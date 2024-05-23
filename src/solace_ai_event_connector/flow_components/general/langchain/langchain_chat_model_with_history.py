@@ -1,6 +1,7 @@
 """A chat model based on LangChain that includes keeping per-session history of the conversation."""
 
 import threading
+import uuid
 from collections import namedtuple
 
 from langchain_core.chat_history import BaseChatMessageHistory
@@ -151,6 +152,7 @@ class LangChainChatModelWithHistory(LangChainChatModelBase):
 
         aggregate_result = ""
         current_batch = ""
+        uuid_str = str(uuid.uuid4())
         for chunk in runnable.stream(
             {"input": human_message},
             config={
@@ -163,23 +165,27 @@ class LangChainChatModelWithHistory(LangChainChatModelBase):
             if len(current_batch.split()) >= self.stream_batch_size:
                 if self.stream_to_flow:
                     self.send_streaming_message(
-                        input_message, current_batch, aggregate_result
+                        input_message, current_batch, aggregate_result, uuid_str
                     )
                 current_batch = ""
 
         if current_batch:
             if self.stream_to_flow:
                 self.send_streaming_message(
-                    input_message, current_batch, aggregate_result
+                    input_message, current_batch, aggregate_result, uuid_str
                 )
 
-        result = namedtuple("Result", ["content"])(aggregate_result)
+        result = namedtuple("Result", ["content", "uuid"])(aggregate_result, uuid_str)
 
         return result
 
-    def send_streaming_message(self, input_message, chunk, aggregate_result):
+    def send_streaming_message(self, input_message, chunk, aggregate_result, uuid_str):
         message = Message(
-            payload={"chunk": chunk, "aggregate_result": aggregate_result},
+            payload={
+                "chunk": chunk,
+                "aggregate_result": aggregate_result,
+                "uuid": uuid_str,
+            },
             user_properties=input_message.get_user_properties(),
         )
         self.send_to_flow(self.stream_to_flow, message)

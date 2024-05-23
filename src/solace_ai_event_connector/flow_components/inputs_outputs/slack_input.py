@@ -298,7 +298,7 @@ class SlackReceiver(threading.Thread):
             "user_id": event.get("user"),
         }
 
-        if self.acknowledgement_message:
+        if self.acknowledgement_message and event.get("channel_type") == "im":
             ack_msg_ts = self.app.client.chat_postMessage(
                 channel=event["channel"],
                 text=self.acknowledgement_message,
