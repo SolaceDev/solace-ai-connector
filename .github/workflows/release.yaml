@@ -1,15 +1,15 @@
 name: Release
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        type: choice
-        required: true
-        description: "Version bump type"
-        options:
-        - patch
-        - minor
-        - major
+  push:
+    # inputs:
+    #   version:
+    #     type: choice
+    #     required: true
+    #     description: "Version bump type"
+    #     options:
+    #     - patch
+    #     - minor
+    #     - major
 
 jobs:
   release:
