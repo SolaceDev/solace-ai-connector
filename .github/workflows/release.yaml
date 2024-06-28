@@ -65,4 +65,4 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git commit -a -m "[ci skip] Bump version to $NEW_VERSION"
-          git push DATAGO-79372-publish-workflow
+          git push
