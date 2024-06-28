@@ -1,0 +1,72 @@
+name: CI
+on:
+  push:
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: |
+            3.9
+            3.10
+            3.12
+
+      - name: Set up pip cache
+        if: runner.os == 'Linux'
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('pyproject.toml') }}
+
+      - name: Install Hatch
+        run: pipx install hatch
+
+      - name: Build Docker Container
+        run: |
+          cp .env_template .env
+          docker build  --platform=linux/amd64 -t solace/solace-ai-connector:local .
+        shell: bash
+
+      - name: Run tests
+        run: |
+          hatch run test:make test
+        shell: bash
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install Hatch
+        uses: pypa/hatch@install
+      - name: Lint
+        run: |
+          hatch fmt --check
+        shell: bash
+
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - name: Install dependencies
+        run: python -m pip install twine
+      - name: Install Hatch
+        uses: pypa/hatch@install
+      - name: Build
+        run: hatch build
+      - name: Verify Packages
+        run: |
+          ls dist/*.tar.gz | xargs -n1 twine check
+          ls dist/*.whl | xargs -n1 twine check
+        shell: bash
