@@ -1,7 +1,17 @@
 name: CI
 on:
   push:
+    branches:
+      - main
   pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  id-token: write
+  checks: write
+  issues: read
+  pull-requests: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -27,17 +37,58 @@ jobs:
       - name: Install Hatch
         run: pipx install hatch
 
-      - name: Build Docker Container
+      - name: Set up Docker Buildx
+        id: builder
+        uses: docker/setup-buildx-action@v3
+
+      - name: Prepare env file
         run: |
           cp .env_template .env
-          docker build  --platform=linux/amd64 -t solace/solace-ai-connector:local .
         shell: bash
 
-      - name: Run tests
+      - name: Build Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          push: false
+          tags: solace/solace-ai-connector:local
+          platforms: linux/amd64
+          builder: ${{ steps.builder.outputs.name }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          load: true
+
+      - name: Run Structured Tests
         run: |
-          hatch run test:make test
+          hatch run test:make structure-test
         shell: bash
 
+      - name: Run Unit Tests
+        run: |
+          hatch test --cover --parallel
+
+      - name: Report coverage
+        run: |
+          hatch run test:coverage xml
+        shell: bash
+
+      - name: SonarQube Scan
+        uses: sonarsource/sonarqube-scan-action@v2.2.0
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
+        with:
+          args: >
+            -Dsonar.tests=tests/
+            -Dsonar.verbose=true
+            -Dsonar.sources=src/
+            -Dsonar.projectKey=${{github.event.repository.name}}
+            -Dsonar.python.coverage.reportPaths=coverage.xml
+      - name: SonarQube Quality Gate check
+        id: sonarqube-quality-gate-check
+        uses: sonarsource/sonarqube-quality-gate-action@master
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
   lint:
     runs-on: ubuntu-latest
     steps:
