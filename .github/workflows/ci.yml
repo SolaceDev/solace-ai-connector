@@ -63,6 +63,8 @@ jobs:
         shell: bash
 
       - name: Run Unit Tests
+        env:
+          HATCH_TEST_ARGS: --junitxml=junit.xml
         run: |
           hatch test --cover --parallel
 
@@ -83,6 +85,26 @@ jobs:
             -Dsonar.sources=src/
             -Dsonar.projectKey=${{github.event.repository.name}}
             -Dsonar.python.coverage.reportPaths=coverage.xml
+
+      - name: Github login
+        id: get_workflow_token
+        uses: peter-murray/workflow-application-token-action@v3
+        with:
+          application_id: ${{secrets.APP_ID }}
+          application_private_key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - name: Publish Pre Deploy Test Report
+        uses: mikepenz/action-junit-report@v4
+        if: always()
+        with:
+          report_paths: junit.xml
+          fail_on_failure: false
+          require_passed_tests: true
+          check_annotations: false
+          detailed_summary: true
+          check_name: "Test Results (Linux)"
+          token: ${{ steps.get_workflow_token.outputs.token }}
+
       - name: SonarQube Quality Gate check
         id: sonarqube-quality-gate-check
         uses: sonarsource/sonarqube-quality-gate-action@master
