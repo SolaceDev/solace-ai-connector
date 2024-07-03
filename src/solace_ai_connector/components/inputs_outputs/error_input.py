@@ -1,5 +1,5 @@
-"""Input component to receive processing errors from the Solace AI Event Connector. 
-Using this component allows the user to decide how to handle errors from other flows. 
+"""Input component to receive processing errors from the Solace AI Event Connector.
+Using this component allows the user to decide how to handle errors from other flows.
 For example, the user could send the errors to a log or send them to a broker."""
 
 import time
@@ -128,8 +128,7 @@ class ErrorInput(ComponentBase):
             self.error_count_in_last_second += 1
             if self.error_count_in_last_second > self.max_rate:
                 log.warning(
-                    "Discarding error message due to input rate limit. "
-                    "Error rate exceeded max rate of %d.",
+                    "Discarding error message due to input rate limit. " "Error rate exceeded max rate of %d.",
                     self.max_rate,
                 )
                 return True

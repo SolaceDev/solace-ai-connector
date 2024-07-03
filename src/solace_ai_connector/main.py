@@ -39,15 +39,12 @@ def merge_config(dict1, dict2):
 
 
 def main():
-
     files = sys.argv[1:]
 
     if not files:
         print("No configuration files provided", file=sys.stderr)
         base_file = os.path.basename(sys.argv[0])
-        print(
-            f"Usage: {base_file} <config1.yaml> [<config2.yaml> ...]", file=sys.stderr
-        )
+        print(f"Usage: {base_file} <config1.yaml> [<config2.yaml> ...]", file=sys.stderr)
         sys.exit(1)
 
     # Loop over the configuration files

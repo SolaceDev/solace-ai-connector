@@ -5,10 +5,7 @@ from .langchain_base import (
 )
 
 
-class LangChainVectorStoreEmbeddingsBase(
-    LangChainBase
-):  # pylint: disable=abstract-method
-
+class LangChainVectorStoreEmbeddingsBase(LangChainBase):  # pylint: disable=abstract-method
     def init(self):
         self.vector_store_info = {
             "name": self.get_config("vector_store_component_name"),
@@ -24,17 +21,11 @@ class LangChainVectorStoreEmbeddingsBase(
         }
 
         # Create the embedding model
-        embedding_class = self.load_component(
-            self.embedding_info["path"], self.embedding_info["name"]
-        )
-        self.embedding = self.create_component(
-            self.embedding_info["config"], embedding_class
-        )
+        embedding_class = self.load_component(self.embedding_info["path"], self.embedding_info["name"])
+        self.embedding = self.create_component(self.embedding_info["config"], embedding_class)
 
         # Create the vector store
-        vector_store_class = self.load_component(
-            self.vector_store_info["path"], self.vector_store_info["name"]
-        )
+        vector_store_class = self.load_component(self.vector_store_info["path"], self.vector_store_info["name"])
 
         if "index" not in self.vector_store_info["config"]:
             self.vector_store_info["config"]["index"] = self.vector_store_info["index"]
@@ -46,12 +37,8 @@ class LangChainVectorStoreEmbeddingsBase(
             del self.vector_store_info["config"]["index"]
 
         try:
-            self.vector_store = self.create_component(
-                self.vector_store_info["config"], vector_store_class
-            )
+            self.vector_store = self.create_component(self.vector_store_info["config"], vector_store_class)
         except Exception:  # pylint: disable=broad-except
             del self.vector_store_info["config"]["embeddings"]
             del self.vector_store_info["config"]["embedding_function"]
-            self.vector_store = vector_store_class.from_texts(
-                [], self.embedding, **self.vector_store_info["config"]
-            )
+            self.vector_store = vector_store_class.from_texts([], self.embedding, **self.vector_store_info["config"])

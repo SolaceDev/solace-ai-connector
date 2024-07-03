@@ -18,9 +18,7 @@ class StorageS3(Storage):
 
     def get(self, key: str) -> dict:
         """Get a value from the AWS S3 storage"""
-        return (
-            self.s3.Object(self.bucket_name, key).get()["Body"].read().decode("utf-8")
-        )
+        return self.s3.Object(self.bucket_name, key).get()["Body"].read().decode("utf-8")
 
     def delete(self, key: str):
         """Delete a value from the AWS S3 storage."""

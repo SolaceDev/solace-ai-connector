@@ -68,9 +68,7 @@ class MessagePublishReceiptListenerImpl(MessagePublishReceiptListener):
 
 
 # Inner classes for error handling
-class ServiceEventHandler(
-    ReconnectionListener, ReconnectionAttemptListener, ServiceInterruptionListener
-):
+class ServiceEventHandler(ReconnectionListener, ReconnectionAttemptListener, ServiceInterruptionListener):
     def on_reconnected(self, service_event: ServiceEvent):
         print("\non_reconnected")
         print(f"Error cause: {service_event.get_cause()}")
@@ -121,15 +119,9 @@ class SolaceMessaging(Messaging):
         broker_props = {
             "solace.messaging.transport.host": self.broker_properties.get("host"),
             "solace.messaging.service.vpn-name": self.broker_properties.get("vpn_name"),
-            "solace.messaging.authentication.scheme.basic.username": self.broker_properties.get(
-                "username"
-            ),
-            "solace.messaging.authentication.scheme.basic.password": self.broker_properties.get(
-                "password"
-            ),
-            "solace.messaging.tls.trust-store-path": self.broker_properties.get(
-                "trust_store_path"
-            )
+            "solace.messaging.authentication.scheme.basic.username": self.broker_properties.get("username"),
+            "solace.messaging.authentication.scheme.basic.password": self.broker_properties.get("password"),
+            "solace.messaging.tls.trust-store-path": self.broker_properties.get("trust_store_path")
             or os.environ.get("TRUST_STORE")
             or os.path.dirname(certifi.where())
             or "/usr/share/ca-certificates/mozilla/",
@@ -138,9 +130,7 @@ class SolaceMessaging(Messaging):
         self.messaging_service = (
             MessagingService.builder()
             .from_properties(broker_props)
-            .with_reconnection_retry_strategy(
-                RetryStrategy.parametrized_retry(20, 3000)
-            )
+            .with_reconnection_retry_strategy(RetryStrategy.parametrized_retry(20, 3000))
             .build()
         )
 
@@ -162,9 +152,7 @@ class SolaceMessaging(Messaging):
         publish_receipt_listener = MessagePublishReceiptListenerImpl()
         self.publisher.set_message_publish_receipt_listener(publish_receipt_listener)
 
-        if "queue_name" in self.broker_properties and self.broker_properties.get(
-            "queue_name"
-        ):
+        if "queue_name" in self.broker_properties and self.broker_properties.get("queue_name"):
             self.bind_to_queue(
                 self.broker_properties.get("queue_name"),
                 self.broker_properties.get("subscriptions"),
@@ -180,9 +168,7 @@ class SolaceMessaging(Messaging):
             # Build a receiver and bind it to the durable exclusive queue
             self.persistent_receiver: PersistentMessageReceiver = (
                 self.messaging_service.create_persistent_message_receiver_builder()
-                .with_missing_resources_creation_strategy(
-                    MissingResourcesCreationStrategy.CREATE_ON_START
-                )
+                .with_missing_resources_creation_strategy(MissingResourcesCreationStrategy.CREATE_ON_START)
                 .build(durable_exclusive_queue)
             )
             self.persistent_receiver.start()
@@ -248,9 +234,7 @@ class SolaceMessaging(Messaging):
     def receive_message(self, timeout_ms):
         return self.persistent_receivers[0].receive_message(timeout_ms)
 
-    def subscribe(
-        self, subscription: str, persistent_receiver: PersistentMessageReceiver
-    ):
+    def subscribe(self, subscription: str, persistent_receiver: PersistentMessageReceiver):
         sub = TopicSubscription.of(subscription)
         persistent_receiver.add_subscription(sub)
 

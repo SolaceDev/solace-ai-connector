@@ -126,9 +126,7 @@ class BrokerInput(BrokerBase):
             payload = base64.b64decode(payload)
         elif encoding == "gzip":
             payload = gzip.decompress(payload)
-        elif encoding == "utf-8" and (
-            isinstance(payload, bytes) or isinstance(payload, bytearray)
-        ):
+        elif encoding == "utf-8" and (isinstance(payload, bytes) or isinstance(payload, bytearray)):
             payload = payload.decode("utf-8")
         if payload_format == "json":
             payload = json.loads(payload)

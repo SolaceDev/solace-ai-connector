@@ -17,6 +17,4 @@ class MessagingServiceBuilder:
             print("Building Solace Messaging Service", self.broker_properties)
             return SolaceMessaging(self.broker_properties)
 
-        raise ValueError(
-            f"Unsupported broker type: {self.broker_properties['broker_type']}"
-        )
+        raise ValueError(f"Unsupported broker type: {self.broker_properties['broker_type']}")

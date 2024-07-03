@@ -41,14 +41,10 @@ class Transforms:
         transform_class = name_to_class.get(transform_type, None)
 
         if not transform_class:
-            raise ValueError(
-                f"Transform at index {index} has an unknown type: {transform_type}"
-            )
+            raise ValueError(f"Transform at index {index} has an unknown type: {transform_type}")
 
         # Create the transform
-        transform_instance = transform_class(
-            transform, index, log_identifier=self.log_identifier
-        )
+        transform_instance = transform_class(transform, index, log_identifier=self.log_identifier)
         self.transforms.append(transform_instance)
 
     def transform(self, message, calling_object=None):

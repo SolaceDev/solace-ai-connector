@@ -112,9 +112,7 @@ class SolaceAiConnector:
             # Create a trace queue
             self.trace_queue = queue.Queue()
             # Start a new thread to handle trace messages
-            self.trace_thread = threading.Thread(
-                target=self.handle_trace, args=(trace_file,)
-            )
+            self.trace_thread = threading.Thread(target=self.handle_trace, args=(trace_file,))
             self.trace_thread.start()
 
     def handle_trace(self, trace_file):
@@ -162,15 +160,10 @@ class SolaceAiConnector:
             # Loop through the components and validate them
             for component_index, component in enumerate(flow.get("components", [])):
                 if not component.get("component_name"):
-                    raise ValueError(
-                        f"component_name not provided in flow {index}, component {component_index}"
-                    )
+                    raise ValueError(f"component_name not provided in flow {index}, component {component_index}")
 
                 if not component.get("component_module"):
-                    raise ValueError(
-                        f"component_module not provided in flow {index}, "
-                        f"component {component_index}"
-                    )
+                    raise ValueError(f"component_module not provided in flow {index}, " f"component {component_index}")
 
     def get_flows(self):
         """Return the flows"""

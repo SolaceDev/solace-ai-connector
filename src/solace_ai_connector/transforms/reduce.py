@@ -106,28 +106,20 @@ class ReduceTransform(TransformBase):
         source_expression = self.get_source_expression(allow_none=True)
         if not source_expression:
             source_expression = "item"
-        source_list = message.get_data(
-            source_list_expression, calling_object=calling_object
-        )
+        source_list = message.get_data(source_list_expression, calling_object=calling_object)
 
         # Get the accumulator function - pass None as the message so we get the function back
         accumulator_function = self.get_config(None, "accumulator_function")
         if not accumulator_function:
-            raise ValueError(
-                f"{self.log_identifier}: Reduce transform does not have an accumulator function"
-            )
+            raise ValueError(f"{self.log_identifier}: Reduce transform does not have an accumulator function")
 
         if not callable(accumulator_function):
-            raise ValueError(
-                f"{self.log_identifier}: Reduce transform has an invalid accumulator function"
-            )
+            raise ValueError(f"{self.log_identifier}: Reduce transform has an invalid accumulator function")
 
         # Get the initial value
         initial_value = self.get_config(message, "initial_value", None)
         if initial_value:
-            initial_value = message.get_data(
-                initial_value, calling_object=calling_object
-            )
+            initial_value = message.get_data(initial_value, calling_object=calling_object)
 
         keyword_args = {
             "index": 0,
@@ -140,9 +132,7 @@ class ReduceTransform(TransformBase):
         accumulated_value = initial_value
         for index, source_data in enumerate(source_list):
             if source_expression != "item":
-                source_data = message.get_data(
-                    source_expression, calling_object=calling_object
-                )
+                source_data = message.get_data(source_expression, calling_object=calling_object)
 
             # Set the current value
             keyword_args["current_value"] = source_data
@@ -153,9 +143,7 @@ class ReduceTransform(TransformBase):
             try:
                 accumulated_value = accumulator_function(message)
             except Exception as e:
-                raise ValueError(
-                    f"{self.log_identifier}: Error calling accumulator function: {e}"
-                ) from e
+                raise ValueError(f"{self.log_identifier}: Error calling accumulator function: {e}") from e
 
             # Set the accumulated value
             keyword_args["accumulated_value"] = accumulated_value

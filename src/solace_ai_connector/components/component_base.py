@@ -73,9 +73,7 @@ class ComponentBase:
                 message = self.get_next_message()
                 if message is not None:
                     if self.trace_queue:
-                        message.trace(
-                            self.trace_queue, self.log_identifier, "Received message"
-                        )
+                        message.trace(self.trace_queue, self.log_identifier, "Received message")
                     self.process_message(message)
             except Exception as e:  # pylint: disable=broad-except
                 log.error(
@@ -187,9 +185,7 @@ class ComponentBase:
 
         # Finally send the message to the next component - or if this is the last component,
         # the component will override send_message and do whatever it needs to do with the message
-        log.debug(
-            "%sSending message from %s: %s", self.log_identifier, self.name, message
-        )
+        log.debug("%sSending message from %s: %s", self.log_identifier, self.name, message)
         self.current_message = message
         self.send_message(message)
 
@@ -198,9 +194,7 @@ class ComponentBase:
         return None
 
     def get_input_data(self, message):
-        component_input = self.config.get("component_input") or {
-            "source_expression": "previous"
-        }
+        component_input = self.config.get("component_input") or {"source_expression": "previous"}
         source_expression = get_source_expression(component_input)
 
         # This should be overridden by the component if it needs to extract data from the message
@@ -296,9 +290,7 @@ class ComponentBase:
 
     def setup_communications(self):
         self.queue_timeout_ms = None  # pylint: disable=assignment-from-none
-        self.queue_max_depth = self.config.get(
-            "component_queue_max_depth", DEFAULT_QUEUE_MAX_DEPTH
-        )
+        self.queue_max_depth = self.config.get("component_queue_max_depth", DEFAULT_QUEUE_MAX_DEPTH)
         self.need_acknowledgement = False
         self.next_component = None
 
@@ -310,9 +302,7 @@ class ComponentBase:
             self.input_queue = queue.Queue(maxsize=self.queue_max_depth)
 
     def setup_transforms(self):
-        self.transforms = Transforms(
-            self.config.get("input_transforms", []), log_identifier=self.log_identifier
-        )
+        self.transforms = Transforms(self.config.get("input_transforms", []), log_identifier=self.log_identifier)
 
     def validate_config(self):
         config_params = self.module_info.get("config_parameters", [])
@@ -327,9 +317,7 @@ class ComponentBase:
                 )
             required = param.get("required", False)
             if required and name not in self.component_config:
-                raise ValueError(
-                    f"Config parameter {name} is required but not present in component {self.name}"
-                )
+                raise ValueError(f"Config parameter {name} is required but not present in component {self.name}")
             default = param.get("default", None)
             if default is not None and name not in self.component_config:
                 self.component_config[name] = default

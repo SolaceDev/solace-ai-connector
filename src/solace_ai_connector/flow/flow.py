@@ -31,7 +31,6 @@ class FlowKVStore:
 
 
 class Flow:
-
     _lock_manager = FlowLockManager()
     _kv_store = FlowKVStore()
 

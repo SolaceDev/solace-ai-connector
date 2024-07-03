@@ -106,24 +106,18 @@ class FilterTransform(TransformBase):
         source_expression = self.get_source_expression(allow_none=True)
         if not source_expression:
             source_expression = "item"
-        source_list = message.get_data(
-            source_list_expression, calling_object=calling_object
-        )
+        source_list = message.get_data(source_list_expression, calling_object=calling_object)
 
         dest_list_expression = self.get_config(message, "dest_list_expression")
         dest_expression = self.get_config(message, "dest_expression", None)
         if not dest_list_expression:
-            raise ValueError(
-                f"{self.log_identifier}: Filter transform does not have a dest list expression"
-            )
+            raise ValueError(f"{self.log_identifier}: Filter transform does not have a dest list expression")
 
         # Get the filter function - pass None as the message so we get the function back
         filter_function = self.get_config(None, "filter_function")
 
         if filter_function and not callable(filter_function):
-            raise ValueError(
-                f"{self.log_identifier}: Filter transform has a non-callable processing function"
-            )
+            raise ValueError(f"{self.log_identifier}: Filter transform has a non-callable processing function")
 
         keyword_args = {
             "index": 0,
@@ -134,12 +128,9 @@ class FilterTransform(TransformBase):
         # Iterate over the source list
         dest_index = 0
         for index, source_data in enumerate(source_list):
-
             message.set_iteration_data(source_data, index)
             if source_expression != "item":
-                source_data = message.get_data(
-                    source_expression, calling_object=calling_object
-                )
+                source_data = message.get_data(source_expression, calling_object=calling_object)
 
             keyword_args["current_value"] = source_data
             keyword_args["index"] = index
@@ -151,17 +142,13 @@ class FilterTransform(TransformBase):
                 try:
                     keep = filter_function(message)
                 except Exception as e:
-                    raise ValueError(
-                        f"{self.log_identifier}: Error calling processing function: {e}"
-                    ) from e
+                    raise ValueError(f"{self.log_identifier}: Error calling processing function: {e}") from e
 
             if keep:
                 # Now put the data into the destination list
                 full_dest_expression = None
                 if dest_expression:
-                    full_dest_expression = (
-                        f"{dest_list_expression}.{index}.{dest_expression}"
-                    )
+                    full_dest_expression = f"{dest_list_expression}.{index}.{dest_expression}"
                 else:
                     full_dest_expression = f"{dest_list_expression}.{dest_index}"
 

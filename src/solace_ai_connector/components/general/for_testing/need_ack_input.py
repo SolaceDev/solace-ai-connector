@@ -1,5 +1,5 @@
-"""An input component that specifies that it needs an ack when the message has finished 
-processing. This is used to test the ack functionality of the connector. 
+"""An input component that specifies that it needs an ack when the message has finished
+processing. This is used to test the ack functionality of the connector.
 This component is used in the tests."""
 
 from ...component_base import ComponentBase
@@ -7,9 +7,7 @@ from ...component_base import ComponentBase
 
 info = {
     "class_name": "NeedAckInput",
-    "description": (
-        "An input component that specifies that it needs an ack when the message has finished "
-    ),
+    "description": ("An input component that specifies that it needs an ack when the message has finished "),
     "config_parameters": [
         {
             "name": "ack_message",

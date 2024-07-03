@@ -119,9 +119,7 @@ def create_markdown_documentation(directory, output_dir, module_type):
             {
                 "file": file,
                 "name": re.sub(r"\..*", "", file),
-                "description": info.get(
-                    "short_description", info.get("description", "")
-                ),
+                "description": info.get("short_description", info.get("description", "")),
             }
         )
         file = f"{output_dir}/{file}"
@@ -217,9 +215,7 @@ def create_ai_prompt(info):
         f.write(prompts["prompt"])
 
 
-def format_json_schema(
-    schema_dict, field_list, level=0, first_line_string="", prop_path=""
-):
+def format_json_schema(schema_dict, field_list, level=0, first_line_string="", prop_path=""):
     indent = "  " * level
     output = ""
     if schema_dict is None:
@@ -260,9 +256,7 @@ def format_json_schema(
     elif schema_dict["type"] == "array":
         # output += f"{indent}[{first_line_string}\n"
         output += f"[{first_line_string}\n"
-        output += format_json_schema(
-            schema_dict.get("items"), field_list, level + 1, "", prop_path + "[]"
-        )
+        output += format_json_schema(schema_dict.get("items"), field_list, level + 1, "", prop_path + "[]")
         output += f",\n{indent}  ...\n"
         output += f"{indent}]"
     else:
@@ -278,9 +272,7 @@ def format_fields(fields):
     output = "| Field | Required | Description |\n"
     output += "| --- | --- | --- |\n"
     for field in fields:
-        output += (
-            f"| {field['name']} | {field['required']} | {field['description']} |\n"
-        )
+        output += f"| {field['name']} | {field['required']} | {field['description']} |\n"
     return output
 
 
@@ -390,12 +382,8 @@ def main():
         base_dir = "src/solace_ai_connector"
 
     # Call the function
-    create_markdown_documentation(
-        f"{base_dir}/components", "docs/components", "component"
-    )
-    create_markdown_documentation(
-        f"{base_dir}/transforms", "docs/transforms", "transform"
-    )
+    create_markdown_documentation(f"{base_dir}/components", "docs/components", "component")
+    create_markdown_documentation(f"{base_dir}/transforms", "docs/transforms", "transform")
 
     # create_ai_prompt(full_info)
 

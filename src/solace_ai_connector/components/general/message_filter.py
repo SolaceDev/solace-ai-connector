@@ -1,7 +1,7 @@
 """A filtering component. This will apply a user configurable expression. If the expression
 evaluates to True, the message will be passed on. If the expression evaluates to False, the
 message will be discarded. If the message is discarded, any previous components that require
-an acknowledgement will be acknowledged. """
+an acknowledgement will be acknowledged."""
 
 from ..component_base import ComponentBase
 from ...common.message import Message

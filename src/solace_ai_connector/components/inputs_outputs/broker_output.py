@@ -157,10 +157,7 @@ class BrokerOutput(BrokerBase):
         if self.decrement_ttl and user_properties.get("ttl"):
             user_properties["ttl"] = int(user_properties["ttl"]) - 1
 
-        if (
-            self.get_config("discard_on_ttl_expiration")
-            and user_properties.get("ttl") <= 0
-        ):
+        if self.get_config("discard_on_ttl_expiration") and user_properties.get("ttl") <= 0:
             log.info("Discarding message due to TTL expiration: %s", message)
             return
 

@@ -5,10 +5,7 @@ from ...common.message import Message
 
 info = {
     "class_name": "Iterate",
-    "description": (
-        "Take a single message that is a list and "
-        "output each item in that list as a separate message"
-    ),
+    "description": ("Take a single message that is a list and " "output each item in that list as a separate message"),
     "config_parameters": [],
     "input_schema": {
         "type": "array",
@@ -39,9 +36,7 @@ class Iterate(ComponentBase):
             if item != data[-1]:
                 topic = message.get_topic()
                 user_properties = message.get_user_properties()
-                new_message = Message(
-                    payload=item, topic=topic, user_properties=user_properties
-                )
+                new_message = Message(payload=item, topic=topic, user_properties=user_properties)
             else:
                 new_message = message
 

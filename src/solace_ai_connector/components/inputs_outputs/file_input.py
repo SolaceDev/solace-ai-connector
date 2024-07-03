@@ -6,7 +6,6 @@ from ...common.message import Message
 
 
 class File(ComponentBase):
-
     def __init__(self, **kwargs):
         super().__init__({}, **kwargs)
 

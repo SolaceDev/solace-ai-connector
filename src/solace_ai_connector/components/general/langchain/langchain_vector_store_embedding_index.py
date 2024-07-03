@@ -17,8 +17,7 @@ info = {
         {
             "name": "vector_store_component_path",
             "required": True,
-            "description": "The vector store library path - e.g. "
-            "'langchain_community.vectorstores'",
+            "description": "The vector store library path - e.g. " "'langchain_community.vectorstores'",
         },
         {
             "name": "vector_store_component_name",

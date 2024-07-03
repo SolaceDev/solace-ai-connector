@@ -24,7 +24,6 @@ info = {
 
 
 class AppendTransform(TransformBase):
-
     def invoke(self, message, calling_object=None):
         # Get the source data
         source_expression = self.get_source_expression()

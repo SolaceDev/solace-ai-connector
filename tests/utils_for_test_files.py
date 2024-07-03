@@ -83,12 +83,8 @@ def create_test_flows(config_yaml, queue_timeout=None, error_queue=None, queue_s
     # For each of the flows, add the input and output components
     flow_info = []
     for flow in flows:
-        input_component = TestInputComponent(
-            flow.component_groups[0][0].get_input_queue()
-        )
-        output_component = TestOutputComponent(
-            queue_timeout=queue_timeout, queue_size=queue_size
-        )
+        input_component = TestInputComponent(flow.component_groups[0][0].get_input_queue())
+        output_component = TestOutputComponent(queue_timeout=queue_timeout, queue_size=queue_size)
         for component in flow.component_groups[-1]:
             component.set_next_component(output_component)
         flow_info.append(
@@ -128,12 +124,8 @@ def dispose_connector(connector):
     connector.stop()
 
 
-def create_and_run_component(
-    config_yaml, message, queue_timeout=None, error_queue=None, no_output=False
-):
-    connector, flow_info = create_test_flows(
-        config_yaml, queue_timeout=queue_timeout, error_queue=error_queue
-    )
+def create_and_run_component(config_yaml, message, queue_timeout=None, error_queue=None, no_output=False):
+    connector, flow_info = create_test_flows(config_yaml, queue_timeout=queue_timeout, error_queue=error_queue)
     try:
         send_message_to_flow(flow_info[0], message)
         output_message = None

@@ -1,5 +1,5 @@
-"""This component has an empty processing stage by default. The user config can use 
-'invoke' configuration to create the processing stage at configuration time. 
+"""This component has an empty processing stage by default. The user config can use
+'invoke' configuration to create the processing stage at configuration time.
 The 'invoke' configuration will be executed at runtime, once per message"""
 
 from ..component_base import ComponentBase
@@ -14,10 +14,7 @@ info = {
         "'component_module:' property in the component's configuration. The input "
         "and output schemas are free-form. The user-defined processing must line up with the input "
     ),
-    "short_description": (
-        "A component that allows the processing stage to be "
-        "defined in the configuration file."
-    ),
+    "short_description": ("A component that allows the processing stage to be " "defined in the configuration file."),
     "config_parameters": [],
     "input_schema": {
         "type": "object",

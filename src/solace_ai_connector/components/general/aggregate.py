@@ -81,9 +81,7 @@ class Aggregate(ComponentBase):
         epoch_time_ms = math.floor(time.time() * 1000)
 
         # How much time is left on the timer
-        remaining_time = (
-            self.current_aggregation["next_aggregation_time"] - epoch_time_ms
-        )
+        remaining_time = self.current_aggregation["next_aggregation_time"] - epoch_time_ms
 
         if remaining_time <= 0:
             return True, self.max_time_ms

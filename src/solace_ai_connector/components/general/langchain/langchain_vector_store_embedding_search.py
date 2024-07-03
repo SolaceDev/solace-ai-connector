@@ -1,4 +1,4 @@
-""" This is a wrapper around all the LangChain Vector Store components for searching
+"""This is a wrapper around all the LangChain Vector Store components for searching
 NOTE that LangChain always associates vector stores with an embedding model
 as well, so the configuration for this component will also include the
 embedding model configuration
@@ -19,8 +19,7 @@ info = {
         {
             "name": "vector_store_component_path",
             "required": True,
-            "description": "The vector store library path - e.g. "
-            "'langchain_community.vectorstores'",
+            "description": "The vector store library path - e.g. " "'langchain_community.vectorstores'",
         },
         {
             "name": "vector_store_component_name",
@@ -109,9 +108,7 @@ class LangChainVectorStoreEmbeddingsSearch(LangChainVectorStoreEmbeddingsBase):
     def invoke(self, message, data):
         text = data["text"]
         k = self.get_config("max_results")
-        combine_context_from_same_source = self.get_config(
-            "combine_context_from_same_source"
-        )
+        combine_context_from_same_source = self.get_config("combine_context_from_same_source")
         # For the lookup, we will double the k value to ensure that we get enough results since
         # we will be combining the results from the same source
         result = self.vector_store.similarity_search(text, k=k * 2)

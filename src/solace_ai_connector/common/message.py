@@ -126,9 +126,7 @@ class Message:
                 self.private_data[user_data_name] = obj
             return obj
 
-        raise ValueError(
-            f"Unknown data type '{data_type}' in expression '{expression}'"
-        )
+        raise ValueError(f"Unknown data type '{data_type}' in expression '{expression}'")
 
     def set_data_object(self, expression, value):
         data_type = expression.split(":")[0]
@@ -147,9 +145,7 @@ class Message:
             user_data_name = data_type.split(".")[1]
             self.private_data[user_data_name] = value
         else:
-            raise ValueError(
-                f"Unknown data type '{data_type}' in expression '{expression}'"
-            )
+            raise ValueError(f"Unknown data type '{data_type}' in expression '{expression}'")
 
     def get_data_value(self, data_object, expression):
         if ":" not in expression:
@@ -189,8 +185,7 @@ class Message:
                 current_data = getattr(current_data, part, None)
             else:
                 raise ValueError(
-                    f"Could not get data value for expression '{expression}' - data "
-                    "is not a dictionary or list"
+                    f"Could not get data value for expression '{expression}' - data " "is not a dictionary or list"
                 )
 
             # If at any point we get None, stop and return None
@@ -207,20 +202,15 @@ class Message:
 
         # It is an error if the data_object is None or not a dictionary or list
         if data_object is None:
-            raise ValueError(
-                f"Could not set data value for expression '{expression}' - data_object is None"
-            )
+            raise ValueError(f"Could not set data value for expression '{expression}' - data_object is None")
         if not isinstance(data_object, dict) and not isinstance(data_object, list):
             raise ValueError(
-                f"Could not set data value for expression '{expression}' - data_object "
-                "is not a dictionary or list"
+                f"Could not set data value for expression '{expression}' - data_object " "is not a dictionary or list"
             )
 
         # It is an error if the data_name is empty
         if data_name == "":
-            raise ValueError(
-                f"Could not set data value for expression '{expression}' - data_name is empty"
-            )
+            raise ValueError(f"Could not set data value for expression '{expression}' - data_name is empty")
 
         # Split the data_name by dots to get the path
         path_parts = data_name.split(".")
@@ -240,17 +230,14 @@ class Message:
                     current_data[int(part)] = value
                 else:
                     log.error(
-                        "Could not set data value for expression '%s' - "
-                        "data is not a dictionary or list",
+                        "Could not set data value for expression '%s' - " "data is not a dictionary or list",
                         expression,
                     )
             # If we're not at the last part of the path, move to the next part
             else:
                 next_part_is_digit = path_parts[i + 1].isdigit()
                 if isinstance(current_data, dict):
-                    current_data = current_data.setdefault(
-                        part, [] if next_part_is_digit else {}
-                    )
+                    current_data = current_data.setdefault(part, [] if next_part_is_digit else {})
                 elif isinstance(current_data, list) and part.isdigit():
                     while len(current_data) <= int(part):
                         current_data.append(None)
@@ -259,8 +246,7 @@ class Message:
                     current_data = current_data[int(part)]
                 else:
                     log.error(
-                        "Could not set data value for expression '%s' - data "
-                        "is not a dictionary or list",
+                        "Could not set data value for expression '%s' - data " "is not a dictionary or list",
                         expression,
                     )
                     return
@@ -333,9 +319,7 @@ class Message:
             mime_type = encoding.split(":")[1]
             data = f"data:{mime_type};base64,{base64.b64encode(bytes(data, 'utf-8')).decode('utf-8')}"
         else:
-            raise ValueError(
-                f"Unknown encoding '{encoding}' in expression '{encoding_expression}'"
-            )
+            raise ValueError(f"Unknown encoding '{encoding}' in expression '{encoding_expression}'")
 
         return data
 
@@ -399,31 +383,15 @@ class Message:
     def trace(self, trace_queue, location, trace_type):
         trace_string = ""
         if (self.payload is not None) and (len(self.payload) > 0):
-            trace_string = (
-                trace_string
-                + "Input Payload: \n"
-                + pprint.pformat(self.payload, indent=4)
-            )
+            trace_string = trace_string + "Input Payload: \n" + pprint.pformat(self.payload, indent=4)
         if (self.topic is not None) and (len(self.topic) > 0):
             trace_string = trace_string + "\nInput Topic: \n" + self.topic
         if (self.user_properties is not None) and (len(self.user_properties) > 0):
-            trace_string = (
-                trace_string
-                + "Input User Properties: \n"
-                + pprint.pformat(self.user_properties, indent=4)
-            )
+            trace_string = trace_string + "Input User Properties: \n" + pprint.pformat(self.user_properties, indent=4)
         if (self.private_data is not None) and (len(self.private_data) > 0):
-            trace_string = (
-                trace_string
-                + "User Data: \n"
-                + pprint.pformat(self.private_data, indent=4)
-            )
+            trace_string = trace_string + "User Data: \n" + pprint.pformat(self.private_data, indent=4)
         if self.previous is not None:
-            trace_string = (
-                trace_string
-                + "\nOutput from previous stage: \n"
-                + pprint.pformat(self.previous, indent=4)
-            )
+            trace_string = trace_string + "\nOutput from previous stage: \n" + pprint.pformat(self.previous, indent=4)
         trace_message = TraceMessage(
             location=location,
             message=trace_string,

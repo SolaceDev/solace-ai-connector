@@ -21,8 +21,7 @@ info = {
         {
             "name": "vector_store_component_path",
             "required": True,
-            "description": "The vector store library path - e.g. "
-            "'langchain_community.vectorstores'",
+            "description": "The vector store library path - e.g. " "'langchain_community.vectorstores'",
         },
         {
             "name": "vector_store_component_name",
@@ -55,8 +54,7 @@ info = {
             "name": "embedding_component_config",
             "required": True,
             "description": (
-                "Model specific configuration for the embedding model. "
-                "See documentation for valid parameter names."
+                "Model specific configuration for the embedding model. " "See documentation for valid parameter names."
             ),
         },
         {
@@ -111,23 +109,17 @@ class LangChainVectorStoreDelete(LangChainVectorStoreEmbeddingsBase):
             # do a search first and then delete the results
             expr = delete_kwargs.get("expr", None)
             if expr is None:
-                raise ValueError(
-                    "In LangChainVectorStoreDelete, expr not provided in delete_kwargs"
-                )
+                raise ValueError("In LangChainVectorStoreDelete, expr not provided in delete_kwargs")
             try:
                 delete_ids = self.vector_store.get_pks(expr)
             except Exception as e:  # pylint: disable=broad-except
-                log.warning(
-                    "%sFailed to get pks from Milvus. %s", self.log_identifier, e
-                )
+                log.warning("%sFailed to get pks from Milvus. %s", self.log_identifier, e)
                 delete_ids = []
             del delete_kwargs["expr"]
 
         try:
             result = self.vector_store.delete(delete_ids, **delete_kwargs)
         except Exception as e:  # pylint: disable=broad-except
-            log.warning(
-                "%sFailed to delete from vector store. %s", self.log_identifier, e
-            )
+            log.warning("%sFailed to delete from vector store. %s", self.log_identifier, e)
             result = False
         return {"result": result}

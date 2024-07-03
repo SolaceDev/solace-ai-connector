@@ -36,9 +36,7 @@ class MemoryTester(ComponentBase):
         super().__init__(info, **kwargs)
 
     def invoke(self, message, data):
-        storage = self.storage_manager.get_storage_handler(
-            self.get_config("storage_name")
-        )
+        storage = self.storage_manager.get_storage_handler(self.get_config("storage_name"))
         storage_data = storage.get("test")
 
         if storage_data is None:

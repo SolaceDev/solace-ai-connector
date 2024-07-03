@@ -16,9 +16,7 @@ class TransformBase:
     # This may be overridden by the transform if more complicated
     def invoke(self, message, calling_object=None):
         # Get the source data
-        source_data = message.get_data(
-            self.source_expression, calling_object=calling_object
-        )
+        source_data = message.get_data(self.source_expression, calling_object=calling_object)
         transformed_data = self.transform_data(source_data)
         message.set_data(self.dest_expression, transformed_data)
         return message
@@ -33,17 +31,11 @@ class TransformBase:
             return value(message)
         return value
 
-    def get_source_expression(
-        self, source_expression_key="source_expression", allow_none=False
-    ):
-        source_expression = get_source_expression(
-            self.transform_config, source_expression_key
-        )
+    def get_source_expression(self, source_expression_key="source_expression", allow_none=False):
+        source_expression = get_source_expression(self.transform_config, source_expression_key)
         if not source_expression:
             if not allow_none:
-                raise ValueError(
-                    f"{self.log_identifier}: Transform does not have a source expression"
-                )
+                raise ValueError(f"{self.log_identifier}: Transform does not have a source expression")
             else:
                 return None
         return source_expression
@@ -51,7 +43,5 @@ class TransformBase:
     def get_dest_expression(self, dest_expression_key="dest_expression"):
         dest_expression = self.transform_config.get(dest_expression_key, None)
         if not dest_expression:
-            raise ValueError(
-                f"{self.log_identifier}: Transform does not have a dest expression"
-            )
+            raise ValueError(f"{self.log_identifier}: Transform does not have a dest expression")
         return dest_expression

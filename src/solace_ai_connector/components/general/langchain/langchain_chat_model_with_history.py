@@ -107,18 +107,13 @@ class LangChainChatModelWithHistory(LangChainChatModelBase):
     def __init__(self, **kwargs):
         super().__init__(info, **kwargs)
         self.history_max_turns = self.get_config("history_max_turns", 20)
-        self.history_max_message_size = self.get_config(
-            "history_max_message_size", 1000
-        )
+        self.history_max_message_size = self.get_config("history_max_message_size", 1000)
         self.history_max_tokens = self.get_config("history_max_tokens", 8000)
         self.stream_to_flow = self.get_config("stream_to_flow", "")
         self.llm_mode = self.get_config("llm_mode", "none")
         self.stream_batch_size = self.get_config("stream_batch_size", 15)
 
-    def invoke_model(
-        self, input_message, messages, session_id=None, clear_history=False
-    ):
-
+    def invoke_model(self, input_message, messages, session_id=None, clear_history=False):
         if clear_history:
             self.clear_history(session_id)
 
@@ -172,16 +167,12 @@ class LangChainChatModelWithHistory(LangChainChatModelBase):
             current_batch += chunk.content
             if len(current_batch.split()) >= self.stream_batch_size:
                 if self.stream_to_flow:
-                    self.send_streaming_message(
-                        input_message, current_batch, aggregate_result
-                    )
+                    self.send_streaming_message(input_message, current_batch, aggregate_result)
                 current_batch = ""
 
         if current_batch:
             if self.stream_to_flow:
-                self.send_streaming_message(
-                    input_message, current_batch, aggregate_result
-                )
+                self.send_streaming_message(input_message, current_batch, aggregate_result)
 
         result = namedtuple("Result", ["content"])(aggregate_result)
 
@@ -197,11 +188,8 @@ class LangChainChatModelWithHistory(LangChainChatModelBase):
         self.send_to_flow(self.stream_to_flow, message)
 
     def create_history(self):
-
         history_class = self.load_component(
-            self.get_config(
-                "history_module", "langchain_community.chat_message_histories"
-            ),
+            self.get_config("history_module", "langchain_community.chat_message_histories"),
             self.get_config("history_class", "ChatMessageHistory"),
         )
         config = self.get_config("history_config", {})
@@ -221,25 +209,17 @@ class LangChainChatModelWithHistory(LangChainChatModelBase):
             messages = self._histories[session_id].messages
             if len(messages) > self.history_max_turns:
                 # Set the history to the last max_turns messages
-                self._histories[session_id].messages = messages[
-                    -self.history_max_turns :
-                ]
+                self._histories[session_id].messages = messages[-self.history_max_turns :]
             return self._histories[session_id]
 
     def prune_large_message_from_history(self, session_id: str):
         with self._lock:
             # Loop over the last 2 messages in the history and truncate if needed
-            if (
-                session_id in self._histories
-                and len(self._histories[session_id].messages) > 1
-            ):
+            if session_id in self._histories and len(self._histories[session_id].messages) > 1:
                 last_two_messages = self._histories[session_id].messages[-2:]
                 for message in last_two_messages:
                     if len(message.content) > self.history_max_message_size:
-                        message.content = (
-                            message.content[: self.history_max_message_size]
-                            + " ...truncated..."
-                        )
+                        message.content = message.content[: self.history_max_message_size] + " ...truncated..."
 
     def clear_history(self, session_id: str):
         with self._lock:

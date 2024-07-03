@@ -39,9 +39,7 @@ def import_from_directories(module_name, base_path=None):
                         module_name = module_name.replace("/", ".")
                         if module_name.endswith(".py"):
                             module_name = module_name[:-3]
-                    spec = importlib.util.spec_from_file_location(
-                        module_name, module_path
-                    )
+                    spec = importlib.util.spec_from_file_location(module_name, module_path)
                     module = importlib.util.module_from_spec(spec)
                     # Insert this module's directory into sys.path so that it
                     # can import other modules
@@ -200,9 +198,7 @@ def call_function(function, params, allow_source_expression):
                 #         "source_expression() is not allowed in this context"
                 #     )
                 (expression, data_type) = extract_source_expression(value)
-                positional[index] = create_lambda_function_for_source_expression(
-                    expression, data_type=data_type
-                )
+                positional[index] = create_lambda_function_for_source_expression(expression, data_type=data_type)
                 have_lambda = True
             elif callable(value):
                 have_lambda = True
@@ -210,20 +206,14 @@ def call_function(function, params, allow_source_expression):
         for key, value in keyword.items():
             if isinstance(value, str) and value.startswith("source_expression("):
                 if not allow_source_expression:
-                    raise ValueError(
-                        "source_expression() is not allowed in this context"
-                    )
+                    raise ValueError("source_expression() is not allowed in this context")
                 (expression, data_type) = extract_source_expression(value)
-                keyword[key] = create_lambda_function_for_source_expression(
-                    expression, data_type=data_type
-                )
+                keyword[key] = create_lambda_function_for_source_expression(expression, data_type=data_type)
                 have_lambda = True
             elif callable(value):
                 have_lambda = True
     if have_lambda:
-        return lambda message: call_function_with_params(
-            message, function, positional, keyword
-        )
+        return lambda message: call_function_with_params(message, function, positional, keyword)
 
     if positional and keyword:
         return function(*positional, **keyword)

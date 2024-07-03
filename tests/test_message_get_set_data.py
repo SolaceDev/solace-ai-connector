@@ -122,10 +122,7 @@ def test_get_data_complex_payload():
 
 def test_get_data_with_user_properties():
     """Test getting the user_properties of a message with user_properties"""
-    assert (
-        messages["with_user_properties"].get_data("input.user_properties")
-        == user_properties["simple"]
-    )
+    assert messages["with_user_properties"].get_data("input.user_properties") == user_properties["simple"]
 
 
 def test_get_data_with_topic():
@@ -136,10 +133,7 @@ def test_get_data_with_topic():
 def test_get_data_with_all():
     """Test getting all the data of a message with a payload, user_properties, and topic"""
     assert messages["with_all"].get_data("input.payload") == payloads["complex"]
-    assert (
-        messages["with_all"].get_data("input.user_properties")
-        == user_properties["simple"]
-    )
+    assert messages["with_all"].get_data("input.user_properties") == user_properties["simple"]
     assert messages["with_all"].get_data("input.topic") == topics["simple"]
 
 
@@ -152,8 +146,7 @@ def test_get_data_deeply_nested_payload():
     """Test getting a deeply nested value from a message with a deeply nested payload"""
     assert (
         messages["deeply_nested"].get_data(
-            "input.payload:key1.subkey1.subsubkey1."
-            "subsubsubkey1.subsubsubsubkey1.subsubsubsubsubkey1"
+            "input.payload:key1.subkey1.subsubkey1." "subsubsubkey1.subsubsubsubkey1.subsubsubsubsubkey1"
         )
         == "value1"
     )
@@ -187,9 +180,7 @@ def test_get_data_with_template():
     """Test getting data from a message with a template"""
     message = Message(payload=payloads["simple"])
     assert (
-        message.get_data(
-            "template:This is a template with '{{input.payload}}' as the payload"
-        )
+        message.get_data("template:This is a template with '{{input.payload}}' as the payload")
         == f"This is a template with '{payloads['simple']}' as the payload"
     )
 
@@ -210,9 +201,7 @@ def test_get_data_with_template_json():
     message = Message(payload=payloads["simple_dict"])
     json_payload = json.dumps(payloads["simple_dict"])
     assert (
-        message.get_data(
-            "template:This is a template with '{{json://input.payload}}' as the payload"
-        )
+        message.get_data("template:This is a template with '{{json://input.payload}}' as the payload")
         == f"This is a template with '{json_payload}' as the payload"
     )
 
@@ -224,9 +213,7 @@ def test_get_data_with_template_datauri():
     b_payload = bytes(payloads["simple"], "utf-8")
     b64_payload = base64.b64encode(b_payload).decode("utf-8")
     assert (
-        message.get_data(
-            "template:This is a template with '{{datauri:image/png://input.payload}}' as the payload"
-        )
+        message.get_data("template:This is a template with '{{datauri:image/png://input.payload}}' as the payload")
         == f"This is a template with 'data:image/png;base64,{b64_payload}' as the payload"
     )
 
@@ -237,10 +224,7 @@ def test_get_data_with_base64():
     # Get the payload as base64 encoded
     b_payload = bytes(payloads["simple"], "utf-8")
     b64_payload = base64.b64encode(b_payload).decode("utf-8")
-    assert (
-        message.get_data("template:Test base64: '{{base64://input.payload}}'")
-        == f"Test base64: '{b64_payload}'"
-    )
+    assert message.get_data("template:Test base64: '{{base64://input.payload}}'") == f"Test base64: '{b64_payload}'"
 
 
 def test_get_data_with_previous():
@@ -275,9 +259,7 @@ def test_index_into_list_out_of_bounds():
 
 def test_get_topic_levels():
     """Test getting the topic of a message as a list of levels"""
-    assert messages["long_topic"].get_data("input.topic_levels") == topics[
-        "long"
-    ].split("/")
+    assert messages["long_topic"].get_data("input.topic_levels") == topics["long"].split("/")
 
 
 # The following tests will test the set_data method of the Message class
@@ -416,9 +398,7 @@ def test_get_set_topic():
 
 def test_get_set_user_properties():
     """Test getting and setting the user_properties of a message"""
-    message = Message(
-        payload=payloads["simple"], user_properties=user_properties["long"]
-    )
+    message = Message(payload=payloads["simple"], user_properties=user_properties["long"])
     assert message.get_user_properties() == user_properties["long"]
     message.set_user_properties(user_properties["simple"])
     assert message.get_user_properties() == user_properties["simple"]

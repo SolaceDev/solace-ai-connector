@@ -150,9 +150,7 @@ flows:
         flows = created_flows
 
     # Create the connector
-    connector = create_connector(
-        config_yaml, event_handlers={"on_flow_creation": event_handler}
-    )
+    connector = create_connector(config_yaml, event_handlers={"on_flow_creation": event_handler})
 
     dispose_connector(connector)
 

@@ -1,7 +1,7 @@
 """This is a map transform where a list is iterated over. For each item, it is possible to
-take a value from either the source list (or anywhere else in the message) and put it in the 
-same index in the destination list. If the destination list is shorter than the source list, 
-the destination list will be extended to match the length of the source list. """
+take a value from either the source list (or anywhere else in the message) and put it in the
+same index in the destination list. If the destination list is shorter than the source list,
+the destination list will be extended to match the length of the source list."""
 
 from .transform_base import TransformBase
 
@@ -109,24 +109,18 @@ class MapTransform(TransformBase):
         source_expression = self.get_source_expression(allow_none=True)
         if not source_expression:
             source_expression = "item"
-        source_list = message.get_data(
-            source_list_expression, calling_object=calling_object
-        )
+        source_list = message.get_data(source_list_expression, calling_object=calling_object)
 
         dest_list_expression = self.get_config(message, "dest_list_expression")
         dest_expression = self.get_config(message, "dest_expression", None)
         if not dest_list_expression:
-            raise ValueError(
-                f"{self.log_identifier}: Map transform does not have a dest list expression"
-            )
+            raise ValueError(f"{self.log_identifier}: Map transform does not have a dest list expression")
 
         # Get the processing function - pass None as the message so we get the function back
         processing_function = self.get_config(None, "processing_function")
 
         if processing_function and not callable(processing_function):
-            raise ValueError(
-                f"{self.log_identifier}: Map transform has a non-callable processing function"
-            )
+            raise ValueError(f"{self.log_identifier}: Map transform has a non-callable processing function")
 
         keyword_args = {
             "index": 0,
@@ -136,12 +130,9 @@ class MapTransform(TransformBase):
 
         # Iterate over the source list
         for index, source_data in enumerate(source_list):
-
             message.set_iteration_data(source_data, index)
             if source_expression != "item":
-                source_data = message.get_data(
-                    source_expression, calling_object=calling_object
-                )
+                source_data = message.get_data(source_expression, calling_object=calling_object)
 
             keyword_args["current_value"] = source_data
             keyword_args["index"] = index
@@ -152,16 +143,12 @@ class MapTransform(TransformBase):
                 try:
                     source_data = processing_function(message)
                 except Exception as e:
-                    raise ValueError(
-                        f"{self.log_identifier}: Error calling processing function: {e}"
-                    ) from e
+                    raise ValueError(f"{self.log_identifier}: Error calling processing function: {e}") from e
 
             # Now put the data into the destination list
             full_dest_expression = None
             if dest_expression:
-                full_dest_expression = (
-                    f"{dest_list_expression}.{index}.{dest_expression}"
-                )
+                full_dest_expression = f"{dest_list_expression}.{index}.{dest_expression}"
             else:
                 full_dest_expression = f"{dest_list_expression}.{index}"
 

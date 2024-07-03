@@ -142,9 +142,7 @@ flows:
           source_expression: user_data.temp
 """
 
-    message = Message(
-        payload={"my_list": [{"one": 1}, {"one": 2}, {"one": 3}], "my_obj": {"two": 2}}
-    )
+    message = Message(payload={"my_list": [{"one": 1}, {"one": 2}, {"one": 3}], "my_obj": {"two": 2}})
     output_message = create_and_run_component(config_yaml, message)
 
     # Check the output

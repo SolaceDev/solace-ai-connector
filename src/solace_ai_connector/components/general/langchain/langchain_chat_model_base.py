@@ -103,16 +103,12 @@ class LangChainChatModelBase(LangChainBase):
             elif item["role"] == "chat":
                 messages.append(ChatMessage(content=item["content"]))
             else:
-                raise ValueError(
-                    f"Invalid message role for Chat Model invocation: {item['role']}"
-                )
+                raise ValueError(f"Invalid message role for Chat Model invocation: {item['role']}")
 
         session_id = data.get("session_id", None)
         clear_history = data.get("clear_history", False)
 
-        llm_res = self.invoke_model(
-            message, messages, session_id=session_id, clear_history=clear_history
-        )
+        llm_res = self.invoke_model(message, messages, session_id=session_id, clear_history=clear_history)
 
         res_format = self.get_config("llm_response_format", "text")
         if res_format == "json":
@@ -133,7 +129,5 @@ class LangChainChatModelBase(LangChainBase):
             return llm_res.content
 
     @abstractmethod
-    def invoke_model(
-        self, input_message, messages, session_id=None, clear_history=False
-    ):
+    def invoke_model(self, input_message, messages, session_id=None, clear_history=False):
         pass

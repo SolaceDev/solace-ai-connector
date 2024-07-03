@@ -429,9 +429,7 @@ def test_resolve_config_values_global_function():
 
 
 def test_resolve_config_values_missing_global_function():
-    with pytest.raises(
-        ValueError, match="Function 'missing' not a known python function"
-    ):
+    with pytest.raises(ValueError, match="Function 'missing' not a known python function"):
         resolve_config_values(
             {
                 "a": {
@@ -777,17 +775,13 @@ def test_invoke_with_source_expression_missing():
         }
     )
     message = Message(payload={"my_obj": {"val1": 1}})
-    with pytest.raises(
-        TypeError, match=r"unsupported operand type\(s\) for \+: 'int' and 'NoneType'"
-    ):
+    with pytest.raises(TypeError, match=r"unsupported operand type\(s\) for \+: 'int' and 'NoneType'"):
         config["source_expression"] = config["source_expression"](message)
 
 
 def test_invoke_with_source_expression_no_source_expression():
     """Verify that the source expression is evaluated"""
-    with pytest.raises(
-        ValueError, match=r"source_expression\(\) must contain an expression"
-    ):
+    with pytest.raises(ValueError, match=r"source_expression\(\) must contain an expression"):
         resolve_config_values(
             {
                 "source_expression": {
@@ -843,12 +837,8 @@ flows:
     output_message = create_and_run_component(config_yaml, message)
 
     # Check the output
-    assert output_message.get_data("user_data.temp") == {
-        "my_val": 4
-    }  # The copy transform
-    assert (
-        output_message.get_data("previous") == "Hello, World! test"
-    )  # The component_input
+    assert output_message.get_data("user_data.temp") == {"my_val": 4}  # The copy transform
+    assert output_message.get_data("previous") == "Hello, World! test"  # The component_input
 
 
 def atest_user_processing_component():
@@ -1045,14 +1035,8 @@ flows:
         component_input:
           source_expression: user_data.temp:new_list
    """
-    message = Message(
-        payload={
-            "my_list": [{"my_val": 1}, {"my_val": 2}, {"my_val": 3}, {"my_val": 4}]
-        }
-    )
+    message = Message(payload={"my_list": [{"my_val": 1}, {"my_val": 2}, {"my_val": 3}, {"my_val": 4}]})
     output_message = create_and_run_component(config_yaml, message)
 
     # Check the output
-    assert output_message.get_data("user_data.temp") == {
-        "new_list": [{"my_val": 3}, {"my_val": 4}]
-    }
+    assert output_message.get_data("user_data.temp") == {"new_list": [{"my_val": 3}, {"my_val": 4}]}

@@ -38,9 +38,7 @@ class TimerInput(ComponentBase):
         super().__init__(info, **kwargs)
         self.interval_ms = self.get_config("interval_ms")
         if not self.interval_ms:
-            raise ValueError(
-                "interval_ms configuration parameter is required for timer_input component."
-            )
+            raise ValueError("interval_ms configuration parameter is required for timer_input component.")
         self.skip_messages_if_behind = self.get_config("skip_messages_if_behind")
         self.last_message_time = None
 
