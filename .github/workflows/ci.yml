@@ -23,24 +23,28 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: |
-            3.9
+            3.8
             3.10
             3.12
-          cache: "pip"
-          cache-dependency-path: |
-            **/requirements*.txt
-            **/pyproject.toml
-
-      # - name: Set up pip cache
-      #   if: runner.os == 'Linux'
-      #   uses: actions/cache@v3
-      #   with:
-      #     path: ~/.cache/pip
-      #     key: ${{ runner.os }}-pip-${{ hashFiles('pyproject.toml', 'requirements.txt') }}
-      #     restore-keys: ${{ runner.os }}-pip-
 
       - name: Install Hatch
         run: pipx install hatch twine
+
+      - name: get python version
+        id: pips
+        shell: bash
+        run: |
+          echo "PIP_38_CACHE=$(hatch run +py=38 test:python -m pip cache dir)" >> $GITHUB_OUTPUT
+          echo "PIP_310_CACHE=$(hatch run +py=310 test:python -m pip cache dir)" >> $GITHUB_OUTPUT
+          echo "PIP_312_CACHE=$(hatch run +py=312 test:python -m pip cache dir)" >> $GITHUB_OUTPUT
+
+      - name: Set up pip cache
+        if: runner.os == 'Linux'
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.pips.outputs.PIP_312_CACHE }}
+          key: ${{ runner.os }}-3.12-pip-${{ hashFiles('pyproject.toml', 'requirements.txt') }}
+          restore-keys: ${{ runner.os }}-3.12-pip-
 
       - name: Set up Docker Buildx
         id: builder
@@ -58,8 +62,6 @@ jobs:
           tags: solace/solace-ai-connector:local
           platforms: linux/amd64
           builder: ${{ steps.builder.outputs.name }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
           load: true
       - name: Run Structured Tests
         run: |
@@ -72,10 +74,8 @@ jobs:
         shell: bash
 
       - name: Run Unit Tests
-        env:
-          HATCH_TEST_ARGS: --junitxml=junit.xml
         run: |
-          hatch test --cover --parallel
+          hatch test --cover --all --junitxml=junit.xml
 
       - name: Report coverage
         run: |
@@ -95,24 +95,6 @@ jobs:
             -Dsonar.projectKey=${{github.repository_owner}}_${{github.event.repository.name}}
             -Dsonar.python.coverage.reportPaths=coverage.xml
             -Dsonar.python.ruff.reportPaths=lint.json
-      # - name: Github login
-      #   id: get_workflow_token
-      #   uses: peter-murray/workflow-application-token-action@v3
-      #   with:
-      #     application_id: ${{secrets.APP_ID }}
-      #     application_private_key: ${{ secrets.APP_PRIVATE_KEY }}
-
-      # - name: Publish Pre Deploy Test Report
-      #   uses: mikepenz/action-junit-report@v4
-      #   if: always()
-      #   with:
-      #     report_paths: junit.xml
-      #     fail_on_failure: false
-      #     require_passed_tests: true
-      #     check_annotations: false
-      #     detailed_summary: true
-      #     check_name: "Test Results (Linux)"
-      #     token: ${{ steps.get_workflow_token.outputs.token }}
 
       - name: SonarQube Quality Gate check
         id: sonarqube-quality-gate-check
@@ -128,3 +110,25 @@ jobs:
           ls dist/*.tar.gz | xargs -n1 twine check
           ls dist/*.whl | xargs -n1 twine check
         shell: bash
+
+      - name: Surface failing tests
+        if: always()
+        uses: pmeier/pytest-results-action@main
+        with:
+          # A list of JUnit XML files, directories containing the former, and wildcard
+          # patterns to process.
+          # See @actions/glob for supported patterns.
+          path: junit.xml
+
+          # (Optional) Add a summary of the results at the top of the report
+          summary: true
+
+          # (Optional) Select which results should be included in the report.
+          # Follows the same syntax as `pytest -r`
+          display-options: fEX
+
+          # (Optional) Fail the workflow if no JUnit XML was found.
+          fail-on-empty: true
+
+          # (Optional) Title of the test results section in the workflow summary
+          title: Test results
