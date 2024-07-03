@@ -15,6 +15,8 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      VAULT_ADDR: https://vault.maas-vault-prod.solace.cloud:8200
     steps:
       - uses: actions/checkout@v4
         with:
@@ -56,6 +58,32 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           load: true
+
+      - name: Vault Login (1/2)
+        id: secrets
+        uses: hashicorp/vault-action@v2.8.0
+        with:
+          url: "${{ env.VAULT_ADDR }}"
+          role: "cicd-workflows-secret-read-role"
+          method: jwt
+          path: jwt-github
+          jwtGithubAudience: https://github.com/SolaceDev
+          exportToken: false
+          secrets:
+            secret/data/tools/githubactions SONAR_HOST_URL | SONAR_HOST_URL ;
+            secret/data/tools/githubactions SONAR_TOKEN | SONAR_TOKEN;
+            secret/data/tools/githubactions PACKAGES_ADMIN_TOKEN | PACKAGES_ADMIN_TOKEN;
+
+      - name: Vault login (2/2)
+        id: vault-login-github
+        uses: hashicorp/vault-action@v2.8.0
+        with:
+          url: "${{ env.VAULT_ADDR }}"
+          method: github
+          githubToken: ${{ steps.secrets.outputs.PACKAGES_ADMIN_TOKEN }}
+          exportToken: true
+          secrets: secret/data/tools/autobots GITHUB_APP_ID | GITHUB_APP_ID ;
+            secret/data/tools/autobots GITHUB_APP_PRIVATE_KEY | GITHUB_APP_PRIVATE_KEY;
 
       - name: Run Structured Tests
         run: |

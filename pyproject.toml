@@ -46,8 +46,8 @@ dependencies = [
 ]
 
 [tool.ruff]
-select = ["E4", "E7", "E9", "F"]
-ignore = ["F401", "E731"]
+lint.select = ["E4", "E7", "E9", "F"]
+lint.ignore = ["F401", "E731"]
 
 [[tool.hatch.envs.test.matrix]]
 python = ["38", "310", "312"]
