@@ -26,17 +26,21 @@ jobs:
             3.9
             3.10
             3.12
+          cache: "pip"
+          cache-dependency-path: |
+            **/requirements*.txt
+            **/pyproject.toml
 
-      - name: Set up pip cache
-        if: runner.os == 'Linux'
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('pyproject.toml') }}
-          restore-keys: ${{ runner.os }}-pip-
+      # - name: Set up pip cache
+      #   if: runner.os == 'Linux'
+      #   uses: actions/cache@v3
+      #   with:
+      #     path: ~/.cache/pip
+      #     key: ${{ runner.os }}-pip-${{ hashFiles('pyproject.toml', 'requirements.txt') }}
+      #     restore-keys: ${{ runner.os }}-pip-
 
       - name: Install Hatch
-        run: pipx install hatch
+        run: pipx install hatch twine
 
       - name: Set up Docker Buildx
         id: builder
@@ -62,6 +66,11 @@ jobs:
           hatch run test:make structure-test
         shell: bash
 
+      - name: Run Lint
+        run: |
+          hatch run lint:ruff check -o lint.json --output-format json ./src ./tests
+        shell: bash
+
       - name: Run Unit Tests
         env:
           HATCH_TEST_ARGS: --junitxml=junit.xml
@@ -83,8 +92,9 @@ jobs:
             -Dsonar.tests=tests/
             -Dsonar.verbose=true
             -Dsonar.sources=src/
-            -Dsonar.projectKey=${{github.event.repository.name}}
+            -Dsonar.projectKey=${{github.repository_owner}}_${{github.event.repository.name}}
             -Dsonar.python.coverage.reportPaths=coverage.xml
+            -Dsonar.python.ruff.reportPaths=lint.json
       # - name: Github login
       #   id: get_workflow_token
       #   uses: peter-murray/workflow-application-token-action@v3
@@ -110,31 +120,7 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Install Hatch
-        uses: pypa/hatch@install
-      - name: Lint
-        run: |
-          hatch fmt --check
-        shell: bash
-
-  package:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.10"
-      - name: Install dependencies
-        run: python -m pip install twine
-      - name: Install Hatch
-        uses: pypa/hatch@install
+      # Build and verify packages
       - name: Build
         run: hatch build
       - name: Verify Packages
