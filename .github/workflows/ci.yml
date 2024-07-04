@@ -15,36 +15,41 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      HATCH_CACHE_DIR: ${{ github.workspace }}/.hatch_cache
+      HATCH_DATA_DIR: ${{ github.workspace }}/.hatch_data
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: |
-            3.8
-            3.10
-            3.12
 
       - name: Install Hatch
-        run: pipx install hatch twine
+        uses: pypa/hatch@install
 
-      - name: get python version
-        id: pips
-        shell: bash
-        run: |
-          echo "PIP_38_CACHE=$(hatch run +py=38 test:python -m pip cache dir)" >> $GITHUB_OUTPUT
-          echo "PIP_310_CACHE=$(hatch run +py=310 test:python -m pip cache dir)" >> $GITHUB_OUTPUT
-          echo "PIP_312_CACHE=$(hatch run +py=312 test:python -m pip cache dir)" >> $GITHUB_OUTPUT
-
-      - name: Set up pip cache
-        if: runner.os == 'Linux'
-        uses: actions/cache@v3
+      - name: Restore Hatch Directory
+        uses: actions/cache/restore@v4
+        id: cache-restore
         with:
-          path: ${{ steps.pips.outputs.PIP_312_CACHE }}
-          key: ${{ runner.os }}-3.12-pip-${{ hashFiles('pyproject.toml', 'requirements.txt') }}
-          restore-keys: ${{ runner.os }}-3.12-pip-
+          path: |
+            ${{ env.HATCH_CACHE_DIR }}
+            ${{ env.HATCH_DATA_DIR }}
+          key: ${{ runner.os }}-hatch-${{ hashFiles('pyproject.toml','requirements.txt') }}
+
+      - name: Install Dependencies
+        if: steps.cache-restore.outputs.cache-hit != 'true'
+        run: |
+          hatch python install 3.8 3.10 3.12
+          hatch env create test
+
+      - name: Cache Hatch Directory
+        uses: actions/cache/save@v4
+        if: steps.cache-restore.outputs.cache-hit != 'true'
+        id: cache-hatch
+        with:
+          path: |
+            ${{ env.HATCH_CACHE_DIR }}
+            ${{ env.HATCH_DATA_DIR }}
+          key: ${{ runner.os }}-hatch-${{ hashFiles('pyproject.toml','requirements.txt') }}
 
       - name: Set up Docker Buildx
         id: builder
@@ -74,8 +79,10 @@ jobs:
         shell: bash
 
       - name: Run Unit Tests
+        shell: bash
         run: |
-          hatch test --cover --all --junitxml=junit.xml
+          hatch test --cover --all --parallel --junitxml=junit.xml
+          cat junit.xml
 
       - name: Report coverage
         run: |
