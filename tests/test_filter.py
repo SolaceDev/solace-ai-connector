@@ -108,8 +108,6 @@ def test_filter_with_multi_stage_data():
 log:
   log_file_level: DEBUG
   log_file: solace_ai_connector.log
-trace:
-  trace_file: solace_ai_connector.trace
 flows:
   - name: test_flow
     components:
@@ -221,3 +219,4 @@ flows:
     finally:
         # Clean up
         dispose_connector(connector)
+
