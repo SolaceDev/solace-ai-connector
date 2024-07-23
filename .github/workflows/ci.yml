@@ -14,7 +14,12 @@ permissions:
 
 jobs:
   ci:
-    name: Lint, Test, and Build
+    uses: SolaceDev/solace-public-workflows/.github/workflows/hatch_ci.yml@v1.0.0
+    secrets:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
+  structure-test:
+    name: Test Docker Image Structure
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -47,9 +52,3 @@ jobs:
         shell: bash
         run: |
           hatch run make structure-test
-
-      - name: Lint, Test and Build
-        uses: SolaceDev/solace-public-workflows/.github/actions/hatch-lint-test-sonar@v1.0.0
-        with:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
