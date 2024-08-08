@@ -109,9 +109,14 @@ class LangChainChatModelBase(LangChainBase):
 
         session_id = data.get("session_id", None)
         clear_history = data.get("clear_history", False)
+        clear_history_depth_to_keep = data.get("clear_history_depth_to_keep", 0)
 
         llm_res = self.invoke_model(
-            message, messages, session_id=session_id, clear_history=clear_history
+            message,
+            messages,
+            session_id=session_id,
+            clear_history=clear_history,
+            clear_history_depth_to_keep=clear_history_depth_to_keep,
         )
 
         res_format = self.get_config("llm_response_format", "text")
@@ -134,6 +139,11 @@ class LangChainChatModelBase(LangChainBase):
 
     @abstractmethod
     def invoke_model(
-        self, input_message, messages, session_id=None, clear_history=False
+        self,
+        input_message,
+        messages,
+        session_id=None,
+        clear_history=False,
+        clear_history_depth_to_keep=0,
     ):
         pass

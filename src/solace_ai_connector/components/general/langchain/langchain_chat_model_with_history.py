@@ -106,6 +106,11 @@ info["input_schema"]["properties"]["clear_history"] = {
     "description": "Whether to clear the history for the session.",
     "default": False,
 }
+info["input_schema"]["properties"]["clear_history_depth_to_keep"] = {
+    "type": "integer",
+    "description": "How many messages to keep in the history when clearing it",
+    "default": 0,
+}
 
 
 class LangChainChatModelWithHistory(LangChainChatModelBase):
@@ -127,11 +132,16 @@ class LangChainChatModelWithHistory(LangChainChatModelBase):
         )
 
     def invoke_model(
-        self, input_message, messages, session_id=None, clear_history=False
+        self,
+        input_message,
+        messages,
+        session_id=None,
+        clear_history=False,
+        clear_history_depth_to_keep=0,
     ):
 
         if clear_history:
-            self.clear_history(session_id)
+            self.clear_history(session_id, clear_history_depth_to_keep)
 
         # Find the first SystemMessage and HumanMessage
         system_prompt = "You are a helpful assistant."
@@ -275,7 +285,12 @@ class LangChainChatModelWithHistory(LangChainChatModelBase):
                             + " ...truncated..."
                         )
 
-    def clear_history(self, session_id: str):
+    def clear_history(self, session_id: str, depth_to_keep=0):
         with self._lock:
             if session_id in self._histories:
-                del self._histories[session_id]
+                if depth_to_keep:
+                    self._histories[session_id].messages = self._histories[
+                        session_id
+                    ].messages[-depth_to_keep:]
+                else:
+                    del self._histories[session_id]

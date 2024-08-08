@@ -17,7 +17,10 @@ info = {
     "description": (
         "Connect to a messaging broker, send request messages, and receive responses. "
         "This component combines the functionality of broker_input and broker_output "
-        "with additional request-response handling."
+        "with additional request-response handling. This is a non-blocking component. After "
+        "a request is sent, the component will not wait for the response. Instead, it will "
+        "continue processing other messages. When a response is received, the component will "
+        "process it and output the request and response messages."
     ),
     "config_parameters": [
         {
