@@ -1,6 +1,8 @@
 import os
 import sys
 import yaml
+import argparse
+from dotenv import load_dotenv
 from .solace_ai_connector import SolaceAiConnector
 
 
@@ -39,15 +41,19 @@ def merge_config(dict1, dict2):
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Solace AI Event Connector")
+    parser.add_argument('config_files', nargs='+', help='Configuration YAML file(s)')
+    parser.add_argument('--env-file', help='Path to .env file')
+    args = parser.parse_args()
 
-    files = sys.argv[1:]
+    if args.env_file:
+        load_dotenv(args.env_file)
+
+    files = args.config_files
 
     if not files:
         print("No configuration files provided", file=sys.stderr)
-        base_file = os.path.basename(sys.argv[0])
-        print(
-            f"Usage: {base_file} <config1.yaml> [<config2.yaml> ...]", file=sys.stderr
-        )
+        parser.print_help(sys.stderr)
         sys.exit(1)
 
     # Loop over the configuration files
