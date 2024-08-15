@@ -42,12 +42,17 @@ def merge_config(dict1, dict2):
 
 def main():
     parser = argparse.ArgumentParser(description="Solace AI Event Connector")
-    parser.add_argument('config_files', nargs='+', help='Configuration YAML file(s)')
-    parser.add_argument('--env-file', help='Path to .env file')
+    parser.add_argument("config_files", nargs="+", help="Configuration YAML file(s)")
+    parser.add_argument("--env-file", help="Path to .env file")
     args = parser.parse_args()
 
     if args.env_file:
-        load_dotenv(args.env_file)
+        print(f"Loading environment variables from {args.env_file}")
+        load_dotenv(args.env_file, override=True)
+        # Print out the environment variables for debugging (sorted by key)
+        print("Environment variables:")
+        for key, value in sorted(os.environ.items()):
+            print(f"{key}={value}")
 
     files = args.config_files
 

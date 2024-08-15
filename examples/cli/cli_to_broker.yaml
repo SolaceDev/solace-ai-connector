@@ -1,0 +1,67 @@
+---
+# Read from STDIN and write to a Solace broker
+# CLI -> Solace
+# Format the message to the broker as an LLM request
+# payload:
+#   messages:
+#     - role: system
+#       content: You are a friendly assistant that likes to talk in Pirate speak.
+#     - role: user
+#       content: <Read from command line>
+# topic: llm/sota/chat/completion
+# user_properties:
+#   - reply_to: cli/output
+log:
+  stdout_log_level: WARN
+
+shared_config:
+  - broker_config: &broker_connection
+      broker_connection_share: ${SOLACE_BROKER_URL}
+      broker_type: solace
+      broker_url: ${SOLACE_BROKER_URL}
+      broker_username: ${SOLACE_BROKER_USERNAME}
+      broker_password: ${SOLACE_BROKER_PASSWORD}
+      broker_vpn: ${SOLACE_BROKER_VPN}
+
+# List of flows
+flows:
+  - name: input_flow
+    components:
+
+      # Input from CLI
+      - component_name: cli_input
+        component_module: stdin_input
+
+      - component_name: send_to_broker
+        component_module: broker_output
+        component_config: 
+          <<: *broker_connection
+          payload_format: json
+        component_input:
+          source_expression: user_data.output
+
+        # Create the message payload, topic and user properties and put
+        # them in the user_data.output object
+        input_transforms:
+          - type: copy
+            source_value:
+              messages:
+                - role: system
+                  content: You are a friendly assistant that likes to talk in Pirate speak.
+            dest_expression: user_data.output:payload
+          - type: copy
+            source_value: user
+            dest_expression: user_data.output:payload.messages.1.role
+          - type: copy
+            source_expression: previous
+            dest_expression: user_data.output:payload.messages.1.content
+          - type: copy
+            source_value: cli/output
+            dest_expression: user_data.output:user_properties.reply_to
+          - type: copy
+            source_value: llm/sota/chat/completion
+            dest_expression: user_data.output:topic
+
+        # Select the user_data.output object we crated above as the input to the component
+        component_input:
+          source_expression: user_data.output
