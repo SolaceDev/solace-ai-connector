@@ -49,13 +49,6 @@ class ComponentBase:
 
         self.log_identifier = f"[{self.instance_name}.{self.flow_name}.{self.name}] "
 
-        # Remove this since it will dump out some secrets
-        # log.debug(
-        #     "%sCreating component %s with config %s",
-        #     self.log_identifier,
-        #     self.name,
-        #     self.config,
-        # )
         self.validate_config()
         self.setup_transforms()
         self.setup_communications()

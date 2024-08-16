@@ -112,10 +112,7 @@ def import_module(name, base_path=None, component_package=None):
         # is necessary. It seems you can't dynamically import a module
         # that is listed in an __init__.py file :(
         if "." not in name:
-            for prefix_prefix in [
-                "solace_ai_connector",
-                "."
-            ]:
+            for prefix_prefix in ["solace_ai_connector", "."]:
                 for prefix in [
                     ".components",
                     ".components.general",
@@ -128,16 +125,18 @@ def import_module(name, base_path=None, component_package=None):
                     full_name = f"{prefix_prefix}{prefix}.{name}"
                     try:
                         if full_name.startswith("."):
-                            module = importlib.import_module(full_name, package=__package__)
+                            module = importlib.import_module(
+                                full_name, package=__package__
+                            )
                         else:
                             module = importlib.import_module(full_name)
                         return module
-                        # module = importlib.import_module(full_name)
-                        # return module
                     except ModuleNotFoundError:
                         pass
                     except Exception as e:
-                        raise ImportError(f"Module load error for {full_name}: {e}") from e
+                        raise ImportError(
+                            f"Module load error for {full_name}: {e}"
+                        ) from e
         raise ModuleNotFoundError(f"Module '{name}' not found") from exc
 
 
