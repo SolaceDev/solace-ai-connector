@@ -103,6 +103,7 @@ class OpenAIChatModelWithHistory(OpenAIChatModelBase):
             history[session_id]["messages"] = history[session_id]["messages"][
                 -self.history_max_turns * 2 :
             ]
+        self.make_history_start_with_user_message(session_id, history)
 
     def clear_history_but_keep_depth(self, session_id: str, depth: int, history):
         if session_id in history:
@@ -127,6 +128,10 @@ class OpenAIChatModelWithHistory(OpenAIChatModelBase):
 
             # In the unlikely case that the history starts with a non-user message,
             # remove it
+            self.make_history_start_with_user_message(session_id, history)
+
+    def make_history_start_with_user_message(self, session_id, history):
+        if session_id in history:
             while (
                 history[session_id]["messages"]
                 and history[session_id]["messages"][0]["role"] != "user"
