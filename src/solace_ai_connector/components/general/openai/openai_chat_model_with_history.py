@@ -20,7 +20,7 @@ info["config_parameters"].extend(
         {
             "name": "history_max_time",
             "required": False,
-            "description": "Maximum time to keep conversation history",
+            "description": "Maximum time to keep conversation history (in seconds)",
             "default": 3600,
         },
     ]
