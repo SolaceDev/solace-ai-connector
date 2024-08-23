@@ -28,7 +28,6 @@ class ComponentBase:
         self.component_index = kwargs.pop("component_index", None)
         self.error_queue = kwargs.pop("error_queue", None)
         self.instance_name = kwargs.pop("instance_name", None)
-        self.storage_manager = kwargs.pop("storage_manager", None)
         self.trace_queue = kwargs.pop("trace_queue", False)
         self.connector = kwargs.pop("connector", None)
         self.timer_manager = kwargs.pop("timer_manager", None)
