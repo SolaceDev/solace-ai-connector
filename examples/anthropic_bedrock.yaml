@@ -4,6 +4,22 @@
 # sends the response back to the Solace broker
 # It will ask the model to write a dry joke about the input
 # message. It takes the entire payload of the input message
+# 
+# Dependencies:
+# pip install langchain_aws langchain_community
+# 
+# Dependencies:
+# - langchain_aws
+# pip install langchain_aws
+# 
+# required ENV variables:
+# - SOLACE_BROKER_URL
+# - SOLACE_BROKER_USERNAME
+# - SOLACE_BROKER_PASSWORD
+# - SOLACE_BROKER_VPN
+# - AWS_BEDROCK_ANTHROPIC_CLAUDE_MODEL_ID
+
+
 instance_name: LLM
 log:
   stdout_log_level: DEBUG
