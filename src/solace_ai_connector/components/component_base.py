@@ -310,6 +310,7 @@ class ComponentBase:
                 "component_index": self.component_index,
             },
         }
+        message = None
         if event and event.event_type == EventType.MESSAGE:
             message = event.data
             if message:
