@@ -1,0 +1,198 @@
+# This will create a flow using the mixture of agents pattern (https://arxiv.org/abs/2406.04692)
+#
+# It will subscribe to `moa/question` and expect an event with the payload:
+# The input message has the following schema:
+# {
+#   "query": "<query as text>"
+# }
+#
+# It will then send an event back to Solace with the topic: `moa/question/response`
+#
+# NOTE: For horizontal scaling, partitioned queues must be used. This is not implemented in this example.
+#
+# Dependencies:
+# pip install -U langchain-google-vertexai langchain_anthropic langchain_openai openai
+#
+# required ENV variables:
+# - GOOGLE_APPLICATION_CREDENTIALS: the path to a service account JSON file
+# - VERTEX_REGION
+# - VERTEX_API_ENDPOINT - optional
+# - VERTEX_MODEL_NAME
+# - OPENAI_API_KEY
+# - OPENAI_API_ENDPOINT - optional
+# - OPENAI_MODEL_NAME
+# - ANTHROPIC_API_KEY
+# - ANTHROPIC_API_ENDPOINT - optional
+# - ANTHROPIC_MODEL_NAME
+# - SOLACE_BROKER_URL
+# - SOLACE_BROKER_USERNAME
+# - SOLACE_BROKER_PASSWORD
+# - SOLACE_BROKER_VPN
+
+---
+log:
+  stdout_log_level: INFO
+  log_file_level: INFO
+  log_file: solace_ai_connector.log
+
+shared_config:
+  # Broker connection configuration
+  - broker_config: &broker_connection
+      broker_type: solace
+      broker_url: ${SOLACE_BROKER_URL}
+      broker_username: ${SOLACE_BROKER_USERNAME}
+      broker_password: ${SOLACE_BROKER_PASSWORD}
+      broker_vpn: ${SOLACE_BROKER_VPN}
+
+  # Agent broker input configuration
+  - agent_broker_input: &agent_broker_input
+      component_name: solace_agent_broker
+      component_module: broker_input
+      component_config:
+        <<: *broker_connection
+        broker_subscriptions:
+          - topic: moa/question
+            qos: 1
+        payload_encoding: utf-8
+        payload_format: json
+
+  # Agent broker output configuration
+  - agent_broker_output: &agent_broker_output
+      component_name: solace_agent_broker
+      component_module: broker_output
+      component_config:
+        <<: *broker_connection
+        payload_encoding: utf-8
+        payload_format: json
+        copy_user_properties: true
+      input_transforms:
+        - type: copy
+          source_expression: user_data.formatted_response:content
+          dest_expression: user_data.output:payload.content
+        - type: copy
+          source_expression: user_data.formatted_response:agent
+          dest_expression: user_data.output:payload.agent
+        - type: copy
+          source_expression: template:{{text://input.topic}}/response
+          dest_expression: user_data.output:topic
+      component_input:
+        source_expression: user_data.output
+
+  # Agent input transformations
+  - agent_input_transformations: &agent_input_transformations
+      input_transforms:
+        - type: copy
+          source_expression: |
+            template:You are a helpful AI assistant. Please help with the user's request below:
+            <user-question>
+            {{text://input.payload:query}}
+            </user-question>
+          dest_expression: user_data.llm_input:messages.0.content
+        - type: copy
+          source_expression: static:user
+          dest_expression: user_data.llm_input:messages.0.role
+      component_input:
+        source_expression: user_data.llm_input
+
+flows:
+  # Agent 1 - Google Vertex AI
+  - name: Agent 1 - Google Vertex AI
+    components:
+      # Broker input for Vertex AI
+      - <<: *agent_broker_input
+
+      # Vertex AI LLM Request
+      - component_name: llm_request
+        component_module: langchain_chat_model
+        component_config:
+          langchain_module: langchain_google_vertexai
+          langchain_class: ChatVertexAI
+          langchain_component_config:
+            base_url: ${VERTEX_API_ENDPOINT}
+            location: ${VERTEX_REGION}
+            model: ${VERTEX_MODEL_NAME}
+            temperature: 0.01
+        <<: *agent_input_transformations
+
+      # Format Vertex AI response for broker output
+      - component_name: format_response
+        component_module: pass_through
+        input_transforms:
+          - type: copy
+            source_value: vertex_ai
+            dest_expression: user_data.formatted_response:agent
+          - type: copy
+            source_expression: previous
+            dest_expression: user_data.formatted_response:content
+        component_input:
+          source_expression: user_data.formatted_response
+
+      # Broker output for Vertex AI
+      - <<: *agent_broker_output
+
+  # Agent 2 - OpenAI
+  - name: Agent 2 - OpenAI
+    components:
+      # Broker input for OpenAI
+      - <<: *agent_broker_input
+
+      # OpenAI LLM Request
+      - component_name: llm_request
+        component_module: openai_chat_model
+        component_config:
+          api_key: ${OPENAI_API_KEY}
+          base_url: ${OPENAI_API_ENDPOINT}
+          model: ${OPENAI_MODEL_NAME}
+          temperature: 0.01
+        <<: *agent_input_transformations
+
+      # Format OpenAI response for broker output
+      - component_name: format_response
+        component_module: pass_through
+        input_transforms:
+          - type: copy
+            source_value: openai
+            dest_expression: user_data.formatted_response:agent
+          - type: copy
+            source_expression: previous:content
+            dest_expression: user_data.formatted_response:content
+        component_input:
+          source_expression: user_data.formatted_response
+
+      # Broker output for OpenAI
+      - <<: *agent_broker_output
+
+  # Agent 3 - Anthropic
+  - name: Agent 3 - Anthropic
+    components:
+      # Broker input for Anthropic
+      - <<: *agent_broker_input
+
+      # Anthropic LLM Request
+      - component_name: llm_request
+        component_module: langchain_chat_model
+        component_config:
+          langchain_module: langchain_anthropic
+          langchain_class: ChatAnthropic
+          langchain_component_config:
+            api_key: ${ANTHROPIC_API_KEY}
+            base_url: ${ANTHROPIC_API_ENDPOINT}
+            model: ${ANTHROPIC_MODEL_NAME}
+            temperature: 0.01
+        <<: *agent_input_transformations
+
+      # Format Anthropic response for broker output
+      - component_name: format_response
+        component_module: pass_through
+        input_transforms:
+          - type: copy
+            source_value: anthropic
+            dest_expression: user_data.formatted_response:agent
+          - type: copy
+            source_expression: previous
+            dest_expression: user_data.formatted_response:content
+        component_input:
+          source_expression: user_data.formatted_response
+
+      # Broker output for Anthropic
+      - <<: *agent_broker_output
