@@ -68,9 +68,9 @@ class Assembly(ComponentBase):
 
     def invoke(self, message, data):
         # Check if the message has the assemble key
-        if self.assemble_key not in data:
-            log.error(f"Message does not have the key {self.assemble_key}")
-            raise ValueError(f"Message does not have the key {self.assemble_key}")
+        if self.assemble_key not in data or type(data[self.assemble_key]) is not str:
+            log.error(f"Message does not have the key {self.assemble_key} or it is not a string")
+            raise ValueError(f"Message does not have the key {self.assemble_key} or it is not a string")
 
         event_key = data[self.assemble_key]
         # Fetch the current assembly from cache
