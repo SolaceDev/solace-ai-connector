@@ -51,7 +51,7 @@ shared_config:
       component_config:
         <<: *broker_connection
         broker_subscriptions:
-          - topic: moa/question
+          - topic: moa/broadcast
             qos: 1
         payload_encoding: utf-8
         payload_format: json
@@ -66,14 +66,21 @@ shared_config:
         payload_format: json
         copy_user_properties: true
       input_transforms:
+          # Copy the contents of the input event (query, id, layer_number)
+        - type: copy
+          source_expression: input.payload
+          dest_expression: user_data.output:payload
+         # Copy the output from the LLM
         - type: copy
           source_expression: user_data.formatted_response:content
           dest_expression: user_data.output:payload.content
+          # Copy the agent name
         - type: copy
           source_expression: user_data.formatted_response:agent
           dest_expression: user_data.output:payload.agent
+          # Copy the response topic based on input  topic
         - type: copy
-          source_expression: template:{{text://input.topic}}/response
+          source_expression: template:{{text://input.topic}}/next
           dest_expression: user_data.output:topic
       component_input:
         source_expression: user_data.output
@@ -95,6 +102,85 @@ shared_config:
         source_expression: user_data.llm_input
 
 flows:
+  # Event manager - Updates user message and send to all agents
+  - name: event manager
+    components:
+      # Broker input for user query
+      - component_name: user_query_input
+        component_module: broker_input
+        component_config:
+          <<: *broker_connection
+          broker_subscriptions:
+            - topic: moa/question
+              qos: 1
+          payload_encoding: utf-8
+          payload_format: json
+      
+      # Broker output for agents - Update input event with layer number and UUID
+      - component_name: solace_agent_broker
+        component_module: broker_output
+        component_config:
+          <<: *broker_connection
+          payload_encoding: utf-8
+          payload_format: json
+          copy_user_properties: true
+        input_transforms:
+            # Copy the original user query
+          - type: copy
+            source_expression: input.payload:query
+            dest_expression: user_data.output:payload.query
+            # Increase layer number by 1, if none exists, set to 1
+          - type: copy
+            source_expression: 
+              invoke:
+                # Check if layer number exists
+                module: invoke_functions
+                function: if_else
+                params:
+                  positional:
+                    - source_expression(input.payload:layer_number)
+                    - invoke:
+                        # Add 1 to the layer number
+                        module: invoke_functions
+                        function: add
+                        params:
+                          positional:
+                            - invoke:
+                                # Default to zero
+                                module: invoke_functions
+                                function: or_op
+                                params:
+                                  positional:
+                                    - source_expression(input.payload:layer_number)
+                                    - 0
+                            - 1
+                    # No layer number, set to 1
+                    - 1
+            dest_expression: user_data.output:payload.layer_number
+
+            # Copy over the UUID, if doesn't exists create one
+          - type: copy
+            source_value: 
+              invoke:
+                module: invoke_functions
+                function: if_else
+                params:
+                  positional:
+                    - source_expression(input.payload:id)
+                    - source_expression(input.payload:id)
+                    - invoke:
+                        module: invoke_functions
+                        function: uuid
+            dest_expression: user_data.output:payload.id
+
+            # Copy the response topic based on input  topic
+          - type: copy
+            source_value: moa/broadcast
+            dest_expression: user_data.output:topic
+
+        component_input:
+          source_expression: user_data.output
+
   # Agent 1 - Google Vertex AI
   - name: Agent 1 - Google Vertex AI
     components:
