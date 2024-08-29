@@ -56,7 +56,7 @@ info = {
 
 # Default timeout to flush the messages
 DEFAULT_FLUSH_TIMEOUT_MS = 10000
-TIMEOUT_PREFIX = "assembly_timeout_"
+ASSEMBLY_EXPIRY_ID = "assembly_expiry"
 
 
 class Assembly(ComponentBase):
@@ -69,44 +69,51 @@ class Assembly(ComponentBase):
     def invoke(self, message, data):
         # Check if the message has the assemble key
         if self.assemble_key not in data or type(data[self.assemble_key]) is not str:
-            log.error(f"Message does not have the key {self.assemble_key} or it is not a string")
-            raise ValueError(f"Message does not have the key {self.assemble_key} or it is not a string")
+            log.error(
+                f"Message does not have the key {self.assemble_key} or it is not a string"
+            )
+            raise ValueError(
+                f"Message does not have the key {self.assemble_key} or it is not a string"
+            )
 
         event_key = data[self.assemble_key]
         # Fetch the current assembly from cache
         current_assembly = self.cache_service.get_data(event_key)
 
+        # Set expiry timeout only on cache creation (not on update)
+        expiry = None
         # Create a new assembly if not present
         if not current_assembly:
-            current_assembly = self.start_new_assembly(event_key)
+            expiry = self.max_time_ms  / 1000
+            current_assembly = {
+                "list": [],
+                "message": Message(),
+            }
 
         # Update cache with the new data
         message.combine_with_message(current_assembly["message"])
         current_assembly["message"] = message
         current_assembly["list"].append(data)
-        self.cache_service.add_data(event_key, current_assembly)
+        self.cache_service.add_data(
+            event_key,
+            current_assembly,
+            expiry=expiry,
+            metadata=ASSEMBLY_EXPIRY_ID,
+            component=self,
+        )
 
         # Flush the assembly if the max size is reached
         if len(current_assembly["list"]) >= self.max_items:
             log.debug(f"Flushing data by size - {len(current_assembly['list'])} items")
             return self.flush_assembly(event_key)["list"]
 
-    def handle_timer_event(self, timer_data):
-        if timer_data["timer_id"].startswith(TIMEOUT_PREFIX):
-            assemble_key = timer_data["timer_id"].replace(TIMEOUT_PREFIX, "")
-            assembled_data = self.flush_assembly(assemble_key)
+    def handle_cache_expiry_event(self, data):
+        if data["metadata"] == ASSEMBLY_EXPIRY_ID:
+            assembled_data = data["expired_data"]
             log.debug(f"Flushing data by timeout - {len(assembled_data['list'])} items")
             self.process_post_invoke(assembled_data["list"], assembled_data["message"])
 
-    def start_new_assembly(self, assemble_key):
-        self.add_timer(self.max_time_ms, TIMEOUT_PREFIX + assemble_key)
-        return {
-            "list": [],
-            "message": Message(),
-        }
-
     def flush_assembly(self, assemble_key):
-        self.cancel_timer(TIMEOUT_PREFIX + assemble_key)
         assembly = self.cache_service.get_data(assemble_key)
         self.cache_service.remove_data(assemble_key)
         return assembly
