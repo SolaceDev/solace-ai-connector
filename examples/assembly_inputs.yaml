@@ -4,7 +4,7 @@
 #
 # The input message has the following schema:
 # {
-#   "content": "<some text>"
+#   "content": "<some text>",
 #   "id": "<same ID across the message>"
 # }
 #
