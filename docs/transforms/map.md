@@ -46,7 +46,7 @@ input_transforms:
                 positional:
                   - source_expression(keyword_args:current_value)
                   - 2
-        dest_expression: user_data.output:new_list
+        dest_list_expression: user_data.output:new_list
 ```
 This transform would take a payload like this:
 
