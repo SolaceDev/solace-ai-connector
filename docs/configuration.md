@@ -570,4 +570,4 @@ You can find various usecase examples in the [examples directory](../examples/)
 
 ---
 
-Checkout [components.md](./components/index.md), [transforms.md](./transforms/index.md), and [tips_and_tricks](tips_and_tricks.md) next.
+Checkout [components.md](./components/index.md), [transforms.md](./transforms/index.md), or [tips_and_tricks](tips_and_tricks.md) next.

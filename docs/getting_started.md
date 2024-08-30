@@ -174,8 +174,6 @@ To build a Docker image, run the following command:
 make build
 ```
 
-Please now visit the [Documentation Page](index.md) for more information
-
 ---
 
-Checkout [configuration.md](configuration.md) next
+Checkout [configuration.md](configuration.md) or [overview.md](overview.md) next

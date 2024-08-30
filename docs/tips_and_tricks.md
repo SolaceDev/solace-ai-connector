@@ -24,7 +24,7 @@ For example:
 
           # Transform and reduce the responses to one message
           - type: reduce
-            source_list_expression: user_data.temp:responses # Access the temporary storage
+            source_list_expression: user_data.temp:responses # Using the value in temporary storage
             source_expression: item
             initial_value: ""
             accumulator_function:
@@ -43,10 +43,13 @@ For example:
 
 ## Using custom modules with the AI Connector
 
+This is a simple example that utilizes a custom component, a class based transform and a function based transform.
+
 First follow the following steps to create a repository to run the ai connector:
 
 ```bash
-mkdir -p module-example/src; cd module-example
+mkdir -p module-example/src
+cd module-example
 python3 -m venv env
 source env/bin/activate
 pip install solace-ai-connector
@@ -97,8 +100,8 @@ flows:
       - component_name: stdin
         component_module: stdin_input
 
-    # Custom module
-      - component_name: custom_module_example
+    # Using Custom component
+      - component_name: custom_component_example
         component_base_path: .
         component_module: src.custom_component
         input_selection:
@@ -107,8 +110,9 @@ flows:
      # Output to a standard out
       - component_name: stdout
         component_module: stdout_output
+        # Using custom transforms
         input_transforms:
-        # Instantiating a class and calling a function
+        # Instantiating a class and calling its function
           - type: copy
             source_expression:
                 invoke:
@@ -124,7 +128,6 @@ flows:
                         positional:
                             - source_expression(previous)
             dest_expression: user_data.output:class
-
             # Calling a function directly
           - type: copy
             source_expression:
@@ -135,7 +138,6 @@ flows:
                         positional:
                             - source_expression(previous)
             dest_expression: user_data.output:function
-
         component_input:
           source_expression: user_data.output
 ```
