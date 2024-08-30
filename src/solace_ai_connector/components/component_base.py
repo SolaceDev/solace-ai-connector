@@ -218,7 +218,7 @@ class ComponentBase:
             if self.current_message is None:
                 raise ValueError(
                     f"Component {self.log_identifier} is trying to use an `invoke` config "
-                    "that contains a 'source_expression()' in a context that does not "
+                    "that contains a 'evaluate_expression()' in a context that does not "
                     "have a message available. This is likely a bug in the "
                     "component's configuration."
                 )

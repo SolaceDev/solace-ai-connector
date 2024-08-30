@@ -148,7 +148,7 @@ The message object has the following properties:
 
 This data type is available only after a topic subscription and then it will be available from that component onwards till overwritten by another input message.
 
-- `user_data`: The user data object. This is a storage where the user can write and read values to be used at the different places. It is an object that is passed through the flows, and can hold any valid Python data type. To write to this object, you can use the `dest_expression` in the configuration file. To read from this object, you can use the `source_expression` in the configuration file. (This object is also available in the `source_expression()` function). 
+- `user_data`: The user data object. This is a storage where the user can write and read values to be used at the different places. It is an object that is passed through the flows, and can hold any valid Python data type. To write to this object, you can use the `dest_expression` in the configuration file. To read from this object, you can use the `source_expression` in the configuration file. (This object is also available in the `evaluate_expression()` function). 
 
 - `previous`: The complete output of the previous component in the flow. This can be used to completely forward the output of the previous component as an input to the next component or be modified in the `input_transforms` section of the next component.
 
@@ -407,7 +407,7 @@ Here is an example of a complex `invoke` block that could be used to get AWS cre
               attribute: token
 ```
 
-**Note:** The function parameters do not support expression syntax outside of the `source_expression()` function. If you need to use an expression like template, you'd have to write it to a temporary user data value and reference it in the `source_expression` function.
+**Note:** The function parameters do not support expression syntax outside of the `evaluate_expression()` function. If you need to use an expression like template, you'd have to write it to a temporary user data value and reference it in the `source_expression` function.
 
 ### invoke_functions
 
@@ -459,12 +459,12 @@ Here is an example of using the `invoke_functions` module to do some simple oper
           - 2
 ```
 
-### source_expression()
+### evaluate_expression()
 
 If the `invoke` block is used within an area of the configuration that relates to message processing
-(e.g. input_transforms), an invoke function call can use the special function `source_expression(<expression>[, type])` for any of its parameters. This function will be replaced with the value of the source expression at runtime.
+(e.g. input_transforms), an invoke function call can use the special function `evaluate_expression(<expression>[, type])` for any of its parameters. This function will be replaced with the value of the source expression at runtime.
 
-It is an error to use `source_expression()` outside of a message processing. The second parameter is optional
+It is an error to use `evaluate_expression()` outside of a message processing. The second parameter is optional
 and will convert the result to the specified type. The following types are supported:
 
 - `int`
@@ -488,12 +488,12 @@ Example:
               function: add
               params:
                 positional:
-                  - source_expression(input.payload:my_obj.val1, int)
+                  - evaluate_expression(input.payload:my_obj.val1, int)
                   - 2
          dest_expression: user_data.my_obj:result
 ```
 
-In the above example, the `source_expression()` function is used to get the value of `input.payload:my_obj.val1`,
+In the above example, the `evaluate_expression()` function is used to get the value of `input.payload:my_obj.val1`,
 convert it to an `int` and add 2 to it.
 
 **Note:** In places where the yaml keys `source_expression` and `dest_expressions` are used, you can use the same type of expression to access a value. Check [Expression Syntax](#expression-syntax) for more details.
@@ -514,7 +514,7 @@ Here is an example of using the `user_processor` component with an `invoke` bloc
         function: my_function
         params:
           positional:
-            - source_expression(input.payload:my_key)
+            - evaluate_expression(input.payload:my_key)
             - 2
 ```
 

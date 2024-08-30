@@ -114,7 +114,7 @@ flows:
                 function: power
                 params:
                   positional:
-                    - source_expression(input.payload:value) # This will throw an error if value is not a number
+                    - evaluate_expression(input.payload:value) # This will throw an error if value is not a number
                     - 2
             dest_expression: user_data.output:payload.valueSquared
           - type: copy
