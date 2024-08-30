@@ -173,10 +173,12 @@ class ComponentBase:
         return None
 
     def get_input_data(self, message):
-        component_input = self.config.get("component_input") or {
-            "source_expression": "previous"
-        }
-        source_expression = get_source_expression(component_input)
+        input_selection = (
+            self.config.get("input_selection")
+            or self.config.get("component_input")
+            or {"source_expression": "previous"}
+        )
+        source_expression = get_source_expression(input_selection)
 
         # This should be overridden by the component if it needs to extract data from the message
         return message.get_data(source_expression, self)

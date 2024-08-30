@@ -83,7 +83,7 @@ shared_config:
         - type: copy
           source_expression: template:{{text://input.topic}}/next
           dest_expression: user_data.output:topic
-      component_input:
+      input_selection:
         source_expression: user_data.output
 
   # Agent input transformations
@@ -99,7 +99,7 @@ shared_config:
         - type: copy
           source_expression: static:user
           dest_expression: user_data.llm_input:messages.0.role
-      component_input:
+      input_selection:
         source_expression: user_data.llm_input
 
 flows:
@@ -181,7 +181,7 @@ flows:
             source_value: moa/broadcast
             dest_expression: user_data.output:topic
 
-        component_input:
+        input_selection:
           source_expression: user_data.output
 
   # Agent 1 - Google Vertex AI
@@ -213,7 +213,7 @@ flows:
           - type: copy
             source_expression: previous
             dest_expression: user_data.formatted_response:content
-        component_input:
+        input_selection:
           source_expression: user_data.formatted_response
 
       # Broker output for Vertex AI
@@ -245,7 +245,7 @@ flows:
           - type: copy
             source_expression: previous:content
             dest_expression: user_data.formatted_response:content
-        component_input:
+        input_selection:
           source_expression: user_data.formatted_response
 
       # Broker output for OpenAI
@@ -280,7 +280,7 @@ flows:
           - type: copy
             source_expression: previous
             dest_expression: user_data.formatted_response:content
-        component_input:
+        input_selection:
           source_expression: user_data.formatted_response
 
       # Broker output for Anthropic
@@ -307,7 +307,7 @@ flows:
           assemble_key: id
           max_time_ms: 30000
           max_items: 3 # Number of Agents
-        component_input:
+        input_selection:
           source_expression: input.payload
 
       # Format response for the LLM request
@@ -348,7 +348,7 @@ flows:
                     - source_expression(keyword_args:accumulated_value)
                     - source_expression(keyword_args:current_value)
             dest_expression: user_data.aggregated_data:responses
-        component_input:
+        input_selection:
           source_expression: user_data.aggregated_data
 
       # Aggregate all the outcomes from the agents
@@ -377,7 +377,7 @@ flows:
           - type: copy
             source_expression: static:user
             dest_expression: user_data.llm_input:messages.0.role
-        component_input:
+        input_selection:
           source_expression: user_data.llm_input
 
       - component_name: aggregator_output
@@ -450,7 +450,7 @@ flows:
                     - moa/question/aggregate
                     - moa/question/cleanup
             dest_expression: user_data.output:topic
-        component_input:
+        input_selection:
           source_expression: user_data.output
 
   # Cleanup the responses from the assembly and send to the user
@@ -482,5 +482,5 @@ flows:
           - type: copy
             source_value: moa/question/response
             dest_expression: user_data.output:topic
-        component_input:
+        input_selection:
           source_expression: user_data.output

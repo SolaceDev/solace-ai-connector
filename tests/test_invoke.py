@@ -827,7 +827,7 @@ def test_invoke_with_source_expression_no_source_expression():
 
 
 def test_invoke_with_source_expression_with_real_flow():
-    """Verify that the source expression is evaluated properly in transforms and component_input"""
+    """Verify that the source expression is evaluated properly in transforms and input_selection"""
     config_yaml = """
 instance_name: test_instance
 log:
@@ -849,7 +849,7 @@ flows:
                     - source_expression(input.payload:my_obj.val1.1)
                     - 2
             dest_expression: user_data.temp:my_val
-        component_input:
+        input_selection:
           source_expression: 
             invoke:
               module: invoke_functions
@@ -868,7 +868,7 @@ flows:
     }  # The copy transform
     assert (
         output_message.get_data("previous") == "Hello, World! test"
-    )  # The component_input
+    )  # The input_selection
 
 
 def atest_user_processing_component():
@@ -922,7 +922,7 @@ flows:
                             - source_expression(keyword_args:accumulated_value)
                             - source_expression(keyword_args:current_value)
             dest_expression: user_data.temp:my_val
-        component_input:
+        input_selection:
           source_expression: user_data.temp:my_val
 """
     message = Message(payload={"my_list": [1, 2, 3, 4, 5]})
@@ -960,7 +960,7 @@ flows:
                     - source_expression(keyword_args:accumulated_value)
                     - source_expression(keyword_args:current_value)
             dest_expression: user_data.temp:my_val
-        component_input:
+        input_selection:
           source_expression: user_data.temp:my_val
    """
     message = Message(payload={"my_list": [1, 2, 3, 4, 5]})
@@ -994,7 +994,7 @@ flows:
                     - source_expression(keyword_args:current_value)
                     - 2
             dest_list_expression: user_data.temp:new_list
-        component_input:
+        input_selection:
           source_expression: user_data.temp:new_list
    """
     message = Message(payload={"my_list": [1, 2, 3, 4, 5]})
@@ -1028,7 +1028,7 @@ flows:
                     - source_expression(keyword_args:current_value)
                     - 2
             dest_list_expression: user_data.temp:new_list
-        component_input:
+        input_selection:
           source_expression: user_data.temp:new_list
    """
     message = Message(payload={"my_list": [1, 2, 3, 4, 5]})
@@ -1062,7 +1062,7 @@ flows:
                     - source_expression(keyword_args:current_value.my_val)
                     - 2
             dest_list_expression: user_data.temp:new_list
-        component_input:
+        input_selection:
           source_expression: user_data.temp:new_list
    """
     message = Message(
