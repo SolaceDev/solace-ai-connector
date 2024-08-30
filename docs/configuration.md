@@ -22,8 +22,9 @@ Table of Contents
     - [num\_instances](#num_instances)
     - [Built-in components](#built-in-components)
   - [Invoke Keyword](#invoke-keyword)
+    - [Invoke with custom function](#invoke-with-custom-function)
     - [invoke\_functions](#invoke_functions)
-    - [source\_expression()](#source_expression)
+    - [evaluate\_expression()](#evaluate_expression)
     - [user\_processor Component and invoke](#user_processor-component-and-invoke)
   - [Usecase Examples](#usecase-examples)
 
@@ -253,12 +254,36 @@ Solace-ai-connector comes with a number of flexible and highly customizable [bui
       max_time_ms: 1000
 ```
 
-The `component_module` can also be the python import syntax for the module. For example, if the component class is in a module named `my_module` and the class is named `my_component`, the `component_module` would:
+The `component_module` can also be the python import syntax for the module. When using with a custom component, you can also use `component_base_path` to specify the base path of the python module.
+
+You're module file should also export a variable named `info` that has the name of the class to instantiate under the key `class_name`. 
+
+For example:
+
+```python
+from solace_ai_connector.components.component_base import ComponentBase
+
+info = {
+    "class_name": "CustomClass",
+}
+
+class CustomClass(ComponentBase):
+    def __init__(self, **kwargs):
+        super().__init__(info, **kwargs)
+
+    def invoke(self, _, data):
+        return data["text"] + " + custom class"
+```
+
+For example, if the component class is in a module named `my_module` in `src` directory, you can use it in the configuration file like this:
 
 ```yaml
-- my_component:
-    component_module: my_module.my_component
+  - component_name: custom_module_example
+    component_base_path: .
+    component_module: src.my_module
 ```
+
+You can find an example of a custom component in the [tips and tricks](tips_and_tricks.md/#using-custom-modules-with-the-ai-connector) section.
 
 **Note:** If you are using a custom component, you must ensure that you're using proper relative paths or your paths are in the correct level to as where you're running the connector from.
 
@@ -409,6 +434,25 @@ Here is an example of a complex `invoke` block that could be used to get AWS cre
 
 **Note:** The function parameters do not support expression syntax outside of the `evaluate_expression()` function. If you need to use an expression like template, you'd have to write it to a temporary user data value and reference it in the `source_expression` function.
 
+### Invoke with custom function
+
+You can use invoke with your own custom functions. When using a custom functions, you can use the `path` to specify the base path of the python module.
+
+For example, if you have a custom function in a module named `my_module` in `src` directory and the function is named `my_function`, you can use it in the configuration file like this:
+
+```yaml
+- my_custom_function:
+    invoke:
+      path: .
+      module: src.my_module
+      function: my_function
+      params:
+        positional:
+          - 1
+          - 2
+```
+
+
 ### invoke_functions
 
 There is a module named `invoke_functions` that has a list of functions that can take the place of python operators used inside of `invoke`. This is useful for when you want to use an operator in a configuration file. 
@@ -526,4 +570,4 @@ You can find various usecase examples in the [examples directory](../examples/)
 
 ---
 
-Checkout [components.md](./components/index.md) and [transforms.md](./transforms/index.md) next.
+Checkout [components.md](./components/index.md), [transforms.md](./transforms/index.md), and [tips_and_tricks](tips_and_tricks.md) next.
