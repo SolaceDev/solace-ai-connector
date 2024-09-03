@@ -35,7 +35,7 @@ As shown in the flow diagram above, each flow is comprised of a sequence of comp
 
 The component is made up of the following parts:
 
-- **Input Queue**: This is the queue that the component reads from. It is where the events are buffered as they flow through the system. Note that if there are multiple instances of the same component, they will all read from the same queue.
+- **Input Queue**: This is a python built queue that the component reads from. It is where the events are buffered as they flow through the system. Note that if there are multiple instances of the same component, they will all read from the same queue.
 
 - **Input Transforms**: This is an optional step that allows you to transform the event before it is processed. This can be useful for normalizing the data or for adding additional context to the event. In the yaml config file this is indicated by the **`input_transforms`** key.
 
