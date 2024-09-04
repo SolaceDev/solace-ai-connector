@@ -74,7 +74,7 @@ info = {
                     "type": "object",
                 },
             },
-            "id": {
+            "ids": {
                 "type": "array",
                 "items": {
                     "type": "string",
@@ -133,7 +133,7 @@ class LangChainVectorStoreEmbeddingsIndex(LangChainVectorStoreEmbeddingsBase):
                 metadatas = [metadatas]
 
         # Get the ids if they exist
-        ids = data.get("id", None)
+        ids = data.get("ids", None)
         if ids is not None:
             if not isinstance(ids, list):
                 ids = [ids]

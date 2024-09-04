@@ -42,7 +42,7 @@ component_config:
     },
     ...
   ],
-  id: [
+  ids: [
     <string>,
     ...
   ],
@@ -53,7 +53,7 @@ component_config:
 | --- | --- | --- |
 | texts | True |  |
 | metadatas | False |  |
-| id | False | The ID of the text to add to the index. required for 'delete' action |
+| ids | False | The ID of the text to add to the index. required for 'delete' action |
 | action | False | The action to perform on the index from one of 'add', 'delete' |
 
 
