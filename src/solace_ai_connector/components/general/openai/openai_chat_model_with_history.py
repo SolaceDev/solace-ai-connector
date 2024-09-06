@@ -47,7 +47,8 @@ class OpenAIChatModelWithHistory(OpenAIChatModelBase):
         session_id = data.get("session_id")
         clear_history_but_keep_depth = data.get("clear_history_but_keep_depth")
         try:
-            clear_history_but_keep_depth = max(0, int(clear_history_but_keep_depth))
+            if clear_history_but_keep_depth is not None:
+                clear_history_but_keep_depth = max(0, int(clear_history_but_keep_depth))
         except (TypeError, ValueError):
             clear_history_but_keep_depth = 0
         messages = data.get("messages", [])
