@@ -1,9 +1,10 @@
 """This file tests the input_transforms configuration and execution"""
 
 import sys
+
 sys.path.append("src")
 
-from solace_ai_connector.utils_for_test_files import (  # pylint: disable=wrong-import-position
+from solace_ai_connector.test_utils.utils_for_test_files import (  # pylint: disable=wrong-import-position
     create_connector,
     create_and_run_component,
     # dispose_connector,

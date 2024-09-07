@@ -1,11 +1,12 @@
 """This file contains tests for configured flows to handle errors"""
 
 import sys
+
 sys.path.append("src")
 
 # import queue
 
-from solace_ai_connector.utils_for_test_files import (  # pylint: disable=wrong-import-position
+from solace_ai_connector.test_utils.utils_for_test_files import (  # pylint: disable=wrong-import-position
     create_test_flows,
     # create_and_run_component,
     dispose_connector,

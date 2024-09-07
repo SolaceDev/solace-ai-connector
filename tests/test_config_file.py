@@ -1,11 +1,12 @@
 """Test various things related to the configuration file"""
 
 import sys
+
 sys.path.append("src")
 import yaml
 import pytest
 
-from solace_ai_connector.utils_for_test_files import (  # pylint: disable=wrong-import-position
+from solace_ai_connector.test_utils.utils_for_test_files import (  # pylint: disable=wrong-import-position
     create_connector,
 )
 

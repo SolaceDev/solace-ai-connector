@@ -59,12 +59,16 @@ class TestInputComponent:
         self.next_component_queue.put(event)
 
 
-def create_connector(config_yaml, event_handlers=None, error_queue=None):
-    """Create a connector from a config"""
+def create_connector(config_or_yaml, event_handlers=None, error_queue=None):
+    """Create a connector from a config that can be an object or a yaml string"""
+
+    config = config_or_yaml
+    if isinstance(config_or_yaml, str):
+        config = yaml.safe_load(config_or_yaml)
 
     # Create the connector
     connector = SolaceAiConnector(
-        yaml.safe_load(config_yaml),
+        config,
         event_handlers=event_handlers,
         error_queue=error_queue,
     )
@@ -74,9 +78,11 @@ def create_connector(config_yaml, event_handlers=None, error_queue=None):
     return connector
 
 
-def create_test_flows(config_yaml, queue_timeout=None, error_queue=None, queue_size=0):
+def create_test_flows(
+    config_or_yaml, queue_timeout=None, error_queue=None, queue_size=0
+):
     # Create the connector
-    connector = create_connector(config_yaml, error_queue=error_queue)
+    connector = create_connector(config_or_yaml, error_queue=error_queue)
 
     flows = connector.get_flows()
 
