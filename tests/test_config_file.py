@@ -149,21 +149,26 @@ def test_static_import_and_object_config():
     """Test that we can statically import a module and pass an object for the config"""
     from solace_ai_connector.components.general.delay import Delay
 
-    # <inst>
-    # The config below is supposed to be a dict rather than a string. Please fix it. create_test_flows can take a dict as well as yaml
-    # </inst>
-    config_yaml = """
-log:
-  log_file_level: DEBUG
-  log_file: solace_ai_connector.log
-flows:
-  - name: test_flow
-    components:
-      - component_name: delay1
-        component_module: delay
-        component_config:
-          delay: 0.1
-"""
+    config_yaml = {
+        "log": {
+            "log_file_level": "DEBUG",
+            "log_file": "solace_ai_connector.log"
+        },
+        "flows": [
+            {
+                "name": "test_flow",
+                "components": [
+                    {
+                        "component_name": "delay1",
+                        "component_module": "delay",
+                        "component_config": {
+                            "delay": 0.1
+                        }
+                    }
+                ]
+            }
+        ]
+    }
     connector = None
     try:
         connector, flows = create_test_flows(config_yaml)
