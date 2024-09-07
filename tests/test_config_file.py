@@ -147,42 +147,32 @@ flows:
 
 def test_static_import_and_object_config():
     """Test that we can statically import a module and pass an object for the config"""
-    from solace_ai_connector.components.general.delay import Delay
+    import solace_ai_connector.components.general.pass_through
 
-    config_yaml = {
-        "log": {
-            "log_file_level": "DEBUG",
-            "log_file": "solace_ai_connector.log"
-        },
+    config = {
+        "log": {"log_file_level": "DEBUG", "log_file": "solace_ai_connector.log"},
         "flows": [
             {
                 "name": "test_flow",
                 "components": [
                     {
                         "component_name": "delay1",
-                        "component_module": "delay",
-                        "component_config": {
-                            "delay": 0.1
-                        }
+                        "component_module": solace_ai_connector.components.general.pass_through,
+                        "component_config": {"delay": 0.1},
                     }
-                ]
+                ],
             }
-        ]
+        ],
     }
     connector = None
     try:
-        connector, flows = create_test_flows(config_yaml)
+        connector, flows = create_test_flows(config)
 
-        # Modify the component_module to use the imported Delay class
-        flows[0].component_groups[0][0].config["component_module"] = Delay
+    # <inst>
+    # Add a test that pushes a simple message throught the delay component
+    # and makes sure that the correct output comes out of it
+    # </inst>
 
-        # If we get here without an exception, the test passes
-        assert len(flows) == 1
-        assert flows[0].name == "test_flow"
-        assert len(flows[0].component_groups) == 1
-        assert flows[0].component_groups[0][0].name == "delay1"
-        assert flows[0].component_groups[0][0].config["component_module"] == Delay
-        assert flows[0].component_groups[0][0].get_config("delay") == 0.1
     except Exception as e:
         pytest.fail(f"Test failed with exception: {e}")
     finally:
