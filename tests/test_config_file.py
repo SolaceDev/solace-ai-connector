@@ -1,11 +1,10 @@
 """Test various things related to the configuration file"""
 
 import sys
+import pytest
+import yaml
 
 sys.path.append("src")
-import yaml
-import yaml
-import pytest
 
 from solace_ai_connector.test_utils.utils_for_test_files import (  # pylint: disable=wrong-import-position
     create_connector,
@@ -150,6 +149,9 @@ def test_static_import_and_object_config():
     """Test that we can statically import a module and pass an object for the config"""
     from solace_ai_connector.components.general.delay import Delay
 
+    # <inst>
+    # The config below is supposed to be a dict rather than a string. Please fix it. create_test_flows can take a dict as well as yaml
+    # </inst>
     config_yaml = """
 log:
   log_file_level: DEBUG
