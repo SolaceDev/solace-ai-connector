@@ -2,7 +2,7 @@
 
 # import pytest
 
-from utils_for_test_files import (
+from solace_ai_connector.utils_for_test_files import (
     create_test_flows,
     # create_connector,
     dispose_connector,
