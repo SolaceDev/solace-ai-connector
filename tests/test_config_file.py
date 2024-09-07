@@ -10,11 +10,15 @@ from solace_ai_connector.test_utils.utils_for_test_files import (  # pylint: dis
     create_connector,
     create_test_flows,
     dispose_connector,
+    send_message_to_flow,
+    get_message_from_flow,
 )
 
 from solace_ai_connector.solace_ai_connector import (  # pylint: disable=wrong-import-position
     SolaceAiConnector,
 )
+
+from solace_ai_connector.common.message import Message
 
 # from solace_ai_connector.common.log import log
 
