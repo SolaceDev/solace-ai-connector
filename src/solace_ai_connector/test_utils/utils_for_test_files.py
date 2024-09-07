@@ -81,11 +81,12 @@ def create_connector(config_or_yaml, event_handlers=None, error_queue=None):
 
 def test_one_component(
     module_or_name,
-    config,
+    component_config,
     validation_func,
     input_data=None,
     input_messages=None,
     input_selection=None,
+    input_transforms=None,
 ):
     if not input_data and not input_messages:
         raise ValueError("Either input_data or input_messages must be provided")
@@ -114,8 +115,9 @@ def test_one_component(
                             {
                                 "component_name": "test_component",
                                 "component_module": module_or_name,
-                                "component_config": config,
+                                "component_config": component_config,
                                 "input_selection": input_selection,
+                                "input_transforms": input_transforms,
                             }
                         ],
                     }
