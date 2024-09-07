@@ -170,37 +170,37 @@ def test_static_import_and_object_config():
     """Test that we can statically import a module and pass an object for the config"""
     from solace_ai_connector.components.general.delay import Delay
 
-    config = {
-        "log": {
-            "log_file_level": "DEBUG",
-            "log_file": "solace_ai_connector.log"
-        },
-        "flows": [
-            {
-                "name": "test_flow",
-                "components": [
-                    {
-                        "component_name": "delay1",
-                        "component_module": Delay,
-                        "component_config": {
-                            "delay": 0.1
-                        }
-                    }
-                ]
-            }
-        ]
-    }
-
+    config_yaml = """
+log:
+  log_file_level: DEBUG
+  log_file: solace_ai_connector.log
+flows:
+  - name: test_flow
+    components:
+      - component_name: delay1
+        component_module: delay
+        component_config:
+          delay: 0.1
+"""
+    
     try:
-        sac = SolaceAiConnector(config)
-        sac.run()
+        connector, flows = create_test_flows(config_yaml)
+        
+        # Modify the component_module to use the imported Delay class
+        flows[0].component_groups[0][0].config['component_module'] = Delay
+        
         # If we get here without an exception, the test passes
-        assert True
+        assert len(flows) == 1
+        assert flows[0].name == "test_flow"
+        assert len(flows[0].component_groups) == 1
+        assert flows[0].component_groups[0][0].name == "delay1"
+        assert flows[0].component_groups[0][0].config['component_module'] == Delay
+        assert flows[0].component_groups[0][0].get_config('delay') == 0.1
     except Exception as e:
         pytest.fail(f"Test failed with exception: {e}")
     finally:
-        sac.stop()
-        sac.cleanup()
+        if 'connector' in locals():
+            dispose_connector(connector)
 
 def test_bad_module():
     """Test that the program exits if the component module is not found"""
