@@ -6,6 +6,7 @@ import sys
 import re
 import builtins
 import subprocess
+import types
 
 from .log import log
 
