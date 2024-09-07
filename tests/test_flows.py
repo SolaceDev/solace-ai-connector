@@ -1,5 +1,7 @@
 """This test file tests all things to do with the flows and the components that make up the flows"""
 
+import sys
+sys.path.append("src")
 import pytest
 import time
 

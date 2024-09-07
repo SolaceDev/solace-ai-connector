@@ -1,5 +1,7 @@
 """Test the timer input component"""
 
+import sys
+sys.path.append("src")
 import time
 import pytest
 

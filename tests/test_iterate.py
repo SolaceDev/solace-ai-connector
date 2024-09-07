@@ -1,5 +1,8 @@
 """Some tests to verify the iterate component works as expected"""
 
+import sys
+sys.path.append("src")
+
 # import pytest
 
 from solace_ai_connector.utils_for_test_files import (
