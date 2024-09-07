@@ -8,6 +8,8 @@ import pytest
 
 from solace_ai_connector.test_utils.utils_for_test_files import (  # pylint: disable=wrong-import-position
     create_connector,
+    create_test_flows,
+    dispose_connector,
 )
 
 from solace_ai_connector.solace_ai_connector import (  # pylint: disable=wrong-import-position
@@ -143,29 +145,6 @@ flows:
         assert str(e) == "component_module not provided in flow 0, component 0"
 
 
-def test_bad_module():
-    """Test that the program exits if the component module is not found"""
-    try:
-        config_yaml = """
-log:
-  log_file_level: DEBUG
-  log_file: solace_ai_connector.log
-flows:
-  - name: test_flow
-    components:
-      - component_name: delay1
-        component_module: not_a_module
-"""
-        sac = SolaceAiConnector(
-            yaml.safe_load(config_yaml),
-        )
-        sac.run()
-    except Exception as e:
-        assert str(e) == "Module 'not_a_module' not found"
-    finally:
-        print("Finally")
-
-
 def test_static_import_and_object_config():
     """Test that we can statically import a module and pass an object for the config"""
     from solace_ai_connector.components.general.delay import Delay
@@ -182,25 +161,26 @@ flows:
         component_config:
           delay: 0.1
 """
-    
+    connector = None
     try:
         connector, flows = create_test_flows(config_yaml)
-        
+
         # Modify the component_module to use the imported Delay class
-        flows[0].component_groups[0][0].config['component_module'] = Delay
-        
+        flows[0].component_groups[0][0].config["component_module"] = Delay
+
         # If we get here without an exception, the test passes
         assert len(flows) == 1
         assert flows[0].name == "test_flow"
         assert len(flows[0].component_groups) == 1
         assert flows[0].component_groups[0][0].name == "delay1"
-        assert flows[0].component_groups[0][0].config['component_module'] == Delay
-        assert flows[0].component_groups[0][0].get_config('delay') == 0.1
+        assert flows[0].component_groups[0][0].config["component_module"] == Delay
+        assert flows[0].component_groups[0][0].get_config("delay") == 0.1
     except Exception as e:
         pytest.fail(f"Test failed with exception: {e}")
     finally:
-        if 'connector' in locals():
+        if "connector" in locals():
             dispose_connector(connector)
+
 
 def test_bad_module():
     """Test that the program exits if the component module is not found"""
