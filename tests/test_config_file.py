@@ -166,6 +166,65 @@ flows:
         print("Finally")
 
 
+def test_static_import_and_object_config():
+    """Test that we can statically import a module and pass an object for the config"""
+    from solace_ai_connector.components.general.delay import Delay
+
+    config = {
+        "log": {
+            "log_file_level": "DEBUG",
+            "log_file": "solace_ai_connector.log"
+        },
+        "flows": [
+            {
+                "name": "test_flow",
+                "components": [
+                    {
+                        "component_name": "delay1",
+                        "component_module": Delay,
+                        "component_config": {
+                            "delay": 0.1
+                        }
+                    }
+                ]
+            }
+        ]
+    }
+
+    try:
+        sac = SolaceAiConnector(config)
+        sac.run()
+        # If we get here without an exception, the test passes
+        assert True
+    except Exception as e:
+        pytest.fail(f"Test failed with exception: {e}")
+    finally:
+        sac.stop()
+        sac.cleanup()
+
+def test_bad_module():
+    """Test that the program exits if the component module is not found"""
+    try:
+        config_yaml = """
+log:
+  log_file_level: DEBUG
+  log_file: solace_ai_connector.log
+flows:
+  - name: test_flow
+    components:
+      - component_name: delay1
+        component_module: not_a_module
+"""
+        sac = SolaceAiConnector(
+            yaml.safe_load(config_yaml),
+        )
+        sac.run()
+    except Exception as e:
+        assert str(e) == "Module 'not_a_module' not found"
+    finally:
+        print("Finally")
+
+
 def test_component_missing_info_attribute():
     """Test that the program exits if the component module is missing the info attribute"""
     config_yaml = """
