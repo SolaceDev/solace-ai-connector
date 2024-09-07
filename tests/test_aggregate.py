@@ -1,5 +1,7 @@
 """Some tests to verify the aggregate component works as expected"""
 
+import sys
+sys.path.append("src")
 import time
 
 from solace_ai_connector.utils_for_test_files import (

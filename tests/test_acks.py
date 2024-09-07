@@ -1,9 +1,8 @@
 """This file tests acks in a flow"""
 
 import sys
-import queue
-
 sys.path.append("src")
+import queue
 
 from solace_ai_connector.utils_for_test_files import (  # pylint: disable=wrong-import-position
     # create_connector,
