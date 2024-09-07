@@ -5,7 +5,7 @@ import queue
 
 sys.path.append("src")
 
-from utils_for_test_files import (  # pylint: disable=wrong-import-position
+from solace_ai_connector.utils_for_test_files import (  # pylint: disable=wrong-import-position
     # create_connector,
     # create_and_run_component,
     dispose_connector,
