@@ -8,6 +8,7 @@ sys.path.insert(0, os.path.abspath("src"))
 from solace_ai_connector.solace_ai_connector import SolaceAiConnector
 from solace_ai_connector.common.log import log
 from solace_ai_connector.common.event import Event, EventType
+from solace_ai_connector.common.message import Message
 
 # from solace_ai_connector.common.message import Message
 
@@ -76,6 +77,67 @@ def create_connector(config_or_yaml, event_handlers=None, error_queue=None):
 
     # Return the connector
     return connector
+
+
+def test_one_component(
+    module_or_name,
+    config,
+    validation_func,
+    input_data=None,
+    input_messages=None,
+    input_selection=None,
+):
+    if not input_data and not input_messages:
+        raise ValueError("Either input_data or input_messages must be provided")
+
+    if input_data and input_messages:
+        raise ValueError("Only one of input_data or input_messages can be provided")
+
+    if input_data and not isinstance(input_data, list):
+        input_data = [input_data]
+
+    if input_messages and not isinstance(input_messages, list):
+        input_messages = [input_messages]
+
+    if input_selection:
+        if isinstance(input_selection, str):
+            input_selection = {"source_expression": input_selection}
+
+    connector = None
+    try:
+        connector, flows = create_test_flows(
+            {
+                "flows": [
+                    {
+                        "name": "test_flow",
+                        "components": [
+                            {
+                                "component_name": "test_component",
+                                "component_module": module_or_name,
+                                "component_config": config,
+                                "input_selection": input_selection,
+                            }
+                        ],
+                    }
+                ]
+            }
+        )
+
+        if input_data:
+            for data in input_data:
+                message = Message(payload=data)
+                message.set_previous(data)
+                input_messages.append(Message(payload=data))
+
+        # Send each message through, one at a time
+        for message in input_messages:
+            send_message_to_flow(flows[0], message)
+            output_message = get_message_from_flow(flows[0])
+            validation_func(output_message, message)
+
+    finally:
+        if connector:
+            dispose_connector(connector)
 
 
 def create_test_flows(

@@ -19,6 +19,7 @@ from solace_ai_connector.solace_ai_connector import (  # pylint: disable=wrong-i
 )
 
 from solace_ai_connector.common.message import Message
+import solace_ai_connector.components.general.pass_through
 
 # from solace_ai_connector.common.log import log
 
@@ -151,7 +152,6 @@ flows:
 
 def test_static_import_and_object_config():
     """Test that we can statically import a module and pass an object for the config"""
-    import solace_ai_connector.components.general.pass_through
 
     config = {
         "log": {"log_file_level": "DEBUG", "log_file": "solace_ai_connector.log"},
@@ -163,6 +163,7 @@ def test_static_import_and_object_config():
                         "component_name": "delay1",
                         "component_module": solace_ai_connector.components.general.pass_through,
                         "component_config": {"delay": 0.1},
+                        "input_selection": {"source_expression": "input.payload"},
                     }
                 ],
             }
