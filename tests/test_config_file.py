@@ -168,10 +168,15 @@ def test_static_import_and_object_config():
     try:
         connector, flows = create_test_flows(config)
 
-    # <inst>
-    # Add a test that pushes a simple message throught the delay component
-    # and makes sure that the correct output comes out of it
-    # </inst>
+        # Test pushing a simple message through the delay component
+        message = Message(payload={"text": "Hello, World!"})
+        send_message_to_flow(flows[0], message)
+
+        # Get the output message
+        output_message = get_message_from_flow(flows[0])
+
+        # Check that the output is correct
+        assert output_message.get_data("previous") == {"text": "Hello, World!"}
 
     except Exception as e:
         pytest.fail(f"Test failed with exception: {e}")
