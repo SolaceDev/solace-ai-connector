@@ -7,11 +7,13 @@ sys.path.append("src")
 from solace_ai_connector.test_utils.utils_for_test_files import (  # pylint: disable=wrong-import-position
     create_connector,
     create_and_run_component,
+    test_one_component,
     # dispose_connector,
 )
 from solace_ai_connector.common.message import (  # pylint: disable=wrong-import-position
     Message,
 )
+import solace_ai_connector.components.general.pass_through
 
 
 def test_basic_copy_transform():
@@ -42,6 +44,64 @@ flows:
         "payload": {"text": "Hello, World!", "greeting": "Static Greeting!"}
     }
     assert output_message.get_data("previous") == "Hello, World!"
+
+
+def test_transform_with_test_one_component():
+    """This test is actually testing the test infrastructure method: test_one_component"""
+
+    def validation_func(output_data, output_message, _input_message):
+        assert output_data == "Hello, World!"
+        assert output_message.get_data("user_data.temp") == {
+            "payload": {"text": "Hello, World!", "greeting": "Static Greeting!"}
+        }
+
+    test_one_component(
+        "pass_through",
+        validation_func,
+        input_data={"text": "Hello, World!"},
+        input_transforms=[
+            {
+                "type": "copy",
+                "source_expression": "input.payload",
+                "dest_expression": "user_data.temp:payload",
+            },
+            {
+                "type": "copy",
+                "source_value": "Static Greeting!",
+                "dest_expression": "user_data.temp:payload.greeting",
+            },
+        ],
+        input_selection={"source_expression": "user_data.temp:payload.text"},
+    )
+
+
+def test_transform_with_test_one_component_with_static_import():
+    """This test is actually testing the test infrastructure method: test_one_component"""
+
+    def validation_func(output_data, output_message, _input_message):
+        assert output_data == "Hello, World!"
+        assert output_message.get_data("user_data.temp") == {
+            "payload": {"text": "Hello, World!", "greeting": "Static Greeting!"}
+        }
+
+    test_one_component(
+        solace_ai_connector.components.general.pass_through,
+        validation_func,
+        input_data={"text": "Hello, World!"},
+        input_transforms=[
+            {
+                "type": "copy",
+                "source_expression": "input.payload",
+                "dest_expression": "user_data.temp:payload",
+            },
+            {
+                "type": "copy",
+                "source_value": "Static Greeting!",
+                "dest_expression": "user_data.temp:payload.greeting",
+            },
+        ],
+        input_selection={"source_expression": "user_data.temp:payload.text"},
+    )
 
 
 def test_basic_map_transform():

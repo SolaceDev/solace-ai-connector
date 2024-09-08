@@ -81,8 +81,8 @@ def create_connector(config_or_yaml, event_handlers=None, error_queue=None):
 
 def test_one_component(
     module_or_name,
-    component_config,
     validation_func,
+    component_config=None,
     input_data=None,
     input_messages=None,
     input_selection=None,
@@ -100,6 +100,9 @@ def test_one_component(
     if input_messages and not isinstance(input_messages, list):
         input_messages = [input_messages]
 
+    if not input_messages:
+        input_messages = []
+
     if input_selection:
         if isinstance(input_selection, str):
             input_selection = {"source_expression": input_selection}
@@ -115,7 +118,7 @@ def test_one_component(
                             {
                                 "component_name": "test_component",
                                 "component_module": module_or_name,
-                                "component_config": component_config,
+                                "component_config": component_config or {},
                                 "input_selection": input_selection,
                                 "input_transforms": input_transforms,
                             }
@@ -135,7 +138,7 @@ def test_one_component(
         for message in input_messages:
             send_message_to_flow(flows[0], message)
             output_message = get_message_from_flow(flows[0])
-            validation_func(output_message, message)
+            validation_func(output_message.get_previous(), output_message, message)
 
     finally:
         if connector:
