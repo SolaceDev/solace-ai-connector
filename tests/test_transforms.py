@@ -7,7 +7,7 @@ sys.path.append("src")
 from solace_ai_connector.test_utils.utils_for_test_files import (  # pylint: disable=wrong-import-position
     create_connector,
     create_and_run_component,
-    test_one_component,
+    run_component_test,
     # dispose_connector,
 )
 from solace_ai_connector.common.message import (  # pylint: disable=wrong-import-position
@@ -46,8 +46,8 @@ flows:
     assert output_message.get_data("previous") == "Hello, World!"
 
 
-def test_transform_with_test_one_component():
-    """This test is actually testing the test infrastructure method: test_one_component"""
+def test_transform_with_run_component_test():
+    """This test is actually testing the test infrastructure method: run_component_test"""
 
     def validation_func(output_data, output_message, _input_message):
         assert output_data == "Hello, World!"
@@ -55,7 +55,7 @@ def test_transform_with_test_one_component():
             "payload": {"text": "Hello, World!", "greeting": "Static Greeting!"}
         }
 
-    test_one_component(
+    run_component_test(
         "pass_through",
         validation_func,
         input_data={"text": "Hello, World!"},
@@ -75,8 +75,8 @@ def test_transform_with_test_one_component():
     )
 
 
-def test_transform_with_test_one_component_with_static_import():
-    """This test is actually testing the test infrastructure method: test_one_component"""
+def test_transform_with_run_component_test_with_static_import():
+    """This test is actually testing the test infrastructure method: run_component_test"""
 
     def validation_func(output_data, output_message, _input_message):
         assert output_data == "Hello, World!"
@@ -84,7 +84,7 @@ def test_transform_with_test_one_component_with_static_import():
             "payload": {"text": "Hello, World!", "greeting": "Static Greeting!"}
         }
 
-    test_one_component(
+    run_component_test(
         solace_ai_connector.components.general.pass_through,
         validation_func,
         input_data={"text": "Hello, World!"},

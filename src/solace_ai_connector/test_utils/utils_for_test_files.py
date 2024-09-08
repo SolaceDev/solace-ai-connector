@@ -79,7 +79,7 @@ def create_connector(config_or_yaml, event_handlers=None, error_queue=None):
     return connector
 
 
-def test_one_component(
+def run_component_test(
     module_or_name,
     validation_func,
     component_config=None,
