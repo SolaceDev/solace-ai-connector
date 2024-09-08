@@ -132,7 +132,7 @@ def run_component_test(
             for data in input_data:
                 message = Message(payload=data)
                 message.set_previous(data)
-                input_messages.append(Message(payload=data))
+                input_messages.append(message)
 
         # Send each message through, one at a time
         for message in input_messages:
