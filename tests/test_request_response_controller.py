@@ -116,7 +116,7 @@ def test_request_response_flow_controller_streaming():
                                 "name": "test_controller",
                                 "flow_name": "request_response_flow",
                                 "streaming": True,
-                                "streaming_last_message_expression": "previous:streaming.last_message",
+                                "streaming_complete_expression": "previous:streaming.last_message",
                                 "timeout_ms": 500000,
                             }
                         ],

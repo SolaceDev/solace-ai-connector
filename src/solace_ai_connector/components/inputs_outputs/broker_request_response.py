@@ -63,6 +63,19 @@ info = {
             "description": "Expiry time for cached requests in milliseconds",
             "default": 60000,
         },
+        {
+            "name": "streaming",
+            "required": False,
+            "description": "The response will arrive in multiple pieces. If True, "
+            "the streaming_complete_expression must be set and will be used to "
+            "determine when the last piece has arrived.",
+        },
+        {
+            "name": "streaming_complete_expression",
+            "required": False,
+            "description": "The source expression to determine when the last piece of a "
+            "streaming response has arrived.",
+        },
     ],
     "input_schema": {
         "type": "object",
@@ -115,6 +128,10 @@ class BrokerRequestResponse(BrokerBase):
         self.reply_queue_name = f"reply-queue-{uuid.uuid4()}"
         self.reply_topic = f"reply/{uuid.uuid4()}"
         self.response_thread = None
+        self.streaming = self.get_config("streaming")
+        self.streaming_complete_expression = self.get_config(
+            "streaming_complete_expression"
+        )
         self.broker_properties["temporary_queue"] = True
         self.broker_properties["queue_name"] = self.reply_queue_name
         self.broker_properties["subscriptions"] = [
@@ -160,36 +177,34 @@ class BrokerRequestResponse(BrokerBase):
             "__solace_ai_connector_broker_request_reply_metadata__"
         )
         if not metadata_json:
-            log.warning("Received response without metadata: %s", payload)
+            log.error("Received response without metadata: %s", payload)
             return
 
         try:
             metadata_stack = json.loads(metadata_json)
         except json.JSONDecodeError:
-            log.warning(
-                "Received response with invalid metadata JSON: %s", metadata_json
-            )
+            log.error("Received response with invalid metadata JSON: %s", metadata_json)
             return
 
         if not metadata_stack:
-            log.warning("Received response with empty metadata stack: %s", payload)
+            log.error("Received response with empty metadata stack: %s", payload)
             return
 
         try:
             current_metadata = metadata_stack.pop()
         except IndexError:
-            log.warning(
+            log.error(
                 "Received response with invalid metadata stack: %s", metadata_stack
             )
             return
         request_id = current_metadata.get("request_id")
         if not request_id:
-            log.warning("Received response without request_id in metadata: %s", payload)
+            log.error("Received response without request_id in metadata: %s", payload)
             return
 
         cached_request = self.cache_service.get_data(request_id)
         if not cached_request:
-            log.warning("Received response for unknown request_id: %s", request_id)
+            log.error("Received response for unknown request_id: %s", request_id)
             return
 
         response = {
@@ -221,8 +236,23 @@ class BrokerRequestResponse(BrokerBase):
                 "__solace_ai_connector_broker_request_reply_topic__", None
             )
 
-        self.process_post_invoke(result, Message(payload=result))
-        self.cache_service.remove_data(request_id)
+        message = Message(
+            payload=payload,
+            user_properties=user_properties,
+            topic=topic,
+        )
+        self.process_post_invoke(result, message)
+
+        # Only remove the cache entry if this isn't a streaming response or
+        # if it is the last piece of a streaming response
+        last_piece = True
+        if self.streaming:
+            is_last = message.get_data(self.streaming_complete_expression)
+            if not is_last:
+                last_piece = False
+
+        if last_piece:
+            self.cache_service.remove_data(request_id)
 
     def invoke(self, message, data):
         request_id = str(uuid.uuid4())
