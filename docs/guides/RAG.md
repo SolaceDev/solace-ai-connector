@@ -56,7 +56,7 @@ One of the standout features of the Solace AI Connector is its ability to seamle
 
 ### Real-Time Data Embedding and Storage Flow
 
-Using Solace topics, the connector can subscribe to real-time data streams. This data is processed in near real-time, where each message is embedded using an embedding model like **OpenAI Embeddings**. These embeddings are then stored in **ChromaDB**, a vector database, making them retrievable for future queries.
+Using Solace topics, the connector can subscribe to real-time data streams. This data is processed in near real-time, where each message is embedded using an embedding model like **OpenAI Embeddings**. These embeddings are then stored in vector database like **ChromaDB** making them retrievable for future queries.
 
 For example, imagine a system that ingests live customer support chat messages. As each message is published to the Solace broker, the system embeds the message, stores the vector in a database, and makes it available for retrieval during future interactions or analyses. This architecture is particularly useful for applications that need to build dynamic, up-to-date knowledge bases based on streaming data.
 
