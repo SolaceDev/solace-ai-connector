@@ -35,6 +35,9 @@ class ComponentBase:
         self.cache_service = kwargs.pop("cache_service", None)
 
         self.component_config = self.config.get("component_config") or {}
+        self.broker_request_response_config = self.config.get(
+            "broker_request_response", None
+        )
         self.name = self.config.get("component_name", "<unnamed>")
 
         resolve_config_values(self.component_config)
@@ -54,6 +57,7 @@ class ComponentBase:
         self.validate_config()
         self.setup_transforms()
         self.setup_communications()
+        self.setup_broker_request_response()
 
     def create_thread_and_run(self):
         self.thread = threading.Thread(target=self.run)
@@ -61,10 +65,6 @@ class ComponentBase:
         return self.thread
 
     def run(self):
-        # Init the request response controllers here so that we know
-        # the connector is fully initialized and all flows are created
-        self.initialize_request_response_flow_controllers()
-
         while not self.stop_signal.is_set():
             event = None
             try:
@@ -73,6 +73,8 @@ class ComponentBase:
                     if self.trace_queue:
                         self.trace_event(event)
                     self.process_event(event)
+            except AssertionError as e:
+                raise e
             except Exception as e:
                 log.error(
                     "%sComponent has crashed: %s\n%s",
@@ -273,6 +275,29 @@ class ComponentBase:
         else:
             self.input_queue = queue.Queue(maxsize=self.queue_max_depth)
 
+    def setup_broker_request_response(self):
+        if (
+            not self.broker_request_response_config
+            or not self.broker_request_response_config.get("enabled", False)
+        ):
+            self.broker_request_response_controller = None
+            return
+        broker_config = self.broker_request_response_config.get("broker_config", {})
+        request_expiry_ms = self.broker_request_response_config.get(
+            "request_expiry_ms", 30000
+        )
+        if not broker_config:
+            raise ValueError(
+                f"Broker request response config not found for component {self.name}"
+            )
+        rrc_config = {
+            "broker_config": broker_config,
+            "request_expiry_ms": request_expiry_ms,
+        }
+        self.broker_request_response_controller = RequestResponseFlowController(
+            config=rrc_config, connector=self.connector
+        )
+
     def setup_transforms(self):
         self.transforms = Transforms(
             self.config.get("input_transforms", []), log_identifier=self.log_identifier
@@ -377,34 +402,25 @@ class ComponentBase:
                 except queue.Empty:
                     break
 
-    def initialize_request_response_flow_controllers(self):
-        request_response_flow_controllers_config = self.config.get(
-            "request_response_flow_controllers", []
-        )
-        if request_response_flow_controllers_config:
-            for rrfc_config in request_response_flow_controllers_config:
-                name = rrfc_config.get("name")
-                if not name:
-                    raise ValueError(
-                        f"Request Response Flow Controller in component {self.name} does not have a name"
+    # This should be used to do an on-the-fly broker request response
+    def do_broker_request_response(
+        self, message, stream=False, streaming_complete_expression=None
+    ):
+        if self.broker_request_response_controller:
+            if stream:
+                return (
+                    self.broker_request_response_controller.do_broker_request_response(
+                        message, stream, streaming_complete_expression
                     )
-
-                rrfc = RequestResponseFlowController(
-                    config=rrfc_config, connector=self.connector
                 )
-
-                if not rrfc:
-                    raise ValueError(
-                        f"Request Response Flow Controller failed to initialize in component {self.name}"
+            else:
+                generator = (
+                    self.broker_request_response_controller.do_broker_request_response(
+                        message
                     )
-
-                self.request_response_flow_controllers[name] = rrfc
-
-    def get_request_response_flow_controller(self, name):
-        return self.request_response_flow_controllers.get(name)
-
-    def send_request_response_flow_message(self, rrfc_name, message, data):
-        rrfc = self.get_request_response_flow_controller(rrfc_name)
-        if rrfc:
-            return rrfc.send_message(message, data)
-        return None
+                )
+                next_message, last = next(generator, None)
+                return next_message
+        raise ValueError(
+            f"Broker request response controller not found for component {self.name}"
+        )
