@@ -100,15 +100,6 @@ class SolaceAiConnector:
                 self.stop()
                 self.cleanup()
 
-    def stop(self):
-        """Stop the Solace AI Event Connector"""
-        log.info("Stopping Solace AI Event Connector")
-        self.stop_signal.set()
-        self.timer_manager.stop()  # Stop the timer manager first
-        self.wait_for_flows()
-        if self.trace_thread:
-            self.trace_thread.join()
-
     def cleanup(self):
         """Clean up resources and ensure all threads are properly joined"""
         log.info("Cleaning up Solace AI Event Connector")

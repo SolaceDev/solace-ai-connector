@@ -5,7 +5,7 @@
 #    Main flow:   STDIN -> llm_streaming_custom_component -> STDOUT
 #                                          |
 #                                          v
-#    Request/Response flow:         request_response
+#                                    request_response
 #                                       |       ^
 #                                       v       |
 #                                    Broker   Broker
@@ -66,12 +66,10 @@ flows:
       - component_name: llm_streaming_custom_component
         component_module: llm_streaming_custom_component
         component_base_path: examples/llm/custom_components
-        request_response_flow_controllers:
-          - name: llm_streaming_request
-            flow_name: request_response
-            streaming: true
-            streaming_complete_expression: input.payload:last_chunk
-            request_expiry_ms: 300000
+        broker_request_response:
+          enable: true
+          broker_config: *broker_connection
+          request_expiry_ms: 60000
         input_transforms:
           - type: copy
             source_expression: |
@@ -93,36 +91,6 @@ flows:
           add_new_line_between_messages: false
         input_selection:
           source_expression: previous:chunk
-
-
-  # The flow that the main flow calls and blocks on
-  - name: request_response
-    components:
-      - component_name: llm_broker_lookup
-        component_module: broker_request_response
-        component_config:
-          <<: *broker_connection
-          broker_queue_name: demo_question
-          broker_subscriptions:
-            - topic: demo/question
-              qos: 1
-          streaming: true
-          streaming_complete_expression: input.payload:last_chunk
-          payload_encoding: utf-8
-          payload_format: json
-
-        input_transforms:
-          - type: copy
-            source_expression: input.payload
-            dest_expression: user_data.request:payload
-          - type: copy
-            source_expression: static:example/llm/best
-            dest_expression: user_data.request:topic
-          - type: copy
-            source_expression: input.user_properties
-            dest_expression: user_data.request:user_properties
-        input_selection:
-          source_expression: user_data.request
 
 
 
