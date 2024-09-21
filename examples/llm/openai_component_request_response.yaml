@@ -66,10 +66,14 @@ flows:
       - component_name: llm_streaming_custom_component
         component_module: llm_streaming_custom_component
         component_base_path: examples/llm/custom_components
+        component_config:
+          llm_request_topic: example/llm/best
         broker_request_response:
-          enable: true
+          enabled: true
           broker_config: *broker_connection
           request_expiry_ms: 60000
+          payload_encoding: utf-8
+          payload_format: json
         input_transforms:
           - type: copy
             source_expression: |

@@ -155,18 +155,6 @@ class OpenAIChatModelBase(ComponentBase):
         current_batch = ""
         first_chunk = True
 
-        request_message = Message(
-            payload={"messages": messages},
-            user_properties=message.get_user_properties(),
-            topic=message.get_topic(),
-        )
-        for response_message, last_message in self.do_broker_request_response(
-            request_message=request_message,
-            stream=True,
-        ):
-            if response_message is None:
-                continue
-
         for chunk in client.chat.completions.create(
             messages=messages,
             model=self.model,

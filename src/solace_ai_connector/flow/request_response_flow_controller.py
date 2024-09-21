@@ -102,7 +102,9 @@ class RequestResponseFlowController:
                             return
                 except queue.Empty:
                     if (time.time() - self.enqueue_time) > self.request_expiry_s:
-                        raise TimeoutError("Timeout waiting for response")
+                        raise TimeoutError(  # pylint: disable=raise-missing-from
+                            "Timeout waiting for response"
+                        )
                 except Exception as e:
                     raise e
 
@@ -120,14 +122,15 @@ class RequestResponseFlowController:
                 return
         except queue.Empty:
             if (time.time() - self.enqueue_time) > self.request_expiry_s:
-                raise TimeoutError("Timeout waiting for response")
+                raise TimeoutError(  # pylint: disable=raise-missing-from
+                    "Timeout waiting for response"
+                )
         except Exception as e:
             raise e
 
     def send_message(
         self, message: Message, stream=False, streaming_complete_expression=None
     ):
-        print("Sending message to flow")
         # Make a new message, but copy the data from the original message
         if not self.input_queue:
             raise ValueError(f"Input queue for flow {self.flow.name} not found")
