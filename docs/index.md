@@ -4,6 +4,10 @@ This connector application makes it easy to connect your AI/ML models to Solace 
 
 ## Table of Contents
 
+<inst>
+add link to the advanced features page
+</inst>
+
 - [Overview](overview.md)
 - [Getting Started](getting_started.md)
 - [Configuration](configuration.md)
