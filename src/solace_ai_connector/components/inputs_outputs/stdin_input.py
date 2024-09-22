@@ -11,7 +11,9 @@ info = {
     "class_name": "Stdin",
     "description": (
         "STDIN input component. The component will prompt for "
-        "input, which will then be placed in the message payload using the output schema below."
+        "input, which will then be placed in the message payload using the output schema below. "
+        "The component will wait for its output message to be acknowledged before prompting for "
+        "the next input."
     ),
     "config_parameters": [],
     "output_schema": {
