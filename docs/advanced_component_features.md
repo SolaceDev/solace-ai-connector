@@ -39,12 +39,80 @@ for chunk, is_last in self.do_broker_request_response(message, stream=True, stre
 
 ## Memory Cache
 
-<inst>
-Describe the cache service features based on the implementation in the cache_service.py file.
-</inst>
+The cache service provides a flexible way to store and retrieve data with optional expiration. It supports different storage backends and offers features like automatic expiry checks.
+
+### Features
+
+1. Multiple storage backends:
+   - In-memory storage
+   - SQLAlchemy-based storage (for persistent storage)
+
+2. Key-value storage with metadata and expiry support
+3. Automatic expiry checks in a background thread
+4. Thread-safe operations
+
+### Usage
+
+Components can access the cache service through `self.cache_service`. Here are some common operations:
+
+```python
+# Set a value with expiry
+self.cache_service.set("key", "value", expiry=300)  # Expires in 300 seconds
+
+# Get a value
+value = self.cache_service.get("key")
+
+# Delete a value
+self.cache_service.delete("key")
+
+# Get all values (including metadata and expiry)
+all_data = self.cache_service.get_all()
+```
+
+### Configuration
+
+The cache service can be configured in the main configuration file:
+
+```yaml
+cache:
+  backend: "memory"  # or "sqlalchemy"
+  connection_string: "sqlite:///cache.db"  # for SQLAlchemy backend
+```
 
 ## Timer Features
 
-<inst>
-Describe the timer features based on the implementation in the timer_manager.py file.
-</inst>
+The timer manager allows components to schedule one-time or recurring timer events. This is useful for implementing delayed actions, periodic tasks, or timeouts.
+
+### Features
+
+1. One-time and recurring timers
+2. Customizable timer IDs for easy management
+3. Optional payloads for timer events
+
+### Usage
+
+Components can access the timer manager through `self.timer_manager`. Here are some common operations:
+
+```python
+# Add a one-time timer
+self.add_timer(delay_ms=5000, timer_id="my_timer", payload={"key": "value"})
+
+# Add a recurring timer
+self.add_timer(delay_ms=5000, timer_id="recurring_timer", interval_ms=10000, payload={"type": "recurring"})
+
+# Cancel a timer
+self.cancel_timer(timer_id="my_timer")
+```
+
+### Handling Timer Events
+
+To handle timer events, components should implement the `handle_timer_event` method:
+
+```python
+def handle_timer_event(self, timer_data):
+    timer_id = timer_data["timer_id"]
+    payload = timer_data["payload"]
+    # Process the timer event
+```
+
+Timer events are automatically dispatched to the appropriate component by the timer manager.
