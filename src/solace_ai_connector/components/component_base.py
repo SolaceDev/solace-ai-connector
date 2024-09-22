@@ -42,8 +42,6 @@ class ComponentBase:
 
         resolve_config_values(self.component_config)
 
-        self.request_response_flow_controllers = {}
-
         self.next_component = None
         self.thread = None
         self.queue_timeout_ms = DEFAULT_QUEUE_TIMEOUT_MS
