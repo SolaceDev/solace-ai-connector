@@ -5,7 +5,7 @@
 #    Main flow:   STDIN -> llm_streaming_custom_component -> STDOUT
 #                                          |
 #                                          v
-#                                    request_response
+#                              do_broker_request_response()
 #                                       |       ^
 #                                       v       |
 #                                    Broker   Broker
