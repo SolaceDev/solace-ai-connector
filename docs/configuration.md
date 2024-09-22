@@ -387,6 +387,33 @@ The `queue_depth` is an integer that specifies the depth of the input queue for 
 
 The `num_instances` is an integer that specifies the number of instances of the component to run. This is the number of threads that will be started to process messages from the input queue. By default, the number of instances is 1.
 
+### Broker Request-Response Configuration
+
+The `broker_request_response` configuration allows components to perform request-response operations with a broker. It has the following structure:
+
+```yaml
+broker_request_response:
+  enabled: <boolean>
+  broker_config:
+    broker_type: <string>
+    broker_url: <string>
+    broker_username: <string>
+    broker_password: <string>
+    broker_vpn: <string>
+  request_expiry_ms: <int>
+```
+
+- `enabled`: Set to `true` to enable broker request-response functionality for the component.
+- `broker_config`: Configuration for the broker connection.
+  - `broker_type`: Type of the broker (e.g., "solace").
+  - `broker_url`: URL of the broker.
+  - `broker_username`: Username for broker authentication.
+  - `broker_password`: Password for broker authentication.
+  - `broker_vpn`: VPN name for the broker connection.
+- `request_expiry_ms`: Expiry time for requests in milliseconds.
+
+For more details on using this functionality, see the [Advanced Component Features](advanced_component_features.md#broker-request-response) documentation.
+
 ### Built-in components
 
 The AI Event Connector comes with a number of built-in components that can be used to process messages. For a list of all built-in components, see the [Components](components/index.md) documentation.
