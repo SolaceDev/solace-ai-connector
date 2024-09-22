@@ -300,6 +300,9 @@ class ComponentBase:
             config=rrc_config, connector=self.connector
         )
 
+    def is_broker_request_response_enabled(self):
+        return self.broker_request_response_controller is not None
+
     def setup_transforms(self):
         self.transforms = Transforms(
             self.config.get("input_transforms", []), log_identifier=self.log_identifier
