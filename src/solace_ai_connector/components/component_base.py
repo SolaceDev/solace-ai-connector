@@ -221,6 +221,10 @@ class ComponentBase:
         val = self.component_config.get(key, None)
         if val is None:
             val = self.config.get(key, default)
+
+        # We reserve a few callable function names for internal use
+        # They are used for the handler_callback component which is used
+        # in testing (search the tests directory for example uses)
         if callable(val) and key not in [
             "invoke_handler",
             "get_next_event_handler",
