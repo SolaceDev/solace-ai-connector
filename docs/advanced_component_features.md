@@ -9,11 +9,7 @@ This document describes advanced features available to custom components in the 
 
 ## Broker Request-Response
 
-<inst>
-This section needs to mention that the component's configuration must include a broker_request_response section. Add a link to the appropriate section in the configuration documentation.
-</inst>
-
-Components can perform a request and get a response from the broker using the `do_broker_request_response` method. This method supports both simple request-response and streamed responses.
+Components can perform a request and get a response from the broker using the `do_broker_request_response` method. This method supports both simple request-response and streamed responses. To use this feature, the component's configuration must include a `broker_request_response` section. For details on how to configure this section, refer to the [Broker Request-Response Configuration](configuration.md#broker-request-response-configuration) in the configuration documentation.
 
 ### Usage
 
