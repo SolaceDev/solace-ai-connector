@@ -253,6 +253,8 @@ broker_request_response:
     broker_username: <string>
     broker_password: <string>
     broker_vpn: <string>
+    payload_encoding: <string>
+    payload_format: <string>
   request_expiry_ms: <int>
 ```
 
@@ -263,6 +265,8 @@ broker_request_response:
   - `broker_username`: Username for broker authentication.
   - `broker_password`: Password for broker authentication.
   - `broker_vpn`: VPN name for the broker connection.
+  - `payload_encoding`: Encoding for the payload (e.g., "utf-8", "base64").
+  - `payload_format`: Format of the payload (e.g., "json", "text").
 - `request_expiry_ms`: Expiry time for requests in milliseconds.
 
 For more details on using this functionality, see the [Advanced Component Features](advanced_component_features.md#broker-request-response) documentation.
