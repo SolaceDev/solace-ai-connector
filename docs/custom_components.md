@@ -81,3 +81,10 @@ Custom components can take advantage of advanced features provided by the Solace
 For more information on these advanced features and how to use them in your custom components, please refer to the [Advanced Component Features](advanced_component_features.md) documentation.
 
 By creating custom components, you can extend the Solace AI Connector to meet your specific needs while still benefiting from the framework's built-in capabilities for event processing, flow management, and integration with Solace event brokers.
+
+## Example
+
+See the [Tips and Tricks page](tips_and_tricks.md) for an example of creating a custom component.
+
+
+[]

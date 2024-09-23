@@ -15,7 +15,13 @@ info = {
         "The component will wait for its output message to be acknowledged before prompting for "
         "the next input."
     ),
-    "config_parameters": [],
+    "config_parameters": [
+        {
+            "name": "prompt",
+            "required": False,
+            "description": "The prompt to display when asking for input",
+        }
+    ],
     "output_schema": {
         "type": "object",
         "properties": {

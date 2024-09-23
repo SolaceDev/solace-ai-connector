@@ -3,8 +3,8 @@
 # you want to call a service that is only accessible via the broker.
 #
 #    Main flow:   STDIN -> llm_streaming_custom_component -> STDOUT
-#                                          |
-#                                          v
+#                                       |       ^
+#                                       v       |
 #                              do_broker_request_response()
 #                                       |       ^
 #                                       v       |
@@ -65,6 +65,7 @@ flows:
       # Our custom component
       - component_name: llm_streaming_custom_component
         component_module: llm_streaming_custom_component
+        # Relative path to the component
         component_base_path: examples/llm/custom_components
         component_config:
           llm_request_topic: example/llm/best
