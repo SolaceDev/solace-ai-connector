@@ -322,12 +322,16 @@ def get_obj_text(block_format, text):
 
 
 def ensure_slash_on_end(string):
+    if not string:
+        return ""
     if not string.endswith("/"):
         return string + "/"
     return string
 
 
 def ensure_slash_on_start(string):
+    if not string:
+        return ""
     if not string.startswith("/"):
         return "/" + string
     return string
