@@ -18,7 +18,7 @@ component_config:
   response_topic_prefix: <string>
   response_topic_suffix: <string>
   reply_queue_prefix: <string>
-  request_expiry_ms: <string>
+  request_expiry_ms: <integer>
   streaming: <string>
   streaming_complete_expression: <string>
 ```

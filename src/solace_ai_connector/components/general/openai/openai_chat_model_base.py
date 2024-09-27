@@ -1,6 +1,7 @@
 """Base class for OpenAI chat models"""
 
 import uuid
+import time
 
 from openai import OpenAI
 from ...component_base import ComponentBase
@@ -153,9 +154,11 @@ class OpenAIChatModelBase(ComponentBase):
                     return {"content": response.choices[0].message.content}
                 except Exception as e:
                     log.error("Error invoking OpenAI: %s", e)
-                    if max_retries == 0:
-                        raise e
                     max_retries -= 1
+                    if max_retries <= 0:
+                        raise e
+                    else:
+                        time.sleep(1)
 
     def invoke_stream(self, client, message, messages):
         response_uuid = str(uuid.uuid4())
@@ -204,9 +207,12 @@ class OpenAIChatModelBase(ComponentBase):
                             first_chunk = False
             except Exception as e:
                 log.error("Error invoking OpenAI: %s", e)
-                if max_retries == 0:
-                    raise e
                 max_retries -= 1
+                if max_retries <= 0:
+                    raise e
+                else:
+                    # Small delay before retrying
+                    time.sleep(1)
 
         if self.stream_to_next_component:
             # Just return the last chunk

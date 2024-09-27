@@ -83,6 +83,7 @@ info = {
             "required": False,
             "description": "Expiry time for cached requests in milliseconds",
             "default": 60000,
+            "type": "integer",
         },
         {
             "name": "streaming",
