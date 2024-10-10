@@ -106,7 +106,27 @@ openai_info_base = {
             "content": {
                 "type": "string",
                 "description": "The generated response from the model",
-            }
+            },
+            "chunk": {
+                "type": "string",
+                "description": "The current chunk of the response",
+            },
+            "uuid": {
+                "type": "string",
+                "description": "The UUID of the response",
+            },
+            "first_chunk": {
+                "type": "boolean",
+                "description": "Whether this is the first chunk of the response",
+            },
+            "last_chunk": {
+                "type": "boolean",
+                "description": "Whether this is the last chunk of the response",
+            },
+            "streaming": {
+                "type": "boolean",
+                "description": "Whether this is a streaming response",
+            },
         },
         "required": ["content"],
     },
@@ -279,7 +299,7 @@ class OpenAIChatModelBase(ComponentBase):
         )
 
         result = {
-            "content": aggregate_result,
+            "aggregte_result": aggregate_result,
             "chunk": chunk,
             "uuid": response_uuid,
             "first_chunk": first_chunk,
