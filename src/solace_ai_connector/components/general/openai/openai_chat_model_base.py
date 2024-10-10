@@ -111,7 +111,7 @@ openai_info_base = {
                 "type": "string",
                 "description": "The current chunk of the response",
             },
-            "uuid": {
+            "response_uuid": {
                 "type": "string",
                 "description": "The UUID of the response",
             },
@@ -239,7 +239,7 @@ class OpenAIChatModelBase(ComponentBase):
             return {
                 "content": aggregate_result,
                 "chunk": current_batch,
-                "uuid": response_uuid,
+                "response_uuid": response_uuid,
                 "first_chunk": first_chunk,
                 "last_chunk": True,
                 "streaming": True,
@@ -255,7 +255,7 @@ class OpenAIChatModelBase(ComponentBase):
                 True,
             )
 
-        return {"content": aggregate_result, "uuid": response_uuid}
+        return {"content": aggregate_result, "response_uuid": response_uuid}
 
     def send_streaming_message(
         self,
@@ -269,7 +269,7 @@ class OpenAIChatModelBase(ComponentBase):
         message = Message(
             payload={
                 "chunk": chunk,
-                "aggregate_result": aggregate_result,
+                "content": aggregate_result,
                 "response_uuid": response_uuid,
                 "first_chunk": first_chunk,
                 "last_chunk": last_chunk,
@@ -290,7 +290,7 @@ class OpenAIChatModelBase(ComponentBase):
         message = Message(
             payload={
                 "chunk": chunk,
-                "aggregate_result": aggregate_result,
+                "content": aggregate_result,
                 "response_uuid": response_uuid,
                 "first_chunk": first_chunk,
                 "last_chunk": last_chunk,
@@ -299,9 +299,9 @@ class OpenAIChatModelBase(ComponentBase):
         )
 
         result = {
-            "aggregte_result": aggregate_result,
+            "content": aggregate_result,
             "chunk": chunk,
-            "uuid": response_uuid,
+            "response_uuid": response_uuid,
             "first_chunk": first_chunk,
             "last_chunk": last_chunk,
             "streaming": True,
