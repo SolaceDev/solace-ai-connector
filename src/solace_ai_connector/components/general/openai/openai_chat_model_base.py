@@ -273,6 +273,7 @@ class OpenAIChatModelBase(ComponentBase):
                 "response_uuid": response_uuid,
                 "first_chunk": first_chunk,
                 "last_chunk": last_chunk,
+                "streaming": True,
             },
             user_properties=input_message.get_user_properties(),
         )
@@ -294,13 +295,14 @@ class OpenAIChatModelBase(ComponentBase):
                 "response_uuid": response_uuid,
                 "first_chunk": first_chunk,
                 "last_chunk": last_chunk,
+                "streaming": True,
             },
             user_properties=input_message.get_user_properties(),
         )
 
         result = {
-            "content": aggregate_result,
             "chunk": chunk,
+            "content": aggregate_result,
             "response_uuid": response_uuid,
             "first_chunk": first_chunk,
             "last_chunk": last_chunk,
