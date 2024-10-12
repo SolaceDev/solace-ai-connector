@@ -37,12 +37,12 @@ class DevBroker(Messaging):
     def disconnect(self):
         self.connected = False
 
-    def receive_message(self, timeout_ms, queue_id: str):
+    def receive_message(self, timeout_ms, queue_name: str):
         if not self.connected:
             raise RuntimeError("DevBroker is not connected")
 
         try:
-            return self.queues[queue_id].get(timeout=timeout_ms / 1000)
+            return self.queues[queue_name].get(timeout=timeout_ms / 1000)
         except queue.Empty:
             return None
 
@@ -62,38 +62,38 @@ class DevBroker(Messaging):
             "user_properties": user_properties or {},
         }
 
-        matching_queue_ids = self._get_matching_queue_ids(destination_name)
+        matching_queue_names = self._get_matching_queue_names(destination_name)
 
-        for queue_id in matching_queue_ids:
+        for queue_name in matching_queue_names:
             # Clone the message for each queue to ensure isolation
-            self.queues[queue_id].put(deepcopy(message))
+            self.queues[queue_name].put(deepcopy(message))
 
         if user_context and "callback" in user_context:
             user_context["callback"](user_context)
 
-    def subscribe(self, subscription: str, queue_id: str):
+    def subscribe(self, subscription: str, queue_name: str):
         if not self.connected:
             raise RuntimeError("DevBroker is not connected")
 
         subscription = self._subscription_to_regex(subscription)
 
         with self.subscriptions_lock:
-            if queue_id not in self.queues:
-                self.queues[queue_id] = queue.Queue()
+            if queue_name not in self.queues:
+                self.queues[queue_name] = queue.Queue()
             if subscription not in self.subscriptions:
                 self.subscriptions[subscription] = []
-            self.subscriptions[subscription].append(queue_id)
+            self.subscriptions[subscription].append(queue_name)
 
     def ack_message(self, message):
         pass
 
-    def _get_matching_queue_ids(self, topic: str) -> List[str]:
-        matching_queue_ids = []
+    def _get_matching_queue_names(self, topic: str) -> List[str]:
+        matching_queue_names = []
         with self.subscriptions_lock:
-            for subscription, queue_ids in self.subscriptions.items():
+            for subscription, queue_names in self.subscriptions.items():
                 if self._topic_matches(subscription, topic):
-                    matching_queue_ids.extend(queue_ids)
-            return list(set(matching_queue_ids))  # Remove duplicates
+                    matching_queue_names.extend(queue_names)
+            return list(set(matching_queue_names))  # Remove duplicates
 
     @staticmethod
     def _topic_matches(subscription: str, topic: str) -> bool:
