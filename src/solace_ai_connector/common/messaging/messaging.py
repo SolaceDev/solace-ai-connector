@@ -15,6 +15,10 @@ class Messaging:
         raise NotImplementedError
 
     def send_message(
-        self, destination_name: str, payload: Any, user_properties: Dict = None
+        self,
+        destination_name: str,
+        payload: Any,
+        user_properties: Dict = None,
+        user_context: Dict = None,
     ):
         raise NotImplementedError

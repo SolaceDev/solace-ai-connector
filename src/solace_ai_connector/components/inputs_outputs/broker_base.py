@@ -36,7 +36,7 @@ class BrokerBase(ComponentBase):
         self.queue_id = self.generate_uuid()
         if self.broker_properties["broker_type"] not in ["test", "test_streaming"]:
             self.messaging_service = (
-                MessagingServiceBuilder()
+                MessagingServiceBuilder(self.flow_lock_manager, self.flow_kv_store)
                 .from_properties(self.broker_properties)
                 .build()
             )

@@ -193,11 +193,12 @@ class BrokerRequestResponse(BrokerBase):
         ]
         self.test_mode = False
 
-        if self.broker_type == "solace":
-            self.connect()
-        elif self.broker_type == "test" or self.broker_type == "test_streaming":
+        if self.broker_type == "test" or self.broker_type == "test_streaming":
             self.test_mode = True
             self.setup_test_pass_through()
+        else:
+            self.connect()
+
         self.start()
 
     def start(self):
