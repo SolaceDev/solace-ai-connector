@@ -33,6 +33,7 @@ class BrokerBase(ComponentBase):
     def __init__(self, module_info, **kwargs):
         super().__init__(module_info, **kwargs)
         self.broker_properties = self.get_broker_properties()
+        self.queue_id = self.generate_uuid()
         if self.broker_properties["broker_type"] not in ["test", "test_streaming"]:
             self.messaging_service = (
                 MessagingServiceBuilder()
