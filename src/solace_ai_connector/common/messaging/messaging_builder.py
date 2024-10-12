@@ -1,7 +1,7 @@
 """Class to build a Messaging Service object"""
 
 from .solace_messaging import SolaceMessaging
-from .messaging import DevBroker
+from .dev_broker_messaging import DevBroker
 
 
 # Make a Messaging Service builder - this is a factory for Messaging Service objects
