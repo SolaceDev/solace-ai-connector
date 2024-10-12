@@ -110,7 +110,7 @@ class BrokerInput(BrokerBase):
     def get_next_message(self, timeout_ms=None):
         if timeout_ms is None:
             timeout_ms = DEFAULT_TIMEOUT_MS
-        broker_message = self.messaging_service.receive_message(timeout_ms, self.queue_id)
+        broker_message = self.messaging_service.receive_message(timeout_ms, self.broker_properties["queue_name"])
         if not broker_message:
             return None
         self.current_broker_message = broker_message
@@ -127,12 +127,6 @@ class BrokerInput(BrokerBase):
             len(payload) if payload is not None else 0,
         )
         return Message(payload=payload, topic=topic, user_properties=user_properties)
-
-    def connect(self):
-        super().connect()
-        if self.broker_properties.get("broker_subscriptions"):
-            for subscription in self.broker_properties["broker_subscriptions"]:
-                self.messaging_service.subscribe(subscription["topic"], self.queue_id)
 
     def acknowledge_message(self, broker_message):
         self.messaging_service.ack_message(broker_message)

@@ -33,6 +33,12 @@ class DevBroker(Messaging):
 
     def connect(self):
         self.connected = True
+        queue_name = self.broker_properties.get("queue_name")
+        subscriptions = self.broker_properties.get("subscriptions", [])
+        if queue_name:
+            self.queues[queue_name] = queue.Queue()
+            for subscription in subscriptions:
+                self.subscribe(subscription["topic"], queue_name)
 
     def disconnect(self):
         self.connected = False
