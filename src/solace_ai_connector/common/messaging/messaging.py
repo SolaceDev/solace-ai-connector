@@ -18,6 +18,3 @@ class Messaging:
         self, destination_name: str, payload: Any, user_properties: Dict = None
     ):
         raise NotImplementedError
-
-    def subscribe(self, subscription: str, queue_id: str):
-        raise NotImplementedError
