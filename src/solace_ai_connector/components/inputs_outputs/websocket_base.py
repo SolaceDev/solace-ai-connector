@@ -3,9 +3,11 @@
 from abc import ABC, abstractmethod
 from flask import Flask, send_file, request
 from flask_socketio import SocketIO
+import logging
 from ...common.log import log
 from ..component_base import ComponentBase
 import copy
+from flask.logging import default_handler
 
 base_info = {
     "config_parameters": [
@@ -60,7 +62,19 @@ class WebsocketBase(ComponentBase, ABC):
 
     def setup_websocket_server(self):
         self.app = Flask(__name__)
-        self.socketio = SocketIO(self.app, cors_allowed_origins="*")
+        
+        # Enable Flask debugging
+        self.app.debug = True
+        
+        # Set up Flask logging
+        self.app.logger.setLevel(logging.DEBUG)
+        self.app.logger.addHandler(default_handler)
+        
+        # Enable SocketIO logging
+        logging.getLogger('socketio').setLevel(logging.DEBUG)
+        logging.getLogger('engineio').setLevel(logging.DEBUG)
+        
+        self.socketio = SocketIO(self.app, cors_allowed_origins="*", logger=True, engineio_logger=True)
         self.setup_websocket()
 
         if self.serve_html:
@@ -91,7 +105,7 @@ class WebsocketBase(ComponentBase, ABC):
     def run_server(self):
         if self.socketio:
             self.socketio.run(
-                self.app, port=self.listen_port, debug=False, use_reloader=False
+                self.app, port=self.listen_port, debug=True, use_reloader=False
             )
 
     def stop_server(self):
