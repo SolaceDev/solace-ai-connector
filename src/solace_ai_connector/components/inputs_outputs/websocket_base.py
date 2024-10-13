@@ -1,5 +1,6 @@
 """Base class for WebSocket components."""
 
+from abc import ABC, abstractmethod
 from flask import Flask, send_file, request
 from flask_socketio import SocketIO
 from ...common.log import log
@@ -44,10 +45,12 @@ base_info = {
 }
 
 
-class WebsocketBase(ComponentBase):
+class WebsocketBase(ComponentBase, ABC):
     def __init__(self, info, **kwargs):
         super().__init__(info, **kwargs)
         self.listen_port = self.get_config("listen_port")
+        if not self.listen_port:
+            raise ValueError("listen_port is required for WebSocket components")
         self.serve_html = self.get_config("serve_html", False)
         self.html_path = self.get_config("html_path", "")
         self.sockets = {}
@@ -113,3 +116,7 @@ class WebsocketBase(ComponentBase):
             log.error("No active connection found for socket_id: %s", socket_id)
             return False
         return True
+
+    @abstractmethod
+    def invoke(self, message, data):
+        pass

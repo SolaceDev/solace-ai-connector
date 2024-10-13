@@ -38,6 +38,9 @@ class WebsocketInput(WebsocketBase):
         self.payload_encoding = self.get_config("payload_encoding")
         self.payload_format = self.get_config("payload_format")
 
+        if not self.listen_port:
+            raise ValueError("listen_port is required for WebsocketInput")
+
         if not os.path.isabs(self.html_path):
             self.html_path = os.path.join(os.getcwd(), self.html_path)
 
