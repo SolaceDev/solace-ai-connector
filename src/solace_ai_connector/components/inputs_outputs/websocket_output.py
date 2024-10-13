@@ -6,24 +6,27 @@ from ...common.utils import encode_payload
 from .websocket_base import WebsocketBase, base_info
 
 info = copy.deepcopy(base_info)
-info.update({
-    "class_name": "WebsocketOutput",
-    "description": "Send messages to a websocket connection.",
-    "input_schema": {
-        "type": "object",
-        "properties": {
-            "payload": {
-                "type": "object",
-                "description": "The payload to be sent via WebSocket",
+info.update(
+    {
+        "class_name": "WebsocketOutput",
+        "description": "Send messages to a websocket connection.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "payload": {
+                    "type": "object",
+                    "description": "The payload to be sent via WebSocket",
+                },
+                "socket_id": {
+                    "type": "string",
+                    "description": "Identifier for the WebSocket connection",
+                },
             },
-            "socket_id": {
-                "type": "string",
-                "description": "Identifier for the WebSocket connection",
-            },
+            "required": ["payload", "user_properties"],
         },
-        "required": ["payload", "user_properties"],
-    },
-})
+    }
+)
+
 
 class WebsocketOutput(WebsocketBase):
     def __init__(self, **kwargs):
@@ -51,7 +54,7 @@ class WebsocketOutput(WebsocketBase):
             encoded_payload = encode_payload(
                 payload, self.payload_encoding, self.payload_format
             )
-            
+
             if not self.send_to_socket(socket_id, encoded_payload):
                 self.discard_current_message()
                 return None

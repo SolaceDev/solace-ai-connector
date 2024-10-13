@@ -49,8 +49,6 @@ class WebsocketBase(ComponentBase, ABC):
     def __init__(self, info, **kwargs):
         super().__init__(info, **kwargs)
         self.listen_port = self.get_config("listen_port")
-        if not self.listen_port:
-            raise ValueError("listen_port is required for WebSocket components")
         self.serve_html = self.get_config("serve_html", False)
         self.html_path = self.get_config("html_path", "")
         self.sockets = {}
