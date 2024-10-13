@@ -8,45 +8,11 @@ from ...common.log import log
 from ...common.message import Message
 from ...common.event import Event, EventType
 from ...common.utils import decode_payload
-from .websocket_base import WebsocketBase
+from .websocket_base import WebsocketBase, base_info
 
 info = {
     "class_name": "WebsocketInput",
     "description": "Listen for incoming messages on a websocket connection.",
-    "config_parameters": [
-        {
-            "name": "listen_port",
-            "type": "int",
-            "required": True,
-            "description": "Port to listen on",
-        },
-        {
-            "name": "serve_html",
-            "type": "bool",
-            "required": False,
-            "description": "Serve the example HTML file",
-            "default": False,
-        },
-        {
-            "name": "html_path",
-            "type": "string",
-            "required": False,
-            "description": "Path to the HTML file to serve",
-            "default": "examples/websocket/websocket_example_app.html",
-        },
-        {
-            "name": "payload_encoding",
-            "required": False,
-            "description": "Encoding for the payload (utf-8, base64, gzip, none)",
-            "default": "utf-8",
-        },
-        {
-            "name": "payload_format",
-            "required": False,
-            "description": "Format for the payload (json, yaml, text)",
-            "default": "json",
-        },
-    ],
     "output_schema": {
         "type": "object",
         "properties": {
@@ -58,7 +24,6 @@ info = {
         "required": ["payload"],
     },
 }
-
 
 class WebsocketInput(WebsocketBase):
     def __init__(self, **kwargs):

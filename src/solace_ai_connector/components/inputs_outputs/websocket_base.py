@@ -4,10 +4,50 @@ from flask import Flask, send_file, request
 from flask_socketio import SocketIO
 from ...common.log import log
 from ..component_base import ComponentBase
+import copy
+
+base_info = {
+    "config_parameters": [
+        {
+            "name": "listen_port",
+            "type": "int",
+            "required": False,
+            "description": "Port to listen on (optional)",
+        },
+        {
+            "name": "serve_html",
+            "type": "bool",
+            "required": False,
+            "description": "Serve the example HTML file",
+            "default": False,
+        },
+        {
+            "name": "html_path",
+            "type": "string",
+            "required": False,
+            "description": "Path to the HTML file to serve",
+            "default": "examples/websocket/websocket_example_app.html",
+        },
+        {
+            "name": "payload_encoding",
+            "required": False,
+            "description": "Encoding for the payload (utf-8, base64, gzip, none)",
+            "default": "utf-8",
+        },
+        {
+            "name": "payload_format",
+            "required": False,
+            "description": "Format for the payload (json, yaml, text)",
+            "default": "json",
+        },
+    ],
+}
 
 class WebsocketBase(ComponentBase):
     def __init__(self, info, **kwargs):
-        super().__init__(info, **kwargs)
+        merged_info = copy.deepcopy(base_info)
+        merged_info.update(info)
+        super().__init__(merged_info, **kwargs)
         self.listen_port = self.get_config("listen_port")
         self.serve_html = self.get_config("serve_html", False)
         self.html_path = self.get_config("html_path", "")
