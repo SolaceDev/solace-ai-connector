@@ -1,10 +1,12 @@
 """This component sends messages to a websocket connection."""
 
+import copy
 from ...common.log import log
 from ...common.utils import encode_payload
 from .websocket_base import WebsocketBase, base_info
 
-info = {
+info = copy.deepcopy(base_info)
+info.update({
     "class_name": "WebsocketOutput",
     "description": "Send messages to a websocket connection.",
     "input_schema": {
@@ -21,7 +23,7 @@ info = {
         },
         "required": ["payload", "user_properties"],
     },
-}
+})
 
 class WebsocketOutput(WebsocketBase):
     def __init__(self, **kwargs):

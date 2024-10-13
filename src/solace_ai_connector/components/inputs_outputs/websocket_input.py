@@ -2,6 +2,7 @@
 
 import json
 import os
+import copy
 
 from flask import request
 from ...common.log import log
@@ -24,6 +25,23 @@ info = {
         "required": ["payload"],
     },
 }
+
+# Merge base_info into info
+info = copy.deepcopy(base_info)
+info.update({
+    "class_name": "WebsocketInput",
+    "description": "Listen for incoming messages on a websocket connection.",
+    "output_schema": {
+        "type": "object",
+        "properties": {
+            "payload": {
+                "type": "object",
+                "description": "The decoded JSON payload received from the WebSocket",
+            },
+        },
+        "required": ["payload"],
+    },
+})
 
 class WebsocketInput(WebsocketBase):
     def __init__(self, **kwargs):
