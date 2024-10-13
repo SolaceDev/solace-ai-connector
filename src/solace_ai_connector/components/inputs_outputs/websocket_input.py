@@ -3,6 +3,7 @@
 import json
 import os
 
+from flask import request
 from ...common.log import log
 from ...common.message import Message
 from ...common.event import Event, EventType
