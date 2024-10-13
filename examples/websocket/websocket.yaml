@@ -36,6 +36,7 @@
        # WebSocket Output
        - component_name: websocket_output
          component_module: websocket_output
-         component_config: {}
+         component_config:
+           payload_encoding: none
          input_selection:
            source_expression: previous

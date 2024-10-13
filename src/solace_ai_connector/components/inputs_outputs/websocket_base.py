@@ -33,7 +33,7 @@ base_info = {
             "name": "payload_encoding",
             "required": False,
             "description": "Encoding for the payload (utf-8, base64, gzip, none)",
-            "default": "utf-8",
+            "default": "none",
         },
         {
             "name": "payload_format",
@@ -90,15 +90,17 @@ class WebsocketBase(ComponentBase, ABC):
 
     def run_server(self):
         if self.socketio:
-            self.socketio.run(self.app, port=self.listen_port, debug=False, use_reloader=False)
+            self.socketio.run(
+                self.app, port=self.listen_port, debug=False, use_reloader=False
+            )
 
     def stop_server(self):
         if self.socketio:
             self.socketio.stop()
         if self.app:
-            func = request.environ.get('werkzeug.server.shutdown')
+            func = request.environ.get("werkzeug.server.shutdown")
             if func is None:
-                raise RuntimeError('Not running with the Werkzeug Server')
+                raise RuntimeError("Not running with the Werkzeug Server")
             func()
 
     def get_sockets(self):
