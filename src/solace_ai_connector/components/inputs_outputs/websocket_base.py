@@ -43,11 +43,10 @@ base_info = {
     ],
 }
 
+
 class WebsocketBase(ComponentBase):
     def __init__(self, info, **kwargs):
-        merged_info = copy.deepcopy(base_info)
-        merged_info.update(info)
-        super().__init__(merged_info, **kwargs)
+        super().__init__(info, **kwargs)
         self.listen_port = self.get_config("listen_port")
         self.serve_html = self.get_config("serve_html", False)
         self.html_path = self.get_config("html_path", "")

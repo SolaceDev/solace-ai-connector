@@ -11,37 +11,26 @@ from ...common.event import Event, EventType
 from ...common.utils import decode_payload
 from .websocket_base import WebsocketBase, base_info
 
-info = {
-    "class_name": "WebsocketInput",
-    "description": "Listen for incoming messages on a websocket connection.",
-    "output_schema": {
-        "type": "object",
-        "properties": {
-            "payload": {
-                "type": "object",
-                "description": "The decoded JSON payload received from the WebSocket",
-            },
-        },
-        "required": ["payload"],
-    },
-}
 
 # Merge base_info into info
 info = copy.deepcopy(base_info)
-info.update({
-    "class_name": "WebsocketInput",
-    "description": "Listen for incoming messages on a websocket connection.",
-    "output_schema": {
-        "type": "object",
-        "properties": {
-            "payload": {
-                "type": "object",
-                "description": "The decoded JSON payload received from the WebSocket",
+info.update(
+    {
+        "class_name": "WebsocketInput",
+        "description": "Listen for incoming messages on a websocket connection.",
+        "output_schema": {
+            "type": "object",
+            "properties": {
+                "payload": {
+                    "type": "object",
+                    "description": "The decoded JSON payload received from the WebSocket",
+                },
             },
+            "required": ["payload"],
         },
-        "required": ["payload"],
-    },
-})
+    }
+)
+
 
 class WebsocketInput(WebsocketBase):
     def __init__(self, **kwargs):
