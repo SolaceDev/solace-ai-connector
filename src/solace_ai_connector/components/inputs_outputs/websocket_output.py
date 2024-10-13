@@ -2,12 +2,33 @@
 
 from ...common.log import log
 from ...common.utils import encode_payload
-from ..component_base import ComponentBase
+from .websocket_base import WebsocketBase
 
 info = {
     "class_name": "WebsocketOutput",
     "description": "Send messages to a websocket connection.",
     "config_parameters": [
+        {
+            "name": "listen_port",
+            "type": "int",
+            "required": False,
+            "description": "Port to listen on (optional)",
+        },
+        {
+            "name": "serve_html",
+            "type": "bool",
+            "required": False,
+            "description": "Serve the example HTML file",
+            "default": False,
+        },
+        {
+            "name":
+            "html_path",
+            "type": "string",
+            "required": False,
+            "description": "Path to the HTML file to serve",
+            "default": "examples/websocket/websocket_example_app.html",
+        },
         {
             "name": "payload_encoding",
             "required": False,
@@ -38,21 +59,20 @@ info = {
 }
 
 
-class WebsocketOutput(ComponentBase):
+class WebsocketOutput(WebsocketBase):
     def __init__(self, **kwargs):
         super().__init__(info, **kwargs)
-        self.sockets = None
         self.payload_encoding = self.get_config("payload_encoding")
         self.payload_format = self.get_config("payload_format")
 
-    def invoke(self, message, data):
-        if self.sockets is None:
-            self.sockets = self.kv_store_get("websocket_connections")
-            if self.sockets is None:
-                log.error("No WebSocket connections found in KV store")
-                self.discard_current_message()
-                return None
+    def run(self):
+        if self.listen_port:
+            self.run_server()
 
+    def stop_component(self):
+        self.stop_server()
+
+    def invoke(self, message, data):
         try:
             payload = data.get("payload")
             socket_id = data.get("socket_id")
@@ -62,19 +82,17 @@ class WebsocketOutput(ComponentBase):
                 self.discard_current_message()
                 return None
 
-            if socket_id not in self.sockets:
-                log.error("No active connection found for socket_id: %s", socket_id)
-                self.discard_current_message()
-                return None
-
-            socket = self.sockets[socket_id]
             encoded_payload = encode_payload(
                 payload, self.payload_encoding, self.payload_format
             )
-            socket.emit("message", encoded_payload)
-            log.debug("Message sent to WebSocket connection %s", socket_id)
+            
+            if not self.send_to_socket(socket_id, encoded_payload):
+                self.discard_current_message()
+                return None
+
         except Exception as e:
             log.error("Error sending message via WebSocket: %s", str(e))
             self.discard_current_message()
+            return None
 
         return data

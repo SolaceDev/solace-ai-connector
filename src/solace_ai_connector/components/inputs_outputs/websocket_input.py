@@ -3,13 +3,11 @@
 import json
 import os
 
-from flask import Flask, send_file, request
-from flask_socketio import SocketIO
 from ...common.log import log
 from ...common.message import Message
 from ...common.event import Event, EventType
-from ..component_base import ComponentBase
 from ...common.utils import decode_payload
+from .websocket_base import WebsocketBase
 
 info = {
     "class_name": "WebsocketInput",
@@ -18,9 +16,8 @@ info = {
         {
             "name": "listen_port",
             "type": "int",
-            "required": False,
+            "required": True,
             "description": "Port to listen on",
-            "default": 5000,
         },
         {
             "name": "serve_html",
@@ -62,52 +59,18 @@ info = {
 }
 
 
-class WebsocketInput(ComponentBase):
+class WebsocketInput(WebsocketBase):
     def __init__(self, **kwargs):
         super().__init__(info, **kwargs)
-        self.listen_port = self.get_config("listen_port")
-        self.serve_html = self.get_config("serve_html")
-        self.html_path = self.get_config("html_path")
         self.payload_encoding = self.get_config("payload_encoding")
         self.payload_format = self.get_config("payload_format")
-        self.app = Flask(__name__)
-        self.socketio = SocketIO(self.app, cors_allowed_origins="*")
-        self.sockets = {}
-        self.kv_store_set("websocket_connections", self.sockets)
-        self.setup_websocket()
 
-        if self.serve_html:
-            self.setup_html_route()
-            # Fix the path to the HTML file - if it's relative, it
-            # should be relative to the current working directory
-            if not os.path.isabs(self.html_path):
-                self.html_path = os.path.join(os.getcwd(), self.html_path)
+        if not os.path.isabs(self.html_path):
+            self.html_path = os.path.join(os.getcwd(), self.html_path)
 
-    def setup_html_route(self):
-        @self.app.route("/")
-        def serve_html():
-            # Get the directory where this app is running
-            directory = os.path.dirname(os.path.realpath(__file__))
-            print(directory)
-            return send_file(self.html_path)
+        self.setup_message_handler()
 
-    def setup_websocket(self):
-        @self.socketio.on("connect")
-        def handle_connect():
-            socket_id = request.sid
-            self.sockets[socket_id] = self.socketio
-            self.kv_store_set("websocket_connections", self.sockets)
-            log.info("New WebSocket connection established. Socket ID: %s", socket_id)
-            return socket_id
-
-        @self.socketio.on("disconnect")
-        def handle_disconnect():
-            socket_id = request.sid
-            if socket_id in self.sockets:
-                del self.sockets[socket_id]
-                self.kv_store_set("websocket_connections", self.sockets)
-                log.info("WebSocket connection closed. Socket ID: %s", socket_id)
-
+    def setup_message_handler(self):
         @self.socketio.on("message")
         def handle_message(data):
             try:
@@ -128,11 +91,10 @@ class WebsocketInput(ComponentBase):
                 self.handle_component_error(e, event)
 
     def run(self):
-        self.socketio.run(self.app, port=self.listen_port)
+        self.run_server()
 
     def stop_component(self):
-        if self.socketio:
-            self.socketio.stop()
+        self.stop_server()
 
     def invoke(self, message, data):
         try:
