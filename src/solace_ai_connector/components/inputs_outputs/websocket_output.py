@@ -1,6 +1,7 @@
 """This component sends messages to a websocket connection."""
 
 import copy
+import threading
 from ...common.log import log
 from ...common.utils import encode_payload
 from .websocket_base import WebsocketBase, base_info
@@ -33,13 +34,18 @@ class WebsocketOutput(WebsocketBase):
         super().__init__(info, **kwargs)
         self.payload_encoding = self.get_config("payload_encoding")
         self.payload_format = self.get_config("payload_format")
+        self.server_thread = None
 
     def run(self):
         if self.listen_port:
-            self.run_server()
+            self.server_thread = threading.Thread(target=self.run_server)
+            self.server_thread.start()
+        super().run()
 
     def stop_component(self):
         self.stop_server()
+        if self.server_thread:
+            self.server_thread.join()
 
     def invoke(self, message, data):
         try:
