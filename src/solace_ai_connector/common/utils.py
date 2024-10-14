@@ -139,8 +139,13 @@ def import_module(module, base_path=None, component_package=None):
                             )
                         else:
                             return importlib.import_module(full_name)
-                    except ModuleNotFoundError:
-                        pass
+                    except ModuleNotFoundError as e:
+                        name = str(e.name)
+                        if (
+                            name != "solace_ai_connector"
+                            and name.split(".")[-1] != full_name.split(".")[-1]
+                        ):
+                            raise e
                     except Exception as e:
                         raise ImportError(
                             f"Module load error for {full_name}: {e}"
