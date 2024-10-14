@@ -25,6 +25,7 @@ def load_config(file):
         print(f"Error loading configuration file: {e}", file=sys.stderr)
         sys.exit(1)
 
+
 def process_includes(file_path, base_dir):
     """Process #include directives in the given file."""
     with open(file_path, "r", encoding="utf8") as f:
@@ -32,16 +33,21 @@ def process_includes(file_path, base_dir):
 
     def include_repl(match):
         indent = match.group(1)  # Capture the leading spaces
-        include_path = match.group(2).strip('\'"')
+        indent = indent.replace("\n", "")  # Remove newlines
+        include_path = match.group(2).strip("'\"")
         full_path = os.path.join(base_dir, include_path)
         if not os.path.exists(full_path):
             raise FileNotFoundError(f"Included file not found: {full_path}")
         included_content = process_includes(full_path, os.path.dirname(full_path))
         # Indent each line of the included content
-        indented_content = '\n'.join(indent + line for line in included_content.splitlines())
+        indented_content = "\n".join(
+            indent + line for line in included_content.splitlines()
+        )
         return indented_content
 
-    include_pattern = re.compile(r'^(\s*)#include\s+(["\']?.+?["\']?)', re.MULTILINE)
+    include_pattern = re.compile(
+        r'^(\s*)!include\s+(["\']?[^"\s\']+)["\']?', re.MULTILINE
+    )
     return include_pattern.sub(include_repl, content)
 
 
