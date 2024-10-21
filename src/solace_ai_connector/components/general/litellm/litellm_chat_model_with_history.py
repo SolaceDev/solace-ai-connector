@@ -1,4 +1,4 @@
-"""LiteLLM model handler component with conversation history"""
+"""LiteLLM chat model component with conversation history"""
 
 import time
 
@@ -16,7 +16,6 @@ info["config_parameters"].extend(
             "description": "Maximum number of conversation turns to keep in history",
             "default": 10,
         },
-        # Add a config for history max time
         {
             "name": "history_max_time",
             "required": False,
