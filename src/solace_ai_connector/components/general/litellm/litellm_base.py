@@ -3,6 +3,7 @@
 import uuid
 import time
 import litellm
+import json
 
 from ...component_base import ComponentBase
 from ....common.message import Message
@@ -13,30 +14,29 @@ litellm_info_base = {
     "description": "Base class for LiteLLM chat models",
     "config_parameters": [
         {
-            "name": "provider",
+            "name": "api_key",
             "required": True,
-            "description": (
-                "The model provider (e.g., 'openai', 'azure', 'gemini', "
-                "'anthropic', 'sagemaker', 'cohere', 'vllm')"
-                "find more providers at https://docs.litellm.ai/docs/providers"
-                ),
+            "description": "The model provider API key",
+        },
+        {
+            "name": "action",
+            "required": True,
+            "description": "The action to perform (e.g., 'inference', 'embedding')",
+            "default": "inference",
         },
         {
             "name": "model",
             "required": True,
-            "description": "LiteLLM model to use (e.g., 'gpt-3.5-turbo')",
+            "description": (
+                "LiteLLM model to use (e.g., 'openai/gpt-3.5-turbo')"
+                "find more models at https://docs.litellm.ai/docs/providers"
+            ),
         },
         {
             "name": "temperature",
             "required": False,
             "description": "Sampling temperature to use",
             "default": 0.7,
-        },
-        {
-            "name": "max_tokens",
-            "required": False,
-            "description": "Maximum number of tokens that the model will return in its response",
-            "default": 4096,
         },
         {
             "name": "stream_to_flow",
@@ -144,9 +144,10 @@ class LiteLLMChatModelBase(ComponentBase):
 
     def init(self):
         self.api_key = self.get_config("api_key")
-        self.model = '/'.join([self.get_config("provider"), self.get_config("model")])
+        self.api_base = self.get_config("api_base")
+        self.model = self.get_config("model")
+        self.action = self.get_config("action")
         self.temperature = self.get_config("temperature")
-        self.max_tokens = self.get_config("max_tokens")
         self.stream_to_flow = self.get_config("stream_to_flow")
         self.stream_to_next_component = self.get_config("stream_to_next_component")
         self.llm_mode = self.get_config("llm_mode")
@@ -162,21 +163,39 @@ class LiteLLMChatModelBase(ComponentBase):
     def invoke(self, message, data):
         messages = data.get("messages", [])
 
-        if self.llm_mode == "stream":
-            return self.invoke_stream(message, messages)
+        if self.action == "inference":
+            if self.llm_mode == "stream":
+                return self.invoke_stream(message, messages)
+            else:
+                max_retries = 3
+                while max_retries > 0:
+                    try:
+                        response = litellm.completion(messages=messages, 
+                                                    model=self.model,
+                                                    api_key=self.api_key,
+                                                    api_base=self.api_base,
+                                                    temperature=self.temperature, 
+                                                    stream=False
+                                                    )
+                        return {"content": response.choices[0].message.content}
+                    except Exception as e:
+                        log.error("Error invoking LiteLLM: %s", e)
+                        max_retries -= 1
+                        if max_retries <= 0:
+                            raise e
+                        else:
+                            time.sleep(1)
+        elif self.action == "embedding":
+            response = litellm.embedding(input=messages[0]["content"], 
+                                        model=self.model,
+                                        api_key=self.api_key,
+                                        )
+            # Extract the embedding data from the response
+            embedding_data = response['data'][0]['embedding']
+            return {"embedding": embedding_data}
         else:
-            max_retries = 3
-            while max_retries > 0:
-                try:
-                    response = litellm.completion(messages=messages, temperature=self.temperature, max_tokens=self.max_tokens, model=self.model)
-                    return {"content": response.choices[0].message.content}
-                except Exception as e:
-                    log.error("Error invoking LiteLLM: %s", e)
-                    max_retries -= 1
-                    if max_retries <= 0:
-                        raise e
-                    else:
-                        time.sleep(1)
+            raise ValueError(f"Unsupported action: {self.action}") 
+
 
     def invoke_stream(self, client, message, messages):
         response_uuid = str(uuid.uuid4())
@@ -190,7 +209,12 @@ class LiteLLMChatModelBase(ComponentBase):
         max_retries = 3
         while max_retries > 0:
             try:
-                response = litellm.completion(messages=messages, model=self.model, temperature=self.temperature, max_tokens=self.max_tokens, stream=True)
+                response = litellm.completion(messages=messages, 
+                                              model=self.model, 
+                                              api_key=self.api_key,
+                                              api_base=self.api_base,
+                                              temperature=self.temperature, 
+                                              stream=True)
 
                 for chunk in response:
                     # If we get any response, then don't retry

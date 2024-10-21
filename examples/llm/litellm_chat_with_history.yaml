@@ -15,7 +15,7 @@
 # Dependencies:
 # pip install litellm
 #
-# required ENV variables:
+# Required ENV variables:
 # - OPENAI_API_KEY
 # - OPENAI_API_ENDPOINT
 # - OPENAI_MODEL_NAME
@@ -27,6 +27,7 @@
 # Supported models: OpenAI, Anthropic, Azure, Huggingface, Ollama, Google VertexAI
 # More models are available in https://docs.litellm.ai/docs/providers
 # Note: For most models, the model provider should be used as the prefix for the model name (e.g. azure/chatgpt-v-2)
+
 
 ---
 log:
@@ -63,9 +64,9 @@ flows:
       # Do an LLM request
       #
       - component_name: llm_request
-        component_module: litellm_chat_model
+        component_module: litellm_chat_model_with_history
         component_config:
-          action: inference # options: inference or embedding
+          action: inference
           model: ${OPENAI_MODEL_NAME}
           api_key: ${OPENAI_API_KEY}
           api_base: ${OPENAI_API_ENDPOINT}

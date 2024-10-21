@@ -65,8 +65,8 @@ flows:
       - component_name: llm_request
         component_module: litellm_chat_model
         component_config:
-          action: inference # options: inference or embedding
-          model: ${OPENAI_MODEL_NAME}
+          action: embedding # options: inference or embedding
+          model: ${OPENAI_EMBEDDING_MODEL_NAME}
           api_key: ${OPENAI_API_KEY}
           api_base: ${OPENAI_API_ENDPOINT}
           temperature: 0.01

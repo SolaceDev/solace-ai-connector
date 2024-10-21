@@ -34,7 +34,8 @@ from .general.langchain import (
 )
 
 from .general.litellm import (
-    litellm_chat,
+    litellm_chat_model,
+    litellm_chat_model_with_history,
 )
 
 # Also import the components from the submodules
@@ -66,4 +67,5 @@ from .general.langchain.langchain_vector_store_embedding_index import (
 from .general.langchain.langchain_vector_store_embedding_search import (
     LangChainVectorStoreEmbeddingsSearch,
 )
-from .general.litellm.litellm_chat import LiteLLMChatModel
+from .general.litellm.litellm_chat_model import LiteLLMChatModel
+from .general.litellm.litellm_chat_model_with_history import LiteLLMChatModelWithHistory
