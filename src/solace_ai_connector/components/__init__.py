@@ -33,6 +33,11 @@ from .general.langchain import (
     langchain_vector_store_embedding_search,
 )
 
+from .general.litellm import (
+    litellm_chat_model,
+    litellm_chat_model_with_history,
+)
+
 # Also import the components from the submodules
 from .inputs_outputs.error_input import ErrorInput
 from .inputs_outputs.timer_input import TimerInput
@@ -62,3 +67,5 @@ from .general.langchain.langchain_vector_store_embedding_index import (
 from .general.langchain.langchain_vector_store_embedding_search import (
     LangChainVectorStoreEmbeddingsSearch,
 )
+from .general.litellm.litellm_chat_model import LiteLLMChatModel
+from .general.litellm.litellm_chat_model_with_history import LiteLLMChatModelWithHistory
