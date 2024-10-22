@@ -14,22 +14,18 @@ litellm_info_base = {
     "description": "Base class for LiteLLM chat models",
     "config_parameters": [
         {
-            "name": "api_key",
-            "required": True,
-            "description": "The model provider API key",
-        },
-        {
             "name": "action",
             "required": True,
             "description": "The action to perform (e.g., 'inference', 'embedding')",
             "default": "inference",
         },
         {
-            "name": "model",
+            "name": "params",
             "required": True,
             "description": (
-                "LiteLLM model to use (e.g., 'openai/gpt-3.5-turbo')"
+                "LiteLLM model parameters. The model, api_key and base_url are mandatory."
                 "find more models at https://docs.litellm.ai/docs/providers"
+                "find more parameters at https://docs.litellm.ai/docs/completion/input"
             ),
         },
         {
@@ -143,11 +139,8 @@ class LiteLLMChatModelBase(ComponentBase):
         self.init()
 
     def init(self):
-        self.api_key = self.get_config("api_key")
-        self.api_base = self.get_config("api_base")
-        self.model = self.get_config("model")
         self.action = self.get_config("action")
-        self.temperature = self.get_config("temperature")
+        self.params = self.get_config("params")
         self.stream_to_flow = self.get_config("stream_to_flow")
         self.stream_to_next_component = self.get_config("stream_to_next_component")
         self.llm_mode = self.get_config("llm_mode")
@@ -171,11 +164,8 @@ class LiteLLMChatModelBase(ComponentBase):
                 while max_retries > 0:
                     try:
                         response = litellm.completion(messages=messages, 
-                                                    model=self.model,
-                                                    api_key=self.api_key,
-                                                    api_base=self.api_base,
-                                                    temperature=self.temperature, 
-                                                    stream=False
+                                                    stream=False,
+                                                    ** self.params
                                                     )
                         return {"content": response.choices[0].message.content}
                     except Exception as e:
@@ -187,8 +177,7 @@ class LiteLLMChatModelBase(ComponentBase):
                             time.sleep(1)
         elif self.action == "embedding":
             response = litellm.embedding(input=messages[0]["content"], 
-                                        model=self.model,
-                                        api_key=self.api_key,
+                                        ** self.params
                                         )
             # Extract the embedding data from the response
             embedding_data = response['data'][0]['embedding']
@@ -210,11 +199,9 @@ class LiteLLMChatModelBase(ComponentBase):
         while max_retries > 0:
             try:
                 response = litellm.completion(messages=messages, 
-                                              model=self.model, 
-                                              api_key=self.api_key,
-                                              api_base=self.api_base,
-                                              temperature=self.temperature, 
-                                              stream=True)
+                                              stream=True,
+                                              ** self.params,
+                                              )
 
                 for chunk in response:
                     # If we get any response, then don't retry
