@@ -2,8 +2,8 @@
 
 import uuid
 import time
+import asyncio
 import litellm
-import json
 
 from ...component_base import ComponentBase
 from ....common.message import Message
@@ -20,8 +20,15 @@ litellm_info_base = {
             "default": "inference",
         },
         {
-            "name": "params",
-            "required": True,
+            "name": "load_balancer",
+            "required": False,
+            "description": (
+                "Add a list of models to load balancer."
+            ),
+        },
+        {
+            "name": "litellm_params",
+            "required": False,
             "description": (
                 "LiteLLM model parameters. The model, api_key and base_url are mandatory."
                 "find more models at https://docs.litellm.ai/docs/providers"
@@ -137,10 +144,13 @@ class LiteLLMChatModelBase(ComponentBase):
     def __init__(self, module_info, **kwargs):
         super().__init__(module_info, **kwargs)
         self.init()
+        self.init_load_balancer()
 
     def init(self):
+        litellm.suppress_debug_info = True
         self.action = self.get_config("action")
-        self.params = self.get_config("params")
+        self.load_balancer = self.get_config("load_balancer")
+        self.litellm_params = self.get_config("litellm_params")
         self.stream_to_flow = self.get_config("stream_to_flow")
         self.stream_to_next_component = self.get_config("stream_to_next_component")
         self.llm_mode = self.get_config("llm_mode")
@@ -152,41 +162,74 @@ class LiteLLMChatModelBase(ComponentBase):
             raise ValueError(
                 "stream_to_flow and stream_to_next_component are mutually exclusive"
             )
+        self.enabled_load_balancer = True if self.load_balancer is not None else False
+        print(self.enabled_load_balancer)
+        self.router = None
+
+    def init_load_balancer(self):
+        """initialize a load balancer"""
+        if self.enabled_load_balancer:
+            try:
+                self.router = litellm.Router(model_list=self.load_balancer)
+                log.debug("Load balancer initialized with models: %s", self.load_balancer)
+            except Exception as e:
+                log.error("Error initializing load balancer: %s", e)
+                self.enabled_load_balancer = False
+    
+    async def load_balance(self, messages):
+        """load balance the messages"""
+        response = await self.router.acompletion(model=self.load_balancer[0]["model_name"], 
+                messages=messages)
+        log.debug("Load balancer response: %s", response)
+        return response
 
     def invoke(self, message, data):
+        """invoke the model"""
         messages = data.get("messages", [])
 
         if self.action == "inference":
             if self.llm_mode == "stream":
                 return self.invoke_stream(message, messages)
             else:
-                max_retries = 3
-                while max_retries > 0:
-                    try:
-                        response = litellm.completion(messages=messages, 
-                                                    stream=False,
-                                                    ** self.params
-                                                    )
-                        return {"content": response.choices[0].message.content}
-                    except Exception as e:
-                        log.error("Error invoking LiteLLM: %s", e)
-                        max_retries -= 1
-                        if max_retries <= 0:
-                            raise e
-                        else:
-                            time.sleep(1)
+                return self.invoke_non_stream(messages)
         elif self.action == "embedding":
-            response = litellm.embedding(input=messages[0]["content"], 
-                                        ** self.params
-                                        )
-            # Extract the embedding data from the response
-            embedding_data = response['data'][0]['embedding']
-            return {"embedding": embedding_data}
+            return self.invoke_embedding(messages)
         else:
             raise ValueError(f"Unsupported action: {self.action}") 
 
+    def invoke_embedding(self, messages):
+        """invoke the embedding model"""
+        response = litellm.embedding(input=messages[0]["content"], 
+                                        ** self.litellm_params
+                                        )
+        # Extract the embedding data from the response
+        embedding_data = response['data'][0]['embedding']
+        return {"embedding": embedding_data}
 
-    def invoke_stream(self, client, message, messages):
+    def invoke_non_stream(self, messages):
+        """invoke the model without streaming"""
+        max_retries = 3
+        while max_retries > 0:
+            try:
+                if self.enabled_load_balancer:
+                    response = asyncio.run(self.load_balance(messages))
+                else:
+                    response = litellm.completion(messages=messages, 
+                                                        stream=False,
+                                                        ** self.litellm_params
+                                                        )
+                
+                return {"content": response.choices[0].message.content}
+            except Exception as e:
+                    log.error("Error invoking LiteLLM: %s", e)
+                    max_retries -= 1
+                    if max_retries <= 0:
+                        raise e
+                    else:
+                        time.sleep(1)
+
+    def invoke_stream(self, message, messages):
+        """invoke the model with streaming"""
         response_uuid = str(uuid.uuid4())
         if self.set_response_uuid_in_user_properties:
             message.set_data("input.user_properties:response_uuid", response_uuid)
@@ -198,10 +241,13 @@ class LiteLLMChatModelBase(ComponentBase):
         max_retries = 3
         while max_retries > 0:
             try:
-                response = litellm.completion(messages=messages, 
-                                              stream=True,
-                                              ** self.params,
-                                              )
+                if self.enabled_load_balancer:
+                    response = asyncio.run(self.load_balance(messages))
+                else:
+                    response = litellm.completion(messages=messages, 
+                                                stream=True,
+                                                ** self.litellm_params,
+                                                )
 
                 for chunk in response:
                     # If we get any response, then don't retry

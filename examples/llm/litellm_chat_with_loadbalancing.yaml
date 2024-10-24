@@ -15,7 +15,7 @@
 # Dependencies:
 # pip install litellm
 #
-# Required ENV variables:
+# required ENV variables:
 # - OPENAI_API_KEY
 # - OPENAI_API_ENDPOINT
 # - OPENAI_MODEL_NAME
@@ -27,7 +27,6 @@
 # Supported models: OpenAI, Anthropic, Azure, Huggingface, Ollama, Google VertexAI
 # More models are available in https://docs.litellm.ai/docs/providers
 # Note: For most models, the model provider should be used as the prefix for the model name (e.g. azure/chatgpt-v-2)
-
 
 ---
 log:
@@ -64,15 +63,22 @@ flows:
       # Do an LLM request
       #
       - component_name: llm_request
-        component_module: litellm_chat_model_with_history
+        component_module: litellm_chat_model
         component_config:
-          action: inference
-          litellm_params:
-            model: ${OPENAI_MODEL_NAME}
-            api_key: ${OPENAI_API_KEY}
-            api_base:  ${OPENAI_API_ENDPOINT}
-            temperature: 0.01
-            # add any other parameters here
+          action: inference # options: inference or embedding
+          load_balancer:
+            - model_name: "gpt-4o" # model alias
+              litellm_params:
+                    model: ${OPENAI_MODEL_NAME}
+                    api_key: ${OPENAI_API_KEY}
+                    api_base: ${OPENAI_API_ENDPOINT}
+                    # add any other parameters here
+            - model_name: "claude-3-5-sonnet" # model alias
+              litellm_params:
+                    model: ${OPENAI_MODEL_NAME}
+                    api_key: ${OPENAI_API_KEY}
+                    api_base: ${OPENAI_API_ENDPOINT}
+                    # add any other parameters here
         input_transforms:
           - type: copy
             source_expression: |
