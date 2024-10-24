@@ -2,7 +2,6 @@
 
 import time
 
-import time
 from .litellm_base import LiteLLMChatModelBase, litellm_info_base
 from ....common.log import log
 
@@ -46,9 +45,8 @@ class LiteLLMChatModelWithHistory(LiteLLMChatModelBase):
     def invoke(self, message, data):
         session_id = data.get("session_id")
         if not session_id:
-             session_id = "default_session"
-             log.warning("session_id is not provided, using default session")
-             
+             raise ValueError("session_id is not provided")
+
         clear_history_but_keep_depth = data.get("clear_history_but_keep_depth")
         try:
             if clear_history_but_keep_depth is not None:

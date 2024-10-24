@@ -1,4 +1,4 @@
-# This will create a flow like this:
+# This process will establish the following flow where the LiteLLM agent retains the history of questions and answers.
 #    Solace -> LiteLLM -> Solace
 #
 # It will subscribe to `demo/question` and expect an event with the payload:
@@ -26,7 +26,7 @@
 #
 # Supported models: OpenAI, Anthropic, Azure, Huggingface, Ollama, Google VertexAI
 # More models are available in https://docs.litellm.ai/docs/providers
-# Note: For most models, the model provider should be used as the prefix for the model name (e.g. azure/chatgpt-v-2)
+# Note: For most models, the model provider’s name should be used as a prefix for the model name (e.g. azure/chatgpt-v-2)
 
 
 ---

@@ -1,4 +1,4 @@
-# This will create a flow like this:
+# This process will establish the following flow where the LiteLLM agent can connects to various models.
 #    Solace -> LiteLLM -> Solace
 #
 # It will subscribe to `demo/question` and expect an event with the payload:

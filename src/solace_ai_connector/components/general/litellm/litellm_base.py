@@ -25,6 +25,7 @@ litellm_info_base = {
             "description": (
                 "Add a list of models to load balancer."
             ),
+            "default": "",
         },
         {
             "name": "litellm_params",
@@ -34,6 +35,7 @@ litellm_info_base = {
                 "find more models at https://docs.litellm.ai/docs/providers"
                 "find more parameters at https://docs.litellm.ai/docs/completion/input"
             ),
+            "default": "",
         },
         {
             "name": "temperature",
@@ -163,7 +165,6 @@ class LiteLLMChatModelBase(ComponentBase):
                 "stream_to_flow and stream_to_next_component are mutually exclusive"
             )
         self.enabled_load_balancer = True if self.load_balancer is not None else False
-        print(self.enabled_load_balancer)
         self.router = None
 
     def init_load_balancer(self):
@@ -175,6 +176,7 @@ class LiteLLMChatModelBase(ComponentBase):
             except Exception as e:
                 log.error("Error initializing load balancer: %s", e)
                 self.enabled_load_balancer = False
+                log.warning("Continued without load balancer")
     
     async def load_balance(self, messages):
         """load balance the messages"""

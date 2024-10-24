@@ -127,8 +127,8 @@ def import_module(module, base_path=None, component_package=None):
                     ".components.general.for_testing",
                     ".components.general.langchain",
                     ".components.general.openai",
-                    ".components.inputs_outputs",
                     ".components.general.litellm",
+                    ".components.inputs_outputs",
                     ".transforms",
                     ".common",
                 ]:
