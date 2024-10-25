@@ -22,7 +22,7 @@ class ChatHistoryHandler(ComponentBase):
             history[session_id]["messages"] = history[session_id]["messages"][
                 -self.history_max_turns * 2 :
             ]
-        log.info(f"Pruned history for session {session_id}")
+        log.debug(f"Pruned history for session {session_id}")
         self.make_history_start_with_user_message(session_id, history)
 
     def clear_history_but_keep_depth(self, session_id: str, depth: int, history):
