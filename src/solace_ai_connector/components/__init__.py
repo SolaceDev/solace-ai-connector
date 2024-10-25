@@ -75,3 +75,6 @@ from .general.langchain.langchain_vector_store_embedding_index import (
 from .general.langchain.langchain_vector_store_embedding_search import (
     LangChainVectorStoreEmbeddingsSearch,
 )
+from .general.websearch.websearch_duckduckgo import WebSearchDuckDuckGo
+from .general.websearch.websearch_google import WebSearchGoogle
+from .general.websearch.websearch_bing import WebSearchBing
