@@ -16,6 +16,7 @@ from .general import (
     delay,
     iterate,
     message_filter,
+    parser,
 )
 
 from .general.for_testing import (
@@ -38,6 +39,12 @@ from .general.litellm import (
     litellm_chat_model_with_history,
 )
 
+from .general.websearch import (
+    websearch_duckduckgo,
+    websearch_google,
+    websearch_bing
+)
+
 # Also import the components from the submodules
 from .inputs_outputs.error_input import ErrorInput
 from .inputs_outputs.timer_input import TimerInput
@@ -54,6 +61,7 @@ from .general.pass_through import PassThrough
 from .general.delay import Delay
 from .general.iterate import Iterate
 from .general.message_filter import MessageFilter
+from .general.parser import Parser
 from .general.langchain.langchain_base import LangChainBase
 from .general.langchain.langchain_embeddings import LangChainEmbeddings
 from .general.langchain.langchain_vector_store_delete import LangChainVectorStoreDelete
@@ -67,5 +75,3 @@ from .general.langchain.langchain_vector_store_embedding_index import (
 from .general.langchain.langchain_vector_store_embedding_search import (
     LangChainVectorStoreEmbeddingsSearch,
 )
-from .general.litellm.litellm_chat_model import LiteLLMChatModel
-from .general.litellm.litellm_chat_model_with_history import LiteLLMChatModelWithHistory
