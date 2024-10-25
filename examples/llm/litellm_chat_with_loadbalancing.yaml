@@ -52,7 +52,7 @@ flows:
         component_module: broker_input
         component_config:
           <<: *broker_connection
-          broker_queue_name: demo_question1
+          broker_queue_name: demo_question
           broker_subscriptions:
             - topic: demo/question
               qos: 1
@@ -75,9 +75,9 @@ flows:
                     # add any other parameters here
             - model_name: "claude-3-5-sonnet" # model alias
               litellm_params:
-                    model: ${OPENAI_MODEL_NAME}
-                    api_key: ${OPENAI_API_KEY}
-                    api_base: ${OPENAI_API_ENDPOINT}
+                    model: ${ANTHROPIC_MODEL_NAME}
+                    api_key: ${ANTHROPIC_API_KEY}
+                    api_base: ${ANTHROPIC_API_ENDPOINT}
                     # add any other parameters here
         input_transforms:
           - type: copy

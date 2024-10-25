@@ -6,6 +6,7 @@
 # The input message has the following schema:
 # {
 #   "text": "<question or request as text>"
+#   "session_id": "<session_id>"
 # }
 #
 # Output is published to the topic `demo/question/response`
@@ -53,7 +54,7 @@ flows:
         component_module: broker_input
         component_config:
           <<: *broker_connection
-          broker_queue_name: demo_question1
+          broker_queue_name: demo_question
           broker_subscriptions:
             - topic: demo/question
               qos: 1
@@ -84,6 +85,9 @@ flows:
           - type: copy
             source_expression: static:user
             dest_expression: user_data.llm_input:messages.0.role
+          - type: copy
+            source_expression: input.payload:session_id
+            dest_expression: user_data.llm_input:session_id
         input_selection:
           source_expression: user_data.llm_input
 

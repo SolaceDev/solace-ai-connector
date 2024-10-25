@@ -52,7 +52,7 @@ flows:
         component_module: broker_input
         component_config:
           <<: *broker_connection
-          broker_queue_name: demo_question1
+          broker_queue_name: demo_question
           broker_subscriptions:
             - topic: demo/question
               qos: 1

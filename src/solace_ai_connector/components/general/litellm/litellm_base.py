@@ -164,7 +164,7 @@ class LiteLLMChatModelBase(ComponentBase):
             raise ValueError(
                 "stream_to_flow and stream_to_next_component are mutually exclusive"
             )
-        self.enabled_load_balancer = True if self.load_balancer is not None else False
+        self.enabled_load_balancer = True if self.load_balancer else False
         self.router = None
 
     def init_load_balancer(self):
