@@ -9,7 +9,8 @@ component_name: <user-supplied-name>
 component_module: litellm_chat_model
 component_config:
   action: <string>
-  params: <string>
+  load_balancer: <string>
+  embedding_params: <string>
   temperature: <string>
   stream_to_flow: <string>
   stream_to_next_component: <string>
@@ -25,7 +26,8 @@ component_config:
 | Parameter | Required | Default | Description |
 | --- | --- | --- | --- |
 | action | True | inference | The action to perform (e.g., 'inference', 'embedding') |
-| params | True |  | LiteLLM model to use (e.g., 'openai/gpt-3.5-turbo')find more models at https://docs.litellm.ai/docs/providers |
+| load_balancer | False |  | Add a list of models to load balancer. |
+| embedding_params | False |  | LiteLLM model parameters. The model, api_key and base_url are mandatory.find more models at https://docs.litellm.ai/docs/providersfind more parameters at https://docs.litellm.ai/docs/completion/input |
 | temperature | False | 0.7 | Sampling temperature to use |
 | stream_to_flow | False |  | Name the flow to stream the output to - this must be configured for llm_mode='stream'. This is mutually exclusive with stream_to_next_component. |
 | stream_to_next_component | False | False | Whether to stream the output to the next component in the flow. This is mutually exclusive with stream_to_flow. |

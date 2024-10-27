@@ -28,9 +28,9 @@
 | [stdout_output](stdout_output.md) | STDOUT output component |
 | [timer_input](timer_input.md) | An input that will generate a message at a specified interval. |
 | [user_processor](user_processor.md) | A component that allows the processing stage to be defined in the configuration file. |
-| [websocket_input](websocket_input.md) | Listen for incoming messages on a websocket connection. |
-| [websocket_output](websocket_output.md) | Send messages to a websocket connection. |
 | [web_scraper](web_scraper.md) | Scrape javascript based websites. |
 | [websearch_bing](websearch_bing.md) | Perform a search query on Bing. |
 | [websearch_duckduckgo](websearch_duckduckgo.md) | Perform a search query on DuckDuckGo. |
 | [websearch_google](websearch_google.md) | Perform a search query on Google. |
+| [websocket_input](websocket_input.md) | Listen for incoming messages on a websocket connection. |
+| [websocket_output](websocket_output.md) | Send messages to a websocket connection. |
