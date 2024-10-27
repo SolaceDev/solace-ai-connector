@@ -1,4 +1,4 @@
-# This process will establish the following flow where the LiteLLM agent can connects to various models.
+# This process will create a flow where the LiteLLM agent distributes requests across multiple LLM models.
 #    Solace -> LiteLLM -> Solace
 #
 # It will subscribe to `demo/question` and expect an event with the payload:
@@ -19,6 +19,9 @@
 # - OPENAI_API_KEY
 # - OPENAI_API_ENDPOINT
 # - OPENAI_MODEL_NAME
+# - ANTHROPIC_MODEL_NAME
+# - ANTHROPIC_API_KEY
+# - ANTHROPIC_API_ENDPOINT
 # - SOLACE_BROKER_URL
 # - SOLACE_BROKER_USERNAME
 # - SOLACE_BROKER_PASSWORD
@@ -26,7 +29,7 @@
 #
 # Supported models: OpenAI, Anthropic, Azure, Huggingface, Ollama, Google VertexAI
 # More models are available in https://docs.litellm.ai/docs/providers
-# Note: For most models, the model provider should be used as the prefix for the model name (e.g. azure/chatgpt-v-2)
+# Note: For most models, the model provider’s name should be used as a prefix for the model name (e.g. azure/chatgpt-v-2)
 
 ---
 log:
@@ -66,12 +69,22 @@ flows:
         component_module: litellm_chat_model
         component_config:
           action: inference # options: inference or embedding
-          litellm_params:
-            model: ${OPENAI_MODEL_NAME}
-            api_key: ${OPENAI_API_KEY}
-            api_base: ${OPENAI_API_ENDPOINT}
-            temperature: 0.01
-            # add any other parameters here
+          llm_mode: none # options: none or stream
+          load_balancer:
+            - model_name: "gpt-4o" # model alias
+              litellm_params:
+                    model: ${OPENAI_MODEL_NAME}
+                    api_key: ${OPENAI_API_KEY}
+                    api_base: ${OPENAI_API_ENDPOINT}
+                    temperature: 0.01
+                    # add any other parameters here
+            - model_name: "claude-3-5-sonnet" # model alias
+              litellm_params:
+                    model: ${ANTHROPIC_MODEL_NAME}
+                    api_key: ${ANTHROPIC_API_KEY}
+                    api_base: ${ANTHROPIC_API_ENDPOINT}
+                    # add any other parameters here
+            # add more models here
         input_transforms:
           - type: copy
             source_expression: |

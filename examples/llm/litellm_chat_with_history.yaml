@@ -20,6 +20,9 @@
 # - OPENAI_API_KEY
 # - OPENAI_API_ENDPOINT
 # - OPENAI_MODEL_NAME
+# - ANTHROPIC_MODEL_NAME
+# - ANTHROPIC_API_KEY
+# - ANTHROPIC_API_ENDPOINT
 # - SOLACE_BROKER_URL
 # - SOLACE_BROKER_USERNAME
 # - SOLACE_BROKER_PASSWORD
@@ -54,7 +57,7 @@ flows:
         component_module: broker_input
         component_config:
           <<: *broker_connection
-          broker_queue_name: demo_question
+          broker_queue_name: demo_question67
           broker_subscriptions:
             - topic: demo/question
               qos: 1
@@ -68,12 +71,21 @@ flows:
         component_module: litellm_chat_model_with_history
         component_config:
           action: inference
-          litellm_params:
-            model: ${OPENAI_MODEL_NAME}
-            api_key: ${OPENAI_API_KEY}
-            api_base:  ${OPENAI_API_ENDPOINT}
-            temperature: 0.01
-            # add any other parameters here
+          load_balancer:
+            - model_name: "gpt-4o" # model alias
+              litellm_params:
+                    model: ${OPENAI_MODEL_NAME}
+                    api_key: ${OPENAI_API_KEY}
+                    api_base: ${OPENAI_API_ENDPOINT}
+                    temperature: 0.01
+                    # add any other parameters here
+            - model_name: "claude-3-5-sonnet" # model alias
+              litellm_params:
+                    model: ${ANTHROPIC_MODEL_NAME}
+                    api_key: ${ANTHROPIC_API_KEY}
+                    api_base: ${ANTHROPIC_API_ENDPOINT}
+                    # add any other parameters here
+            # add more models here
         input_transforms:
           - type: copy
             source_expression: |

@@ -28,7 +28,7 @@ litellm_info_base = {
             "default": "",
         },
         {
-            "name": "litellm_params",
+            "name": "embedding_params",
             "required": False,
             "description": (
                 "LiteLLM model parameters. The model, api_key and base_url are mandatory."
@@ -152,7 +152,6 @@ class LiteLLMChatModelBase(ComponentBase):
         litellm.suppress_debug_info = True
         self.action = self.get_config("action")
         self.load_balancer = self.get_config("load_balancer")
-        self.litellm_params = self.get_config("litellm_params")
         self.stream_to_flow = self.get_config("stream_to_flow")
         self.stream_to_next_component = self.get_config("stream_to_next_component")
         self.llm_mode = self.get_config("llm_mode")
@@ -164,24 +163,20 @@ class LiteLLMChatModelBase(ComponentBase):
             raise ValueError(
                 "stream_to_flow and stream_to_next_component are mutually exclusive"
             )
-        self.enabled_load_balancer = True if self.load_balancer else False
         self.router = None
 
     def init_load_balancer(self):
         """initialize a load balancer"""
-        if self.enabled_load_balancer:
-            try:
-                self.router = litellm.Router(model_list=self.load_balancer)
-                log.debug("Load balancer initialized with models: %s", self.load_balancer)
-            except Exception as e:
-                log.error("Error initializing load balancer: %s", e)
-                self.enabled_load_balancer = False
-                log.warning("Continued without load balancer")
+        try:
+            self.router = litellm.Router(model_list=self.load_balancer)
+            log.debug("Load balancer initialized with models: %s", self.load_balancer)
+        except Exception as e:
+            raise ValueError(f"Error initializing load balancer: {e}")
     
-    async def load_balance(self, messages):
+    def load_balance(self, messages, stream):
         """load balance the messages"""
-        response = await self.router.acompletion(model=self.load_balancer[0]["model_name"], 
-                messages=messages)
+        response = self.router.completion(model=self.load_balancer[0]["model_name"], 
+                messages=messages, stream=stream)
         log.debug("Load balancer response: %s", response)
         return response
 
@@ -201,9 +196,10 @@ class LiteLLMChatModelBase(ComponentBase):
 
     def invoke_embedding(self, messages):
         """invoke the embedding model"""
-        response = litellm.embedding(input=messages[0]["content"], 
-                                        ** self.litellm_params
-                                        )
+        response = self.router.embedding(model=self.load_balancer[0]["model_name"], 
+                input=messages[0]["content"])
+        log.debug("Embedding response: %s", response)
+
         # Extract the embedding data from the response
         embedding_data = response['data'][0]['embedding']
         return {"embedding": embedding_data}
@@ -213,14 +209,7 @@ class LiteLLMChatModelBase(ComponentBase):
         max_retries = 3
         while max_retries > 0:
             try:
-                if self.enabled_load_balancer:
-                    response = asyncio.run(self.load_balance(messages))
-                else:
-                    response = litellm.completion(messages=messages, 
-                                                        stream=False,
-                                                        ** self.litellm_params
-                                                        )
-                
+                response = self.load_balance(messages, stream=False)
                 return {"content": response.choices[0].message.content}
             except Exception as e:
                     log.error("Error invoking LiteLLM: %s", e)
@@ -243,13 +232,7 @@ class LiteLLMChatModelBase(ComponentBase):
         max_retries = 3
         while max_retries > 0:
             try:
-                if self.enabled_load_balancer:
-                    response = asyncio.run(self.load_balance(messages))
-                else:
-                    response = litellm.completion(messages=messages, 
-                                                stream=True,
-                                                ** self.litellm_params,
-                                                )
+                response = self.load_balance(messages, stream=True)
 
                 for chunk in response:
                     # If we get any response, then don't retry
