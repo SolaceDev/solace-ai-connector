@@ -4,7 +4,7 @@ import time
 
 import time
 from .openai_chat_model_base import OpenAIChatModelBase, openai_info_base
-from ..utils.chat_history_handler import ChatHistoryHandler
+from ..common.chat_history_handler import ChatHistoryHandler
 
 info = openai_info_base.copy()
 info["class_name"] = "OpenAIChatModelWithHistory"

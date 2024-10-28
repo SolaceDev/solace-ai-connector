@@ -3,8 +3,8 @@
 import time
 
 from .litellm_base import LiteLLMChatModelBase, litellm_info_base
-from ..utils.chat_history_handler import ChatHistoryHandler
-from ....common.log import log
+from ..common.chat_history_handler import ChatHistoryHandler
+from .....common.log import log
 
 info = litellm_info_base.copy()
 info["class_name"] = "LiteLLMChatModelWithHistory"

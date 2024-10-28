@@ -5,9 +5,9 @@ import time
 import asyncio
 import litellm
 
-from ...component_base import ComponentBase
-from ....common.message import Message
-from ....common.log import log
+from ....component_base import ComponentBase
+from .....common.message import Message
+from .....common.log import log
 
 litellm_info_base = {
     "class_name": "LiteLLMChatModelBase",
