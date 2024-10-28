@@ -29,7 +29,7 @@ class ComponentBase:
         self.component_index = kwargs.pop("component_index", None)
         self.error_queue = kwargs.pop("error_queue", None)
         self.instance_name = kwargs.pop("instance_name", None)
-        self.trace_queue = kwargs.pop("trace_queue", False)
+        self.trace_queue = kwargs.pop("trace_queue", True)
         self.connector = kwargs.pop("connector", None)
         self.timer_manager = kwargs.pop("timer_manager", None)
         self.cache_service = kwargs.pop("cache_service", None)
@@ -192,9 +192,17 @@ class ComponentBase:
             or {"source_expression": "previous"}
         )
         source_expression = get_source_expression(input_selection)
+        data = message.get_data(source_expression, self)
+
+        if source_expression != "previous" and data is None:
+            log.error(
+                "%sNo data found for source expression '%s'",
+                self.log_identifier,
+                source_expression
+            )
 
         # This should be overridden by the component if it needs to extract data from the message
-        return message.get_data(source_expression, self)
+        return data
 
     def get_input_queue(self):
         return self.input_queue

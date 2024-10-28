@@ -48,23 +48,31 @@ class Message:
     # The type of the data returned will depend on the data type specified. It could be an object,
     # array, string, etc.
     def get_data(self, expression, calling_object=None, data_type=None):
-        # If the expression is callable, call it
-        if callable(expression):
-            return expression(self)
-        if isinstance(expression, (dict, list)):
-            return expression
-        # If the expression starts with 'template:', render the template
-        if expression.startswith("template:"):
-            return self.fill_template(expression.split(":", 1)[1])
-        if expression.startswith("static:"):
-            return expression.split(":", 1)[1]
-        data_object = self.get_data_object(expression, calling_object=calling_object)
-        data = self.get_data_value(data_object, expression)
+        try:
+            # If the expression is callable, call it
+            if callable(expression):
+                return expression(self)
+            if isinstance(expression, (dict, list)):
+                return expression
+            # If the expression starts with 'template:', render the template
+            if expression.startswith("template:"):
+                return self.fill_template(expression.split(":", 1)[1])
+            if expression.startswith("static:"):
+                return expression.split(":", 1)[1]
+            data_object = self.get_data_object(expression, calling_object=calling_object)
+            data = self.get_data_value(data_object, expression)
 
-        if data_type:
-            data = self.convert_data_type(data, data_type)
+            if data_type:
+                data = self.convert_data_type(data, data_type)
 
-        return data
+            return data
+        except Exception as e:
+            log.error(
+                "Error getting data for expression '%s': %s",
+                expression,
+                str(e)
+            )
+            return None
 
     def convert_data_type(self, data, data_type):
         type_map = {
