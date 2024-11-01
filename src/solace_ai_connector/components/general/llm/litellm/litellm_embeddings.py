@@ -11,13 +11,13 @@ info.update(
         "input_schema": {
             "type": "object",
             "properties": {
-                "text": {
-                    "type": "string",
-                    "description": "The text to embed",
+                "items": {
+                        "type": "array",
+                        "description": "A single element or a list of elements to embed",
+                    },
                 },
+                "required": ["messages"],
             },
-            "required": ["text"],
-        },
         "output_schema": {
             "type": "object",
             "properties": {
@@ -41,13 +41,12 @@ class LiteLLMEmbeddings(LiteLLMBase):
 
     def invoke(self, message, data):
         """invoke the embedding model"""
-        messages = data.get("messages", [])
+        items = data.get("items", [])
+
         response = self.router.embedding(model=self.load_balancer[0]["model_name"], 
-                input=messages[0]["content"])
+                input=items)
         log.debug("Embedding response: %s", response)
 
         # Extract the embedding data from the response
         embedding_data = response['data'][0]['embedding']
         return {"embedding": embedding_data}
-        
-        
