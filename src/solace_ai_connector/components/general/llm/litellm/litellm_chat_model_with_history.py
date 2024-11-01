@@ -2,11 +2,11 @@
 
 import time
 
-from .litellm_base import LiteLLMChatModelBase, litellm_info_base
+from .litellm_chat_model_base import LiteLLMChatModelBase, litellm_chat_info_base
 from ..common.chat_history_handler import ChatHistoryHandler
 from .....common.log import log
 
-info = litellm_info_base.copy()
+info = litellm_chat_info_base.copy()
 info["class_name"] = "LiteLLMChatModelWithHistory"
 info["description"] = "LiteLLM model handler component with conversation history"
 info["config_parameters"].extend(
@@ -31,7 +31,6 @@ info["input_schema"]["properties"]["clear_history_but_keep_depth"] = {
     "minimum": 0,
     "description": "Clear history but keep the last N messages. If 0, clear all history. If not set, do not clear history.",
 }
-
 
 class LiteLLMChatModelWithHistory(LiteLLMChatModelBase, ChatHistoryHandler):
     def __init__(self, **kwargs):

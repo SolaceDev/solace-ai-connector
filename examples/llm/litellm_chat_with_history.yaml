@@ -70,7 +70,6 @@ flows:
       - component_name: llm_request
         component_module: litellm_chat_model_with_history
         component_config:
-          action: inference
           load_balancer:
             - model_name: "gpt-4o" # model alias
               litellm_params:

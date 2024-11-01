@@ -65,11 +65,10 @@ flows:
       # Do an LLM request
       #
       - component_name: llm_request
-        component_module: litellm_chat_model
+        component_module: litellm_embeddings
         component_config:
-          action: embedding # options: inference or embedding
           load_balancer: 
-            - model_name: "text-embedding-ada-002-v2" # model alias
+            - model_name: "text-embedding-ada-002" # model alias
               litellm_params:
                     model: ${OPENAI_EMBEDDING_MODEL_NAME}
                     api_key: ${OPENAI_API_KEY}
