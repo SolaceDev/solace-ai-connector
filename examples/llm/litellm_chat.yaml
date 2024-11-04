@@ -68,7 +68,6 @@ flows:
       - component_name: llm_request
         component_module: litellm_chat_model
         component_config:
-          action: inference # options: inference or embedding
           llm_mode: none # options: none or stream
           load_balancer:
             - model_name: "gpt-4o" # model alias

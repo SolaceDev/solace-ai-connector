@@ -36,6 +36,7 @@ from .general.llm.langchain import (
 
 from .general.llm.litellm import (
     litellm_chat_model,
+    litellm_embeddings,
     litellm_chat_model_with_history,
 )
 

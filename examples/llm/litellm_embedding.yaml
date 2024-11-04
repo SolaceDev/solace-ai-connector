@@ -5,7 +5,7 @@
 #
 # The input message has the following schema:
 # {
-#   "text": "<question or request as text>"
+#   "items": ["item1", "item2", ...]
 # }
 #
 # Output is published to the topic `demo/question/response`
@@ -65,35 +65,27 @@ flows:
       # Do an LLM request
       #
       - component_name: llm_request
-        component_module: litellm_chat_model
+        component_module: litellm_embeddings
         component_config:
-          action: embedding # options: inference or embedding
           load_balancer: 
-            - model_name: "text-embedding-ada-002-v2" # model alias
+            - model_name: "text-embedding-ada-002" # model alias
               litellm_params:
                     model: ${OPENAI_EMBEDDING_MODEL_NAME}
                     api_key: ${OPENAI_API_KEY}
                     api_base: ${OPENAI_API_ENDPOINT}
                     # add any other parameters here
             - model_name: "text-embedding-3-large" # model alias
-              litellm_params:
-                    model: ${AZURE_EMBEDDING_MODEL_NAME}
-                    api_key: ${AZURE_API_KEY}
-                    api_base: ${AZURE_API_ENDPOINT}
+              itellm_params:
+                     model: ${AZURE_EMBEDDING_MODEL_NAME}
+                     api_key: ${AZURE_API_KEY}
+                     api_base: ${AZURE_API_ENDPOINT}
                     # add any other parameters here
         input_transforms:
           - type: copy
-            source_expression: |
-              template:You are a helpful AI assistant. Please help with the user's request below:
-              <user-question>
-              {{text://input.payload:text}}
-              </user-question>
-            dest_expression: user_data.llm_input:messages.0.content
-          - type: copy
-            source_expression: static:user
-            dest_expression: user_data.llm_input:messages.0.role
+            source_expression: input.payload
+            dest_expression: user_data.llm_input:items
         input_selection:
-          source_expression: user_data.llm_input
+          source_expression: user_data.llm_input:items
 
       # Send response back to broker
       - component_name: send_response
