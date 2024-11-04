@@ -45,8 +45,7 @@ class LiteLLMEmbeddings(LiteLLMBase):
 
         response = self.router.embedding(model=self.load_balancer[0]["model_name"], 
                 input=items)
-        log.debug("Embedding response: %s", response)
 
         # Extract the embedding data from the response
         embedding_data = response['data'][0]['embedding']
-        return {"embedding": embedding_data}
+        return {"embeddings": embedding_data}
