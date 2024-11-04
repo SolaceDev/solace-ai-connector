@@ -16,21 +16,21 @@ info.update(
                         "description": "A single element or a list of elements to embed",
                     },
                 },
-                "required": ["messages"],
+                "required": ["items"],
             },
         "output_schema": {
             "type": "object",
             "properties": {
-                "embedding": {
+                "embeddings": {
                     "type": "array",
                     "description": (
-                        "A list of floating point numbers representing the embedding. "
+                        "A list of floating point numbers representing the embeddings. "
                         "Its length is the size of vector that the embedding model produces"
                     ),
                     "items": {"type": "float"},
                 }
             },
-            "required": ["embedding"],
+            "required": ["embeddings"],
         },
     }
 )
