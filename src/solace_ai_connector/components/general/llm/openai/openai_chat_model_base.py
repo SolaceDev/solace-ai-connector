@@ -4,9 +4,9 @@ import uuid
 import time
 
 from openai import OpenAI
-from ...component_base import ComponentBase
-from ....common.message import Message
-from ....common.log import log
+from ....component_base import ComponentBase
+from .....common.message import Message
+from .....common.log import log
 
 openai_info_base = {
     "class_name": "OpenAIChatModelBase",
@@ -96,6 +96,11 @@ openai_info_base = {
                     },
                     "required": ["role", "content"],
                 },
+            },
+            "stream": {
+                "type": "boolean",
+                "description": "Whether to stream the response. It is is not provided, it will default to the value of llm_mode.",
+                "required": False,
             },
         },
         "required": ["messages"],

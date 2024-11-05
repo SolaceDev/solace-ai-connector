@@ -17,6 +17,7 @@ DEFAULT_QUEUE_MAX_DEPTH = 5
 
 
 class ComponentBase:
+
     def __init__(self, module_info, **kwargs):
         self.module_info = module_info
         self.config = kwargs.pop("config", {})
@@ -302,6 +303,16 @@ class ComponentBase:
             "broker_config": broker_config,
             "request_expiry_ms": request_expiry_ms,
         }
+
+        if "response_topic_prefix" in self.broker_request_response_config:
+            rrc_config["response_topic_prefix"] = self.broker_request_response_config[
+                "response_topic_prefix"
+            ]
+        if "response_queue_prefix" in self.broker_request_response_config:
+            rrc_config["response_queue_prefix"] = self.broker_request_response_config[
+                "response_queue_prefix"
+            ]
+
         self.broker_request_response_controller = RequestResponseFlowController(
             config=rrc_config, connector=self.connector
         )
