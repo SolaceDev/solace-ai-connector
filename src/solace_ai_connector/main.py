@@ -2,7 +2,7 @@ import os
 import sys
 import re
 import yaml
-from pathlib import Path
+import time
 from .solace_ai_connector import SolaceAiConnector
 
 
@@ -107,8 +107,9 @@ def main():
     app.run()
 
     app.wait_for_flows()
-
+    time.sleep(3)
     print("Solace AI Connector exited successfully!")
+    os._exit(0)
 
 
 if __name__ == "__main__":

@@ -3,10 +3,8 @@
 from abc import ABC, abstractmethod
 from flask import Flask, send_file, request
 from flask_socketio import SocketIO
-import logging
 from ...common.log import log
 from ..component_base import ComponentBase
-import copy
 from flask.logging import default_handler
 
 base_info = {
@@ -112,7 +110,11 @@ class WebsocketBase(ComponentBase, ABC):
 
     def stop_server(self):
         if self.socketio:
-            self.socketio.stop()
+            try:
+                # This shutdown should stop the server if it's running as a separate thread/process
+                self.socketio.stop()
+            except Exception as e:
+                log.error("Error stopping SocketIO server: %s", e)
         if self.app:
             func = request.environ.get("werkzeug.server.shutdown")
             if func is None:
