@@ -9,6 +9,7 @@ from ..common.utils import import_module
 
 
 class FlowLockManager:
+
     def __init__(self):
         self._lock = threading.Lock()
         self.locks = {}
@@ -22,6 +23,7 @@ class FlowLockManager:
 
 
 class FlowKVStore:
+
     def __init__(self):
         self.store = {}
 
@@ -54,7 +56,6 @@ class Flow:
         self.name = flow_config.get("name")
         self.module_info = None
         self.stop_signal = stop_signal
-        self.error_queue = error_queue
         self.instance_name = instance_name
         self.trace_queue = trace_queue
         self.flow_instance_index = flow_instance_index
@@ -64,6 +65,15 @@ class Flow:
         self.flow_lock_manager = Flow._lock_manager
         self.flow_kv_store = Flow._kv_store
         self.cache_service = connector.cache_service if connector else None
+
+        self.put_errors_in_error_queue = flow_config.get(
+            "put_errors_in_error_queue", True
+        )
+        if self.put_errors_in_error_queue:
+            self.error_queue = error_queue
+        else:
+            self.error_queue = None
+
         self.create_components()
 
     def get_input_queue(self):

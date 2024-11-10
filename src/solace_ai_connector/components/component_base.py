@@ -17,6 +17,7 @@ DEFAULT_QUEUE_MAX_DEPTH = 5
 
 
 class ComponentBase:
+
     def __init__(self, module_info, **kwargs):
         self.module_info = module_info
         self.config = kwargs.pop("config", {})
@@ -357,6 +358,7 @@ class ComponentBase:
             "error": {
                 "text": str(exception),
                 "exception": type(exception).__name__,
+                "traceback": traceback.format_exc(),
             },
             "location": {
                 "instance": self.instance_name,
