@@ -95,9 +95,9 @@ class WebSearchDuckDuckGo(WebSearchBase):
         else:
             data = []
             if (
-                "AbstractSource" in message
-                and "Abstract" in message
-                and "AbstractURL" in message
+                message.get("AbstractSource")
+                and message.get("Abstract")
+                and message.get("AbstractURL")
             ):
                 data.append(
                     {

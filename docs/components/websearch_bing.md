@@ -16,7 +16,7 @@ component_config:
 | Parameter | Required | Default | Description |
 | --- | --- | --- | --- |
 | api_key | True |  | Bing API Key. |
-| count | False | 10 | Max sNumber of search results to return. |
+| count | False | 10 | Max number of search results to return. |
 | safesearch | False | Moderate | Safe search setting: Off, Moderate, or Strict. |
 
 

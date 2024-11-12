@@ -30,7 +30,7 @@ flows:
         component_config:
         input_transforms:
           - type: copy
-            source_value: previous:text
+            source_expression: previous:text
             dest_expression: user_data.scraper:url
         input_selection:
           source_expression: user_data.scraper

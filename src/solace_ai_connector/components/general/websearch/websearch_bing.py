@@ -18,7 +18,7 @@ info = {
         {
             "name": "count",
             "required": False,
-            "description": "Max sNumber of search results to return.",
+            "description": "Max number of search results to return.",
             "default": 10,
         },
         {

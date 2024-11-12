@@ -22,6 +22,12 @@ info = {
             "default": 1,
         },
         {
+            "name": "count",
+            "required": False,
+            "description": "Max Number of search results to return.",
+            "default": 10,
+        },
+        {
             "name": "detail",
             "required": False,
             "description": "Return the detail.",
@@ -52,6 +58,7 @@ class WebSearchGoogle(WebSearchBase):
     def init(self):
         self.api_key = self.get_config("api_key")
         self.search_engine_id = self.get_config("search_engine_id")
+        self.count = self.get_config("count", 10)
         self.url = "https://www.googleapis.com/customsearch/v1"
 
     def invoke(self, message, data):
@@ -87,4 +94,4 @@ class WebSearchGoogle(WebSearchBase):
                         "url": item["link"],
                     }
                 )
-            return data
+            return data[: self.count]

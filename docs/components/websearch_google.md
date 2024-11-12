@@ -10,6 +10,7 @@ component_module: websearch_google
 component_config:
   api_key: <string>
   search_engine_id: <string>
+  count: <string>
   detail: <string>
 ```
 
@@ -17,6 +18,7 @@ component_config:
 | --- | --- | --- | --- |
 | api_key | True |  | Google API Key. |
 | search_engine_id | False | 1 | The custom search engine id. |
+| count | False | 10 | Max Number of search results to return. |
 | detail | False | False | Return the detail. |
 
 

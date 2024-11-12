@@ -14,7 +14,7 @@ flows:
       - component_name: stdin
         component_module: stdin_input
 
-      # Using Custom component
+      # Using web component
       - component_name: web_search_component
         component_module: websearch_duckduckgo
         component_config:
