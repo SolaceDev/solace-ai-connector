@@ -18,7 +18,7 @@ info = {
         {
             "name": "count",
             "required": False,
-            "description": "Number of search results to return.",
+            "description": "Max sNumber of search results to return.",
             "default": 10,
         },
         {
@@ -32,11 +32,14 @@ info = {
         "type": "string",
     },
     "output_schema": {
-        "type": "object",
-        "properties": {
-            "title": {"type": "string"},
-            "snippet": {"type": "string"},
-            "url": {"type": "string"},
+        "type": "array",
+        "items": {
+            "type": "object",
+            "properties": {
+                "title": {"type": "string"},
+                "snippet": {"type": "string"},
+                "url": {"type": "string"},
+            },
         },
     },
 }
@@ -50,7 +53,7 @@ class WebSearchBing(WebSearchBase):
 
     def init(self):
         self.api_key = self.get_config("api_key")
-        self.count = self.get_config("count")
+        self.count = self.get_config("count", 10)
         self.safesearch = self.get_config("safesearch")
         self.url = "https://api.bing.microsoft.com/v7.0/search"
 

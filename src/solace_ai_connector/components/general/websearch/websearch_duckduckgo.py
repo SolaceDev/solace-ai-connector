@@ -23,6 +23,12 @@ info = {
             "default": 1,
         },
         {
+            "name": "count",
+            "required": False,
+            "description": "Max Number of search results to return.",
+            "default": 10,
+        },
+        {
             "name": "skip_disambig",
             "required": False,
             "description": "Skip disambiguation.",
@@ -37,11 +43,14 @@ info = {
     ],
     "input_schema": {"type": "string"},
     "output_schema": {
-        "type": "object",
-        "properties": {
-            "title": {"type": "string"},
-            "snippet": {"type": "string"},
-            "url": {"type": "string"},
+        "type": "array",
+        "items": {
+            "type": "object",
+            "properties": {
+                "title": {"type": "string"},
+                "snippet": {"type": "string"},
+                "url": {"type": "string"},
+            },
         },
     },
 }
@@ -56,6 +65,7 @@ class WebSearchDuckDuckGo(WebSearchBase):
     def init(self):
         self.pretty = self.get_config("pretty", 1)
         self.no_html = self.get_config("no_html", 1)
+        self.count = self.get_config("count", 10)
         self.skip_disambig = self.get_config("skip_disambig", 1)
         self.url = "http://api.duckduckgo.com/"
 
@@ -83,8 +93,19 @@ class WebSearchDuckDuckGo(WebSearchBase):
         if self.detail:
             return message
         else:
-            return {
-                "title": message["AbstractSource"],
-                "snippet": message["Abstract"],
-                "url": message["AbstractURL"],
-            }
+            data = [
+                {
+                    "title": message["AbstractSource"],
+                    "snippet": message["Abstract"],
+                    "url": message["AbstractURL"],
+                }
+            ]
+            for message in message["RelatedTopics"]:
+                data.append(
+                    {
+                        "url": message["FirstURL"],
+                        "title": message["Text"],
+                        "snippet": message["Result"],
+                    }
+                )
+        return data[: self.count]

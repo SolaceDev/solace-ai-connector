@@ -30,11 +30,14 @@ info = {
     ],
     "input_schema": {"type": "string"},
     "output_schema": {
-        "type": "object",
-        "properties": {
-            "title": {"type": "string"},
-            "snippet": {"type": "string"},
-            "url": {"type": "string"},
+        "type": "array",
+        "items": {
+            "type": "object",
+            "properties": {
+                "title": {"type": "string"},
+                "snippet": {"type": "string"},
+                "url": {"type": "string"},
+            },
         },
     },
 }

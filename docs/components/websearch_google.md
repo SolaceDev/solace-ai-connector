@@ -30,14 +30,17 @@ component_config:
 ## Component Output Schema
 
 ```
-{
-  title:   <string>,
-  snippet:   <string>,
-  url:   <string>
-}
+[
+  {
+    title:     <string>,
+    snippet:     <string>,
+    url:     <string>
+  },
+  ...
+]
 ```
 | Field | Required | Description |
 | --- | --- | --- |
-| title | False |  |
-| snippet | False |  |
-| url | False |  |
+| [].title | False |  |
+| [].snippet | False |  |
+| [].url | False |  |
