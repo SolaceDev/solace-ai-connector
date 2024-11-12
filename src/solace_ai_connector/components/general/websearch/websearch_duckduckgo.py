@@ -86,26 +86,33 @@ class WebSearchDuckDuckGo(WebSearchBase):
             response = self.parse(response)
             return response
         else:
-            return f"Error: {response.status_code}"
+            raise ValueError(f"Error: {response.status_code}")
 
     # Extract required data from a message
     def parse(self, message):
         if self.detail:
             return message
         else:
-            data = [
-                {
-                    "title": message["AbstractSource"],
-                    "snippet": message["Abstract"],
-                    "url": message["AbstractURL"],
-                }
-            ]
-            for message in message["RelatedTopics"]:
+            data = []
+            if (
+                "AbstractSource" in message
+                and "Abstract" in message
+                and "AbstractURL" in message
+            ):
                 data.append(
                     {
-                        "url": message["FirstURL"],
-                        "title": message["Text"],
-                        "snippet": message["Result"],
+                        "title": message["AbstractSource"],
+                        "snippet": message["Abstract"],
+                        "url": message["AbstractURL"],
                     }
                 )
+            for message in message["RelatedTopics"]:
+                if "FirstURL" in message and "Text" in message and "Result" in message:
+                    data.append(
+                        {
+                            "url": message["FirstURL"],
+                            "title": message["Text"],
+                            "snippet": message["Result"],
+                        }
+                    )
         return data[: self.count]

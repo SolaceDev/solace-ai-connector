@@ -69,7 +69,7 @@ class WebSearchGoogle(WebSearchBase):
             response = self.parse(response)
             return response
         else:
-            return f"Error: {response.status_code}"
+            raise ValueError(f"Error: {response.status_code}")
 
     # Extract required data from a message
     def parse(self, message):
