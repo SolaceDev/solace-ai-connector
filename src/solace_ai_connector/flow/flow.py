@@ -65,14 +65,10 @@ class Flow:
         self.flow_lock_manager = Flow._lock_manager
         self.flow_kv_store = Flow._kv_store
         self.cache_service = connector.cache_service if connector else None
-
+        self.error_queue = error_queue
         self.put_errors_in_error_queue = flow_config.get(
             "put_errors_in_error_queue", True
         )
-        if self.put_errors_in_error_queue:
-            self.error_queue = error_queue
-        else:
-            self.error_queue = None
 
         self.create_components()
 
@@ -135,6 +131,7 @@ class Flow:
                 connector=self.connector,
                 timer_manager=self.connector.timer_manager,
                 cache_service=self.cache_service,
+                put_errors_in_error_queue=self.put_errors_in_error_queue,
             )
             sibling_component = component_instance
 

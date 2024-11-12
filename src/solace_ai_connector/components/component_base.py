@@ -34,6 +34,7 @@ class ComponentBase:
         self.connector = kwargs.pop("connector", None)
         self.timer_manager = kwargs.pop("timer_manager", None)
         self.cache_service = kwargs.pop("cache_service", None)
+        self.put_errors_in_error_queue = kwargs.pop("put_errors_in_error_queue", True)
 
         self.component_config = self.config.get("component_config") or {}
         self.broker_request_response_config = self.config.get(
@@ -89,8 +90,7 @@ class ComponentBase:
             e,
             traceback.format_exc(),
         )
-        if self.error_queue:
-            self.handle_error(e, event)
+        self.handle_error(e, event)
 
     def get_next_event(self):
         # Check if there is a get_next_message defined by a
@@ -354,6 +354,8 @@ class ComponentBase:
         )
 
     def handle_error(self, exception, event):
+        if self.error_queue is None or not self.put_errors_in_error_queue:
+            return
         error_message = {
             "error": {
                 "text": str(exception),
