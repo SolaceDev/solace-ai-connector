@@ -8,9 +8,12 @@ Scrape javascript based websites.
 component_name: <user-supplied-name>
 component_module: web_scraper
 component_config:
+  timeout: <string>
 ```
 
-No configuration parameters
+| Parameter | Required | Default | Description |
+| --- | --- | --- | --- |
+| timeout | False | 10000 | The timeout for the browser in milliseconds. |
 
 
 ## Component Input Schema
