@@ -19,41 +19,45 @@ info = {
             "name": "search_engine_id",
             "required": False,
             "description": "The custom search engine id.",
-            "default": 1
+            "default": 1,
         },
         {
             "name": "detail",
             "required": False,
             "description": "Return the detail.",
-            "default": False
-        }
+            "default": False,
+        },
     ],
-    "input_schema": {
-        "type": "object",
-        "properties": {},
-    },
+    "input_schema": {"type": "string"},
     "output_schema": {
         "type": "object",
-        "properties": {},
+        "properties": {
+            "title": {"type": "string"},
+            "snippet": {"type": "string"},
+            "url": {"type": "string"},
+        },
     },
 }
 
+
 class WebSearchGoogle(WebSearchBase):
+
     def __init__(self, **kwargs):
         super().__init__(info, **kwargs)
         self.init()
-        
+
     def init(self):
         self.api_key = self.get_config("api_key")
         self.search_engine_id = self.get_config("search_engine_id")
         self.url = "https://www.googleapis.com/customsearch/v1"
 
     def invoke(self, message, data):
-        query = data["text"]
+        if type(data) != str or not data:
+            raise ValueError("Invalid search query")
         params = {
-            "q": query,                       # User query
-            "key": self.api_key,              # Google API Key
-            "cx": self.search_engine_id,      # Google custom search engine id
+            "q": data,  # User query
+            "key": self.api_key,  # Google API Key
+            "cx": self.search_engine_id,  # Google custom search engine id
         }
 
         response = requests.get(self.url, params=params)
@@ -70,12 +74,14 @@ class WebSearchGoogle(WebSearchBase):
             return message
         else:
             data = []
-                
+
             # Process the search results to create a summary
-            for item in message.get('items', []):
-                data.append({
-                    "Title": item['title'],
-                    "Snippet": item['snippet'],
-                    "URL": item['link']
-                })
+            for item in message.get("items", []):
+                data.append(
+                    {
+                        "title": item["title"],
+                        "snippet": item["snippet"],
+                        "url": item["link"],
+                    }
+                )
             return data

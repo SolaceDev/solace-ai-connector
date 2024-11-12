@@ -14,42 +14,45 @@ info = {
             "name": "pretty",
             "required": False,
             "description": "Beautify the search output.",
-            "default": 1
+            "default": 1,
         },
         {
             "name": "no_html",
             "required": False,
             "description": "The number of output pages.",
-            "default": 1
+            "default": 1,
         },
         {
             "name": "skip_disambig",
             "required": False,
             "description": "Skip disambiguation.",
-            "default": 1
+            "default": 1,
         },
         {
             "name": "detail",
             "required": False,
             "description": "Return the detail.",
-            "default": False
-        }
+            "default": False,
+        },
     ],
-    "input_schema": {
-        "type": "object",
-        "properties": {},
-    },
+    "input_schema": {"type": "string"},
     "output_schema": {
         "type": "object",
-        "properties": {},
+        "properties": {
+            "title": {"type": "string"},
+            "snippet": {"type": "string"},
+            "url": {"type": "string"},
+        },
     },
 }
 
+
 class WebSearchDuckDuckGo(WebSearchBase):
+
     def __init__(self, **kwargs):
         super().__init__(info, **kwargs)
         self.init()
-        
+
     def init(self):
         self.pretty = self.get_config("pretty", 1)
         self.no_html = self.get_config("no_html", 1)
@@ -57,13 +60,14 @@ class WebSearchDuckDuckGo(WebSearchBase):
         self.url = "http://api.duckduckgo.com/"
 
     def invoke(self, message, data):
-        query = data["text"]
+        if type(data) != str or not data:
+            raise ValueError("Invalid search query")
         params = {
-            "q": query,                         # User query
-            "format": "json",                   # Response format (json by default)
-            "pretty": self.pretty,              # Beautify the output
-            "no_html": self.no_html,            # Remove HTML from the response
-            "skip_disambig": self.skip_disambig # Skip disambiguation
+            "q": data,  # User query
+            "format": "json",  # Response format (json by default)
+            "pretty": self.pretty,  # Beautify the output
+            "no_html": self.no_html,  # Remove HTML from the response
+            "skip_disambig": self.skip_disambig,  # Skip disambiguation
         }
 
         response = requests.get(self.url, params=params)
@@ -73,14 +77,14 @@ class WebSearchDuckDuckGo(WebSearchBase):
             return response
         else:
             return f"Error: {response.status_code}"
-        
+
     # Extract required data from a message
     def parse(self, message):
         if self.detail:
             return message
         else:
             return {
-                    "Title": message['AbstractSource'],
-                    "Snippet": message['Abstract'],
-                    "URL": message['AbstractURL']
-                }
+                "title": message["AbstractSource"],
+                "snippet": message["Abstract"],
+                "url": message["AbstractURL"],
+            }

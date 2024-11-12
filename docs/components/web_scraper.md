@@ -17,15 +17,23 @@ No configuration parameters
 
 ```
 {
-  <freeform-object>
+  url:   <string>
 }
 ```
+| Field | Required | Description |
+| --- | --- | --- |
+| url | False | The URL of the website to scrape. |
 
 
 ## Component Output Schema
 
 ```
 {
-  <freeform-object>
+  title:   <string>,
+  content:   <string>
 }
 ```
+| Field | Required | Description |
+| --- | --- | --- |
+| title | False | The title of the website. |
+| content | False | The content of the website. |

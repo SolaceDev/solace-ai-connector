@@ -23,9 +23,7 @@ component_config:
 ## Component Input Schema
 
 ```
-{
-  <freeform-object>
-}
+<string>
 ```
 
 
@@ -33,6 +31,13 @@ component_config:
 
 ```
 {
-  <freeform-object>
+  title:   <string>,
+  snippet:   <string>,
+  url:   <string>
 }
 ```
+| Field | Required | Description |
+| --- | --- | --- |
+| title | False |  |
+| snippet | False |  |
+| url | False |  |
