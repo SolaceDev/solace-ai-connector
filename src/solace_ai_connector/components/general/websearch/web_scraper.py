@@ -66,16 +66,34 @@ class WebScraper(ComponentBase):
                 err_msg = "Failed to launch the Chromium instance. Please install the browser binaries by running 'playwright install'"
                 log.error(err_msg)
                 raise ValueError(err_msg) from e
-            page = browser.new_page()
-            page.goto(url)
 
-            # Wait for the page to fully load
-            page.wait_for_load_state("networkidle")
+            resp = {}
+            try:
+                context = browser.new_context(
+                    user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+                )
+                log.debug(f"Scraping the website: {url}")
+                page = context.new_page()
+                page.goto(url)
 
-            # Scrape the text content of the page
-            title = page.title()
-            content = page.evaluate("document.body.innerText")
-            resp = {"title": title, "content": content}
-            browser.close()
+                # Wait for the page to fully load
+                page.wait_for_load_state("load", timeout=self.timeout)
 
-            return resp
+                # Scroll to the bottom of the page to load more content
+                page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+
+                # Scrape the text content of the page
+                title = page.title()
+                content = page.evaluate("document.body.innerText")
+                resp = {"title": title, "content": content}
+                log.debug(f"Scraped the website: {url}. \n Content is {content}")
+                browser.close()
+                return resp
+            except Exception as e:
+                log.error(f"Failed to scrape the website: {e}")
+                browser.close()
+                return {
+                    "title": "",
+                    "content": "",
+                    "error": "Failed to scrape the website.",
+                }
