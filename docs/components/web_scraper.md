@@ -13,7 +13,7 @@ component_config:
 
 | Parameter | Required | Default | Description |
 | --- | --- | --- | --- |
-| timeout | False | 10000 | The timeout for the browser in milliseconds. |
+| timeout | False | 30000 | The timeout for the browser in milliseconds. |
 
 
 ## Component Input Schema
