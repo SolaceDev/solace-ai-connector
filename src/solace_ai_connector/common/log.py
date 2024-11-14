@@ -21,7 +21,6 @@ class JsonFormatter(logging.Formatter):
         return json.dumps(log_record)
 
 
-# Function to setup the configuration for the logger
 def setup_log(logFilePath, stdOutLogLevel, fileLogLevel, logFormat):
     """
     Set up the configuration for the logger.
@@ -30,7 +29,7 @@ def setup_log(logFilePath, stdOutLogLevel, fileLogLevel, logFormat):
         logFilePath (str): Path to the log file.
         stdOutLogLevel (int): Logging level for standard output.
         fileLogLevel (int): Logging level for the log file.
-        logFormat (str): Format of the log output ('json' or 'pipe-separated').
+        logFormat (str): Format of the log output ('json' or 'pipe-delimited').
 
     """
     # Set the global logger level to the lowest of the two levels
