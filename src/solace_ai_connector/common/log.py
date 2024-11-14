@@ -1,5 +1,3 @@
-# log.py - Logging utilities
-
 import sys
 import logging
 import logging.handlers
@@ -10,6 +8,9 @@ log = logging.getLogger("solace_ai_connector")
 
 
 class JsonFormatter(logging.Formatter):
+    """
+    Custom formatter to output logs in JSON format.
+    """
 
     def format(self, record):
         log_record = {
@@ -22,6 +23,16 @@ class JsonFormatter(logging.Formatter):
 
 # Function to setup the configuration for the logger
 def setup_log(logFilePath, stdOutLogLevel, fileLogLevel, logFormat):
+    """
+    Set up the configuration for the logger.
+
+    Parameters:
+        logFilePath (str): Path to the log file.
+        stdOutLogLevel (int): Logging level for standard output.
+        fileLogLevel (int): Logging level for the log file.
+        logFormat (str): Format of the log output ('json' or 'pipe-separated').
+
+    """
     # Set the global logger level to the lowest of the two levels
     log.setLevel(min(stdOutLogLevel, fileLogLevel))
 
