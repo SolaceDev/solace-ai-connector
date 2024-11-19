@@ -1,0 +1,220 @@
+[
+  {
+    "cell": null,
+    "code": "E711",
+    "end_location": {
+      "column": 23,
+      "row": 57
+    },
+    "filename": "/Users/artmorozov/wrk/SolaceDev-solace-ai-connector/examples/custom_components/web_search.py",
+    "fix": {
+      "applicability": "unsafe",
+      "edits": [
+        {
+          "content": "url is not None",
+          "end_location": {
+            "column": 23,
+            "row": 57
+          },
+          "location": {
+            "column": 12,
+            "row": 57
+          }
+        }
+      ],
+      "message": "Replace with `cond is not None`"
+    },
+    "location": {
+      "column": 19,
+      "row": 57
+    },
+    "message": "Comparison to `None` should be `cond is not None`",
+    "noqa_row": 57,
+    "url": "https://docs.astral.sh/ruff/rules/none-comparison"
+  },
+  {
+    "cell": null,
+    "code": "E721",
+    "end_location": {
+      "column": 85,
+      "row": 71
+    },
+    "filename": "/Users/artmorozov/wrk/SolaceDev-solace-ai-connector/src/solace_ai_connector/components/general/assembly.py",
+    "fix": null,
+    "location": {
+      "column": 45,
+      "row": 71
+    },
+    "message": "Do not compare types, use `isinstance()`",
+    "noqa_row": 71,
+    "url": "https://docs.astral.sh/ruff/rules/type-comparison"
+  },
+  {
+    "cell": null,
+    "code": "E721",
+    "end_location": {
+      "column": 47,
+      "row": 72
+    },
+    "filename": "/Users/artmorozov/wrk/SolaceDev-solace-ai-connector/src/solace_ai_connector/components/general/llm/langchain/langchain_embeddings.py",
+    "fix": null,
+    "location": {
+      "column": 28,
+      "row": 72
+    },
+    "message": "Do not compare types, use `isinstance()`",
+    "noqa_row": 72,
+    "url": "https://docs.astral.sh/ruff/rules/type-comparison"
+  },
+  {
+    "cell": null,
+    "code": "F811",
+    "end_location": {
+      "column": 12,
+      "row": 5
+    },
+    "filename": "/Users/artmorozov/wrk/SolaceDev-solace-ai-connector/src/solace_ai_connector/components/general/llm/openai/openai_chat_model_with_history.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "",
+          "end_location": {
+            "column": 1,
+            "row": 6
+          },
+          "location": {
+            "column": 1,
+            "row": 5
+          }
+        }
+      ],
+      "message": "Remove definition: `time`"
+    },
+    "location": {
+      "column": 8,
+      "row": 5
+    },
+    "message": "Redefinition of unused `time` from line 3",
+    "noqa_row": 5,
+    "url": "https://docs.astral.sh/ruff/rules/redefined-while-unused"
+  },
+  {
+    "cell": null,
+    "code": "E721",
+    "end_location": {
+      "column": 28,
+      "row": 44
+    },
+    "filename": "/Users/artmorozov/wrk/SolaceDev-solace-ai-connector/src/solace_ai_connector/components/general/websearch/web_scraper.py",
+    "fix": null,
+    "location": {
+      "column": 12,
+      "row": 44
+    },
+    "message": "Do not compare types, use `isinstance()`",
+    "noqa_row": 44,
+    "url": "https://docs.astral.sh/ruff/rules/type-comparison"
+  },
+  {
+    "cell": null,
+    "code": "E721",
+    "end_location": {
+      "column": 29,
+      "row": 61
+    },
+    "filename": "/Users/artmorozov/wrk/SolaceDev-solace-ai-connector/src/solace_ai_connector/components/general/websearch/websearch_bing.py",
+    "fix": null,
+    "location": {
+      "column": 12,
+      "row": 61
+    },
+    "message": "Do not compare types, use `isinstance()`",
+    "noqa_row": 61,
+    "url": "https://docs.astral.sh/ruff/rules/type-comparison"
+  },
+  {
+    "cell": null,
+    "code": "E721",
+    "end_location": {
+      "column": 29,
+      "row": 73
+    },
+    "filename": "/Users/artmorozov/wrk/SolaceDev-solace-ai-connector/src/solace_ai_connector/components/general/websearch/websearch_duckduckgo.py",
+    "fix": null,
+    "location": {
+      "column": 12,
+      "row": 73
+    },
+    "message": "Do not compare types, use `isinstance()`",
+    "noqa_row": 73,
+    "url": "https://docs.astral.sh/ruff/rules/type-comparison"
+  },
+  {
+    "cell": null,
+    "code": "E721",
+    "end_location": {
+      "column": 29,
+      "row": 65
+    },
+    "filename": "/Users/artmorozov/wrk/SolaceDev-solace-ai-connector/src/solace_ai_connector/components/general/websearch/websearch_google.py",
+    "fix": null,
+    "location": {
+      "column": 12,
+      "row": 65
+    },
+    "message": "Do not compare types, use `isinstance()`",
+    "noqa_row": 65,
+    "url": "https://docs.astral.sh/ruff/rules/type-comparison"
+  },
+  {
+    "cell": null,
+    "code": "F841",
+    "end_location": {
+      "column": 30,
+      "row": 124
+    },
+    "filename": "/Users/artmorozov/wrk/SolaceDev-solace-ai-connector/src/solace_ai_connector/components/inputs_outputs/websocket_base.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "",
+          "end_location": {
+            "column": 30,
+            "row": 124
+          },
+          "location": {
+            "column": 25,
+            "row": 124
+          }
+        }
+      ],
+      "message": "Remove assignment to unused variable `e`"
+    },
+    "location": {
+      "column": 29,
+      "row": 124
+    },
+    "message": "Local variable `e` is assigned to but never used",
+    "noqa_row": 124,
+    "url": "https://docs.astral.sh/ruff/rules/unused-variable"
+  },
+  {
+    "cell": null,
+    "code": "E721",
+    "end_location": {
+      "column": 38,
+      "row": 1093
+    },
+    "filename": "/Users/artmorozov/wrk/SolaceDev-solace-ai-connector/tests/test_invoke.py",
+    "fix": null,
+    "location": {
+      "column": 12,
+      "row": 1093
+    },
+    "message": "Do not compare types, use `isinstance()`",
+    "noqa_row": 1093,
+    "url": "https://docs.astral.sh/ruff/rules/type-comparison"
+  }
+]
