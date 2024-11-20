@@ -36,6 +36,13 @@ documentation = "https://github.com/SolaceLabs/solace-ai-connector/blob/main/doc
 solace-ai-connector = "solace_ai_connector.main:main"
 solace-ai-connector-gen-docs = "solace_ai_connector.tools.gen_component_docs:main"
 
+[tool.hatch.envs.hatch-test]
+installer = "pip"
+
+# # Specify minimum and maximum Python versions to test
+[[tool.hatch.envs.hatch-test.matrix]]
+python = ["3.9", "3.12"]
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/solace_ai_connector"]
 
