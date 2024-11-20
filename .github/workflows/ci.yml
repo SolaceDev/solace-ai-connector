@@ -31,7 +31,7 @@ jobs:
           ssh-key: ${{ secrets.COMMIT_KEY }}
 
       - name: Set up Hatch
-        uses: SolaceDev/solace-public-workflows/.github/actions/hatch-setup@latest
+        uses: SolaceDev/solace-public-workflows/.github/actions/hatch-setup@test
         with:
           min-python-version: "3.10"
       - name: Set Up Docker Buildx
