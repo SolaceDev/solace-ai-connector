@@ -28,6 +28,10 @@ litellm_chat_info_base.update(
                         "required": ["role", "content"],
                     },
                 },
+                "stream": {
+                    "type": "boolean",
+                    "description": "Whether to stream the response - overwrites llm_mode",
+                },
             },
             "required": ["messages"],
         },
@@ -73,8 +77,13 @@ class LiteLLMChatModelBase(LiteLLMBase):
     def invoke(self, message, data):
         """invoke the model"""
         messages = data.get("messages", [])
+        stream = data.get("stream")
 
-        if self.llm_mode == "stream":
+        should_stream = self.llm_mode == "stream"
+        if stream is not None:
+            should_stream = stream
+
+        if should_stream:
             return self.invoke_stream(message, messages)
         else:
             return self.invoke_non_stream(messages)

@@ -97,6 +97,10 @@ openai_info_base = {
                     "required": ["role", "content"],
                 },
             },
+            "stream": {
+                "type": "boolean",
+                "description": "Whether to stream the response - overwrites llm_mode",
+            },
         },
         "required": ["messages"],
     },
@@ -134,6 +138,7 @@ openai_info_base = {
 
 
 class OpenAIChatModelBase(ComponentBase):
+
     def __init__(self, module_info, **kwargs):
         super().__init__(module_info, **kwargs)
         self.init()
@@ -156,12 +161,17 @@ class OpenAIChatModelBase(ComponentBase):
 
     def invoke(self, message, data):
         messages = data.get("messages", [])
+        stream = data.get("stream")
 
         client = OpenAI(
             api_key=self.get_config("api_key"), base_url=self.get_config("base_url")
         )
 
-        if self.llm_mode == "stream":
+        should_stream = self.llm_mode == "stream"
+        if stream is not None:
+            should_stream = stream
+
+        if should_stream:
             return self.invoke_stream(client, message, messages)
         else:
             max_retries = 3
@@ -171,7 +181,7 @@ class OpenAIChatModelBase(ComponentBase):
                         messages=messages,
                         model=self.model,
                         temperature=self.temperature,
-                        response_format={"type": self.response_format}
+                        response_format={"type": self.response_format},
                     )
                     return {"content": response.choices[0].message.content}
                 except Exception as e:
