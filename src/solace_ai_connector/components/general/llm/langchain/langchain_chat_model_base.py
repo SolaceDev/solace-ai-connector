@@ -46,6 +46,11 @@ info_base = {
             "description": "The mode for streaming results: 'none' or 'stream'. 'stream' will just stream the results to the named flow. 'none' will wait for the full response.",
         },
         {
+            "name": "allow_overwrite_llm_mode",
+            "required": False,
+            "description": "Whether to allow the llm_mode to be overwritten by the `stream` from the input message.",
+        },
+        {
             "name": "stream_to_flow",
             "required": False,
             "description": "Name the flow to stream the output to - this must be configured for llm_mode='stream'.",
@@ -110,6 +115,7 @@ class LangChainChatModelBase(LangChainBase):
     def __init__(self, info, **kwargs):
         super().__init__(info, **kwargs)
         self.llm_mode = self.get_config("llm_mode", "none")
+        self.allow_overwrite_llm_mode = self.get_config("allow_overwrite_llm_mode")
         self.stream_to_flow = self.get_config("stream_to_flow", "")
         self.stream_batch_size = self.get_config("stream_batch_size", 15)
 
@@ -137,7 +143,11 @@ class LangChainChatModelBase(LangChainBase):
         stream = data.get("stream")
 
         should_stream = self.llm_mode == "stream"
-        if stream is not None:
+        if (
+            self.allow_overwrite_llm_mode
+            and stream is not None
+            and isinstance(stream, bool)
+        ):
             should_stream = stream
 
         llm_res = self.invoke_model(
