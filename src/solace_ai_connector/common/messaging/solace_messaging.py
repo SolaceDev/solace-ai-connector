@@ -35,6 +35,7 @@ from ..log import log
 
 
 class MessageHandlerImpl(MessageHandler):
+
     def __init__(self, persistent_receiver: PersistentMessageReceiver):
         self.receiver: PersistentMessageReceiver = persistent_receiver
         self.persistent_receiver: PersistentMessageReceiver = None
@@ -54,6 +55,7 @@ class MessageHandlerImpl(MessageHandler):
 
 
 class MessagePublishReceiptListenerImpl(MessagePublishReceiptListener):
+
     def __init__(self, callback=None):
         self.callback = callback
 
@@ -67,6 +69,7 @@ class MessagePublishReceiptListenerImpl(MessagePublishReceiptListener):
 class ServiceEventHandler(
     ReconnectionListener, ReconnectionAttemptListener, ServiceInterruptionListener
 ):
+
     def on_reconnected(self, service_event: ServiceEvent):
         log.debug("Reconnected to broker: %s", service_event.get_cause())
         log.debug("Message: %s", service_event.get_message())
@@ -92,6 +95,7 @@ def set_python_solace_log_level(level: str):
 
 # Create SolaceMessaging class inheriting from Messaging
 class SolaceMessaging(Messaging):
+
     def __init__(self, broker_properties: dict):
         super().__init__(broker_properties)
         self.persistent_receivers = []
@@ -136,8 +140,15 @@ class SolaceMessaging(Messaging):
             .build()
         )
 
-        # Blocking connect thread
-        self.messaging_service.connect()
+        try:
+            # Blocking connect thread
+            self.messaging_service.connect()
+        except KeyboardInterrupt:
+            log.error("Interrupt received. Disconnecting from messaging service.")
+            self.disconnect()
+        except Exception as e:
+            log.error(f"Failed to connect to messaging service: {e}")
+            raise
 
         # Event Handling for the messaging service
         self.service_handler = ServiceEventHandler()
