@@ -146,6 +146,7 @@ class SolaceMessaging(Messaging):
         except KeyboardInterrupt:
             log.error("Interrupt received. Disconnecting from messaging service.")
             self.disconnect()
+            exit()
         except Exception as e:
             log.error(f"Failed to connect to messaging service: {e}")
             raise
