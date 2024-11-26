@@ -18,7 +18,7 @@ jobs:
     with:
       min-python-version: "3.10"
       whitesource_product_name: "solaceai"
-      whitesource_project_name: "${{ github.event.repository.name }}"
+      whitesource_project_name: "solace-ai-connector"
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
