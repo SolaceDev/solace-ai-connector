@@ -116,6 +116,11 @@ class LiteLLMChatModelBase(LiteLLMBase):
         self.llm_mode = self.get_config("llm_mode")
         self.stream_batch_size = self.get_config("stream_batch_size")
 
+        if self.stream_to_flow and self.stream_to_next_component:
+            raise ValueError(
+                "stream_to_flow and stream_to_next_component are mutually exclusive"
+            )
+
     def invoke(self, message, data):
         """invoke the model"""
         messages = data.get("messages", [])
