@@ -56,7 +56,7 @@ openai_info_base = {
             "name": "llm_mode",
             "required": False,
             "description": (
-                "The mode for streaming results: 'sync' or 'stream'. 'stream' "
+                "The mode for streaming results: 'none' or 'stream'. 'stream' "
                 "will just stream the results to the named flow. 'none' will "
                 "wait for the full response."
             ),
