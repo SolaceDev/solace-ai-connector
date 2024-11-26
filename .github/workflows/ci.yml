@@ -17,12 +17,12 @@ jobs:
     uses: SolaceDev/solace-public-workflows/.github/workflows/hatch_ci.yml@security_tools
     with:
       min-python-version: "3.10"
+      whitesource_product_name: "solaceai"
+      whitesource_project_name: "${{ github.event.repository.name }}"
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
       WHITESOURCE_API_KEY: ${{ secrets.WHITESOURCE_API_KEY }}
-      WHITESOURCE_PRODUCT_NAME: ${{ vars.WHITESOURCE_PRODUCT_NAME }}
-      WHITESOURCE_PROJECT_NAME: ${{ vars.WHITESOURCE_PROJECT_NAME }}
   # structure-test:
   #   name: Test Docker Image Structure
   #   runs-on: ubuntu-latest
