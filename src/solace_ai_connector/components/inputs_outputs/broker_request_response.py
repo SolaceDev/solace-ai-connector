@@ -257,6 +257,7 @@ class BrokerRequestResponse(BrokerBase):
             topic = broker_message.get("topic")
             user_properties = broker_message.get("user_properties", {})
 
+        streaming_complete_expression = None
         metadata_json = user_properties.get(
             "__solace_ai_connector_broker_request_reply_metadata__"
         )
@@ -347,6 +348,7 @@ class BrokerRequestResponse(BrokerBase):
         stream = False
         if "stream" in data:
             stream = data["stream"]
+        streaming_complete_expression = None
         if "streaming_complete_expression" in data:
             streaming_complete_expression = data["streaming_complete_expression"]
 

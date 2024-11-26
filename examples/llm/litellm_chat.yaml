@@ -1,27 +1,35 @@
-# This will create a flow like this:
-#    Solace -> Anthropic -> Solace
+# This process will create a flow where the LiteLLM agent distributes requests across multiple LLM models.
+#    Solace -> LiteLLM -> Solace
 #
 # It will subscribe to `demo/question` and expect an event with the payload:
 #
 # The input message has the following schema:
 # {
-#   "query": "<question or request as text>",
-#   "stream": false
+#   "text": "<question or request as text>"
 # }
 #
+# Output is published to the topic `demo/question/response`
+# 
 # It will then send an event back to Solace with the topic: `demo/question/response`
 #
 # Dependencies:
-# pip install -U langchain-anthropic
+# pip install litellm
 #
 # required ENV variables:
+# - OPENAI_API_KEY
+# - OPENAI_API_ENDPOINT
+# - OPENAI_MODEL_NAME
+# - ANTHROPIC_MODEL_NAME
 # - ANTHROPIC_API_KEY
 # - ANTHROPIC_API_ENDPOINT
-# - MODEL_NAME
 # - SOLACE_BROKER_URL
 # - SOLACE_BROKER_USERNAME
 # - SOLACE_BROKER_PASSWORD
 # - SOLACE_BROKER_VPN
+#
+# Supported models: OpenAI, Anthropic, Azure, Huggingface, Ollama, Google VertexAI
+# More models are available in https://docs.litellm.ai/docs/providers
+# Note: For most models, the model provider’s name should be used as a prefix for the model name (e.g. azure/chatgpt-v-2)
 
 ---
 log:
@@ -37,9 +45,9 @@ shared_config:
       broker_password: ${SOLACE_BROKER_PASSWORD}
       broker_vpn: ${SOLACE_BROKER_VPN}
 
-# Take from Slack and publish to Solace
+# Take from input broker and publish back to Solace
 flows:
-  # Slack chat input processing
+  # broker input processing
   - name: Simple template to LLM
     components:
       # Input from a Solace broker
@@ -58,32 +66,35 @@ flows:
       # Do an LLM request
       #
       - component_name: llm_request
-        component_module: langchain_chat_model
+        component_module: litellm_chat_model
         component_config:
-          langchain_module: langchain_anthropic
-          langchain_class: ChatAnthropic
-          langchain_component_config:
-            api_key: ${ANTHROPIC_API_KEY}
-            base_url: ${ANTHROPIC_API_ENDPOINT}
-            model: ${MODEL_NAME}
-            temperature: 0.01
-          llm_mode: stream
-          allow_overwrite_llm_mode: true
-          stream_to_flow: stream_output
+          llm_mode: none # options: none or stream
+          load_balancer:
+            - model_name: "gpt-4o" # model alias
+              litellm_params:
+                    model: ${OPENAI_MODEL_NAME}
+                    api_key: ${OPENAI_API_KEY}
+                    api_base: ${OPENAI_API_ENDPOINT}
+                    temperature: 0.01
+                    # add any other parameters here
+            - model_name: "claude-3-5-sonnet" # model alias
+              litellm_params:
+                    model: ${ANTHROPIC_MODEL_NAME}
+                    api_key: ${ANTHROPIC_API_KEY}
+                    api_base: ${ANTHROPIC_API_ENDPOINT}
+                    # add any other parameters here
+            # add more models here
         input_transforms:
           - type: copy
             source_expression: |
               template:You are a helpful AI assistant. Please help with the user's request below:
               <user-question>
-              {{text://input.payload:query}}
+              {{text://input.payload:text}}
               </user-question>
             dest_expression: user_data.llm_input:messages.0.content
           - type: copy
             source_expression: static:user
             dest_expression: user_data.llm_input:messages.0.role
-          - type: copy
-            source_expression: input.payload:stream
-            dest_expression: user_data.llm_input:stream
         input_selection:
           source_expression: user_data.llm_input
 
@@ -101,26 +112,6 @@ flows:
             dest_expression: user_data.output:payload
           - type: copy
             source_expression: template:{{text://input.topic}}/response
-            dest_expression: user_data.output:topic
-        input_selection:
-          source_expression: user_data.output
-
-  - name: stream_output
-    components:
-      # Send response back to broker
-      - component_name: send_response
-        component_module: broker_output
-        component_config:
-          <<: *broker_connection
-          payload_encoding: utf-8
-          payload_format: json
-          copy_user_properties: true
-        input_transforms:
-          - type: copy
-            source_expression: input.payload
-            dest_expression: user_data.output:payload
-          - type: copy
-            source_value: demo/question/stream
             dest_expression: user_data.output:topic
         input_selection:
           source_expression: user_data.output

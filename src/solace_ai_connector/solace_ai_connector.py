@@ -91,7 +91,7 @@ class SolaceAiConnector:
 
     def wait_for_flows(self):
         """Wait for the flows to finish"""
-        while True:
+        while not self.stop_signal.is_set():
             try:
                 for flow in self.flows:
                     flow.wait_for_threads()
@@ -119,9 +119,10 @@ class SolaceAiConnector:
         """Setup logging"""
         log_config = self.config.get("log", {})
         stdout_log_level = log_config.get("stdout_log_level", "INFO")
-        file_log_level = log_config.get("file_log_level", "DEBUG")
+        log_file_level = log_config.get("log_file_level", "DEBUG")
         log_file = log_config.get("log_file", "solace_ai_connector.log")
-        setup_log(log_file, stdout_log_level, file_log_level)
+        log_format = log_config.get("log_format", "pipe-delimited")
+        setup_log(log_file, stdout_log_level, log_file_level, log_format)
 
     def setup_trace(self):
         """Setup trace"""
@@ -216,6 +217,5 @@ class SolaceAiConnector:
         self.stop_signal.set()
         self.timer_manager.stop()  # Stop the timer manager first
         self.cache_service.stop()  # Stop the cache service
-        self.wait_for_flows()
         if self.trace_thread:
             self.trace_thread.join()
