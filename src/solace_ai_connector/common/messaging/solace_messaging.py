@@ -140,12 +140,8 @@ class SolaceMessaging(Messaging):
             .build()
         )
 
-        try:
-            # Blocking connect thread
-            self.messaging_service.connect()
-        except Exception as e:
-            log.error(f"Failed to connect to messaging service: {e}")
-            raise
+        # Blocking connect thread
+        self.messaging_service.connect()
 
         # Event Handling for the messaging service
         self.service_handler = ServiceEventHandler()
