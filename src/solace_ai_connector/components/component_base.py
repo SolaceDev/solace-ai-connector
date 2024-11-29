@@ -17,6 +17,7 @@ from ..common.monitoring import Monitoring
 
 DEFAULT_QUEUE_TIMEOUT_MS = 1000
 DEFAULT_QUEUE_MAX_DEPTH = 5
+DEFAULT_EVENT_MESSAGE_RETRY_SLEEP_TIME = 60
 
 
 class ComponentBase:
@@ -79,8 +80,10 @@ class ComponentBase:
                 if event is not None:
                     self.process_event_with_tracing(event)
             except AssertionError as e:
+                time.sleep(DEFAULT_EVENT_MESSAGE_RETRY_SLEEP_TIME)
                 raise e
             except Exception as e:
+                time.sleep(DEFAULT_EVENT_MESSAGE_RETRY_SLEEP_TIME)
                 self.handle_component_error(e, event)
 
         self.stop_component()
@@ -475,7 +478,7 @@ class ComponentBase:
                 metrics = self.get_metrics()
                 for metric_name, metric_value in metrics.items():
                     monitoring.send_metric(metric_name, metric_value)
-                    log.info("Sent metric %s: %s", metric_name, metric_value)
+                    log.debug("Sent metric %s: %s", metric_name, metric_value)
                 time.sleep(10)
         except KeyboardInterrupt:
             log.info("Monitoring stopped.")
