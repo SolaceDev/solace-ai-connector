@@ -17,7 +17,6 @@ from ..common.monitoring import Monitoring
 
 DEFAULT_QUEUE_TIMEOUT_MS = 1000
 DEFAULT_QUEUE_MAX_DEPTH = 5
-DEFAULT_EVENT_MESSAGE_RETRY_SLEEP_TIME = 10
 
 
 class ComponentBase:
@@ -55,6 +54,7 @@ class ComponentBase:
         self.stop_thread_event = threading.Event()
         self.current_message = None
         self.current_message_has_been_discarded = False
+        self.event_message_repeat_sleep_time = 1
 
         self.log_identifier = f"[{self.instance_name}.{self.flow_name}.{self.name}] "
 
@@ -62,6 +62,13 @@ class ComponentBase:
         self.setup_transforms()
         self.setup_communications()
         self.setup_broker_request_response()
+
+    def grow_sleep_time(self):
+        if self.event_message_repeat_sleep_time < 60:
+            self.event_message_repeat_sleep_time *= 2
+
+    def reset_sleep_time(self):
+        self.event_message_repeat_sleep_time = 1
 
     def create_thread_and_run(self):
         self.thread = threading.Thread(target=self.run)
@@ -79,11 +86,14 @@ class ComponentBase:
                 event = self.get_next_event()
                 if event is not None:
                     self.process_event_with_tracing(event)
+                    self.reset_sleep_time()
             except AssertionError as e:
-                time.sleep(DEFAULT_EVENT_MESSAGE_RETRY_SLEEP_TIME)
+                time.sleep(self.event_message_repeat_sleep_time)
+                self.grow_sleep_time()
                 raise e
             except Exception as e:
-                time.sleep(DEFAULT_EVENT_MESSAGE_RETRY_SLEEP_TIME)
+                time.sleep(self.event_message_repeat_sleep_time)
+                self.grow_sleep_time()
                 self.handle_component_error(e, event)
 
         self.stop_component()

@@ -46,6 +46,8 @@ class SolaceAiConnector:
             if on_flow_creation:
                 on_flow_creation(self.flows)
 
+            self.monitoring.set_readiness(True)
+
             log.info("Solace AI Event Connector started successfully")
         except Exception as e:
             log.error("Error during Solace AI Event Connector startup: %s", str(e))
@@ -221,3 +223,6 @@ class SolaceAiConnector:
         self.cache_service.stop()  # Stop the cache service
         if self.trace_thread:
             self.trace_thread.join()
+
+        self.monitoring.set_liveness(False)
+        self.monitoring.set_readiness(False)

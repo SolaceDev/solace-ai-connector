@@ -11,6 +11,8 @@ class Monitoring:
 
     _instance = None
     _initialized = False
+    _ready = False
+    _live = False
 
     def __new__(cls, *args, **kwargs):
         if not cls._instance:
@@ -58,6 +60,22 @@ class Monitoring:
 
             initialize(**options)
         self._initialized = True
+
+    def set_readiness(self, ready: bool) -> None:
+        """
+        Set the readiness status of the MetricCollector.
+
+        :param ready: Readiness status
+        """
+        self._ready = ready
+
+    def set_liveness(self, live: bool) -> None:
+        """
+        Set the liveness status of the MetricCollector.
+
+        :param live: Liveness status
+        """
+        self._live = live
 
     def send_metric(self, metric_name: str, metric_value: Any) -> None:
         """
