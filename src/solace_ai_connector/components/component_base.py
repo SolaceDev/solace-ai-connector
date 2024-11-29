@@ -17,7 +17,7 @@ from ..common.monitoring import Monitoring
 
 DEFAULT_QUEUE_TIMEOUT_MS = 1000
 DEFAULT_QUEUE_MAX_DEPTH = 5
-DEFAULT_EVENT_MESSAGE_RETRY_SLEEP_TIME = 60
+DEFAULT_EVENT_MESSAGE_RETRY_SLEEP_TIME = 10
 
 
 class ComponentBase:
@@ -474,7 +474,7 @@ class ComponentBase:
         monitoring = Monitoring()
         try:
             while not self.stop_signal.is_set():
-                # Collect and send metrics every 60 seconds
+                # Collect and send metrics every 10 seconds
                 metrics = self.get_metrics()
                 for metric_name, metric_value in metrics.items():
                     monitoring.send_metric(metric_name, metric_value)
