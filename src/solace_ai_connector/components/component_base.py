@@ -86,7 +86,7 @@ class ComponentBase:
                 event = self.get_next_event()
                 if event is not None:
                     self.process_event_with_tracing(event)
-                    self.reset_sleep_time()
+                self.reset_sleep_time()
             except AssertionError as e:
                 try:
                     time.sleep(self.event_message_repeat_sleep_time)
