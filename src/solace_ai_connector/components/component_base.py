@@ -88,11 +88,17 @@ class ComponentBase:
                     self.process_event_with_tracing(event)
                     self.reset_sleep_time()
             except AssertionError as e:
-                time.sleep(self.event_message_repeat_sleep_time)
+                try:
+                    time.sleep(self.event_message_repeat_sleep_time)
+                except KeyboardInterrupt:
+                    raise e
                 self.grow_sleep_time()
                 raise e
             except Exception as e:
-                time.sleep(self.event_message_repeat_sleep_time)
+                try:
+                    time.sleep(self.event_message_repeat_sleep_time)
+                except KeyboardInterrupt:
+                    raise e
                 self.grow_sleep_time()
                 self.handle_component_error(e, event)
 
