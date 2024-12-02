@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   ci:
-    uses: SolaceDev/solace-public-workflows/.github/workflows/hatch_ci.yml@ws_test
+    uses: SolaceDev/solace-public-workflows/.github/workflows/hatch_ci.yml@main
     with:
       min-python-version: "3.10"
       whitesource_product_name: "solaceai"
@@ -24,38 +24,38 @@ jobs:
       WHITESOURCE_API_KEY: ${{ secrets.WHITESOURCE_API_KEY }}
       MANIFEST_AWS_ACCESS_KEY_ID: ${{ secrets.MANIFEST_READ_ONLY_AWS_ACCESS_KEY_ID }}
       MANIFEST_AWS_SECRET_ACCESS_KEY: ${{ secrets.MANIFEST_READ_ONLY_AWS_SECRET_ACCESS_KEY }}
-  # structure-test:
-  #   name: Test Docker Image Structure
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v4
-  #       with:
-  #         fetch-depth: 0
-  #         ssh-key: ${{ secrets.COMMIT_KEY }}
+  structure-test:
+    name: Test Docker Image Structure
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ssh-key: ${{ secrets.COMMIT_KEY }}
 
-  #     - name: Set up Hatch
-  #       uses: SolaceDev/solace-public-workflows/.github/actions/hatch-setup@main
-  #       with:
-  #         min-python-version: "3.10"
-  #     - name: Set Up Docker Buildx
-  #       id: builder
-  #       uses: docker/setup-buildx-action@v3
+      - name: Set up Hatch
+        uses: SolaceDev/solace-public-workflows/.github/actions/hatch-setup@main
+        with:
+          min-python-version: "3.10"
+      - name: Set Up Docker Buildx
+        id: builder
+        uses: docker/setup-buildx-action@v3
 
-  #     - name: Prepare env file
-  #       run: |
-  #         cp .env_template .env
+      - name: Prepare env file
+        run: |
+          cp .env_template .env
 
-  #     - name: Build Docker Image
-  #       uses: docker/build-push-action@v6
-  #       with:
-  #         push: false
-  #         tags: solace/solace-ai-connector:local
-  #         platforms: linux/amd64
-  #         builder: ${{ steps.builder.outputs.name }}
-  #         load: true
+      - name: Build Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          push: false
+          tags: solace/solace-ai-connector:local
+          platforms: linux/amd64
+          builder: ${{ steps.builder.outputs.name }}
+          load: true
 
-  #     - name: Run Structure Tests
-  #       shell: bash
-  #       run: |
-  #         hatch run make structure-test
+      - name: Run Structure Tests
+        shell: bash
+        run: |
+          hatch run make structure-test
