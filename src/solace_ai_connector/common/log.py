@@ -100,10 +100,10 @@ def setup_log(
         if rollingpolicy:
             if "file-name-pattern" not in rollingpolicy:
                 log.warning(
-                    "file-name-pattern is required in rollingpolicy. Continuing with default value '${LOG_FILE}.%d{yyyy-MM-dd}.%i'."
+                    "file-name-pattern is required in rollingpolicy. Continuing with default value '{LOG_FILE}.%d{yyyy-MM-dd}.%i'."
                 )
             file_name_pattern = rollingpolicy.get(
-                "file-name-pattern", "${LOG_FILE}.%d{yyyy-MM-dd}.%i"
+                "file-name-pattern", "{LOG_FILE}.%d{yyyy-MM-dd}.%i.gz"
             )
 
             if "max-file-size" not in rollingpolicy:
@@ -129,7 +129,7 @@ def setup_log(
             total_size_cap = convert_to_bytes(total_size_cap)
 
             # Generate the log file name using the pattern
-            log_file_name = file_name_pattern.replace("${LOG_FILE}", logFilePath)
+            log_file_name = file_name_pattern.replace("{LOG_FILE}", logFilePath)
             log_file_name = log_file_name.replace(
                 "%d{yyyy-MM-dd}", datetime.now().strftime("%Y-%m-%d")
             )
@@ -139,7 +139,7 @@ def setup_log(
 
             # Overwrite the file handler with a rotating file handler
             file_handler = logging.handlers.RotatingFileHandler(
-                filename=logFilePath,
+                filename=log_file_name,
                 backupCount=max_history,
                 maxBytes=max_file_size,
             )
