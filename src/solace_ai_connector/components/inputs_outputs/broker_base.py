@@ -115,5 +115,4 @@ class BrokerBase(ComponentBase):
         metrics: "ApiMetrics" = self.messaging_service.messaging_service.metrics()
         str_metrics = str(metrics)
         stats_dict = json.loads(str_metrics)
-        log.debug(f"API metrics: {stats_dict}\n")
         return stats_dict

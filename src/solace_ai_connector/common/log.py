@@ -69,10 +69,7 @@ def setup_log(
     stdOutLogLevel,
     fileLogLevel,
     logFormat,
-    file_name_pattern,
-    max_file_size,
-    max_history,
-    total_size_cap,
+    logBack,
 ):
     """
     Set up the configuration for the logger.
@@ -82,14 +79,8 @@ def setup_log(
         stdOutLogLevel (int): Logging level for standard output.
         fileLogLevel (int): Logging level for the log file.
         logFormat (str): Format of the log output ('jsonl' or 'pipe-delimited').
-        file_name_pattern (str): Pattern for the log file names.
-        max_file_size (str): Maximum size of a log file before rolling over (e.g., '10MB').
-        max_history (int): Maximum number of backup files to keep.
-        total_size_cap (str): Maximum total size of all log files (e.g., '1GB').
+        logBack (dict): Rolling log file configuration.
     """
-    # Convert size strings to bytes
-    max_file_size = convert_to_bytes(max_file_size)
-    total_size_cap = convert_to_bytes(total_size_cap)
 
     # Set the global logger level to the lowest of the two levels
     log.setLevel(min(stdOutLogLevel, fileLogLevel))
@@ -103,34 +94,73 @@ def setup_log(
     with open(logFilePath, "w") as file:
         file.write("")
 
-    # Generate the log file name using the pattern
-    log_file_name = file_name_pattern.replace("${LOG_FILE}", logFilePath)
-    log_file_name = log_file_name.replace(
-        "%d{yyyy-MM-dd}", datetime.now().strftime("%Y-%m-%d")
-    )
-    log_file_name = log_file_name.replace("%i", "0")  # Initial index for the log file
+    file_handler = logging.FileHandler(filename=logFilePath, mode="a")
+    if logBack:
+        rollingpolicy = logBack.get("rollingpolicy", {})
+        if rollingpolicy:
+            if "file_name_pattern" not in rollingpolicy:
+                log.warning(
+                    "file_name_pattern is required in rollingpolicy. Continuing with default value '${LOG_FILE}.%d{yyyy-MM-dd}.%i'."
+                )
+            file_name_pattern = rollingpolicy.get(
+                "file_name_pattern", "${LOG_FILE}.%d{yyyy-MM-dd}.%i"
+            )
 
-    file_handler = logging.handlers.RotatingFileHandler(
-        filename=logFilePath,
-        backupCount=max_history,
-        maxBytes=max_file_size,
-    )
+            if "max-file-size" not in rollingpolicy:
+                log.warning(
+                    "max-file-size is required in rollingpolicy. Continuing with default value '1GB'."
+                )
+            max_file_size = rollingpolicy.get("max-file-size", "1GB")
+
+            if "max-history" not in rollingpolicy:
+                log.warning(
+                    "max-history is required in rollingpolicy. Continuing with default value '7'."
+                )
+            max_history = rollingpolicy.get("max-history", 7)
+
+            if "total-size-cap" not in rollingpolicy:
+                log.warning(
+                    "total-size-cap is required in rollingpolicy. Continuing with default value '1TB'."
+                )
+            total_size_cap = rollingpolicy.get("total-size-cap", "1TB")
+
+            # Convert size strings to bytes
+            max_file_size = convert_to_bytes(max_file_size)
+            total_size_cap = convert_to_bytes(total_size_cap)
+
+            # Generate the log file name using the pattern
+            log_file_name = file_name_pattern.replace("${LOG_FILE}", logFilePath)
+            log_file_name = log_file_name.replace(
+                "%d{yyyy-MM-dd}", datetime.now().strftime("%Y-%m-%d")
+            )
+            log_file_name = log_file_name.replace(
+                "%i", "0"
+            )  # Initial index for the log file
+
+            # Overwrite the file handler with a rotating file handler
+            file_handler = logging.handlers.RotatingFileHandler(
+                filename=logFilePath,
+                backupCount=max_history,
+                maxBytes=max_file_size,
+            )
+
     if logFormat == "jsonl":
         file_formatter = JsonlFormatter()
     else:
         file_formatter = logging.Formatter("%(asctime)s |  %(levelname)s: %(message)s")
+
     file_handler.setFormatter(file_formatter)
     file_handler.setLevel(fileLogLevel)
 
     log.addHandler(file_handler)
     log.addHandler(stream_handler)
 
-    # Ensure total size cap is not exceeded
-    if total_size_cap > 0:
-        log.addFilter(lambda record: check_total_size(total_size_cap))
+    # # Ensure total size cap is not exceeded
+    # if total_size_cap > 0:
+    #     log.addFilter(lambda record: check_total_size(total_size_cap))
 
-    # Archive the log file when it exceeds maxBytes
-    log.addFilter(
-        lambda record: archive_log_file(logFilePath, log_file_name, max_file_size)
-        or True
-    )
+    # # Archive the log file when it exceeds maxBytes
+    # log.addFilter(
+    #     lambda record: archive_log_file(logFilePath, log_file_name, max_file_size)
+    #     or True
+    # )

@@ -495,6 +495,6 @@ class ComponentBase:
                 for metric_name, metric_value in metrics.items():
                     monitoring.send_metric(metric_name, metric_value)
                     log.debug("Sent metric %s: %s", metric_name, metric_value)
-                time.sleep(10)
+                time.sleep(60)
         except KeyboardInterrupt:
             log.info("Monitoring stopped.")
