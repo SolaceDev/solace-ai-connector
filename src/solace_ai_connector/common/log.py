@@ -98,12 +98,12 @@ def setup_log(
     if logBack:
         rollingpolicy = logBack.get("rollingpolicy", {})
         if rollingpolicy:
-            if "file_name_pattern" not in rollingpolicy:
+            if "file-name-pattern" not in rollingpolicy:
                 log.warning(
-                    "file_name_pattern is required in rollingpolicy. Continuing with default value '${LOG_FILE}.%d{yyyy-MM-dd}.%i'."
+                    "file-name-pattern is required in rollingpolicy. Continuing with default value '${LOG_FILE}.%d{yyyy-MM-dd}.%i'."
                 )
             file_name_pattern = rollingpolicy.get(
-                "file_name_pattern", "${LOG_FILE}.%d{yyyy-MM-dd}.%i"
+                "file-name-pattern", "${LOG_FILE}.%d{yyyy-MM-dd}.%i"
             )
 
             if "max-file-size" not in rollingpolicy:
