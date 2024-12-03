@@ -493,8 +493,9 @@ class ComponentBase:
                 # Collect and send metrics every 10 seconds
                 metrics = self.get_metrics()
                 for metric_name, metric_value in metrics.items():
-                    monitoring.send_metric(metric_name, metric_value)
-                    log.debug("Sent metric %s: %s", metric_name, metric_value)
+                    pass
+                    # monitoring.send_metric(metric_name, metric_value)
+                    # log.debug("Sent metric %s: %s", metric_name, metric_value)
                 time.sleep(60)
         except KeyboardInterrupt:
             log.info("Monitoring stopped.")
