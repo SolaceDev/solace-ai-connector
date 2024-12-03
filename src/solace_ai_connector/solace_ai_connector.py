@@ -11,6 +11,7 @@ from .flow.flow import Flow
 from .flow.timer_manager import TimerManager
 from .common.event import Event, EventType
 from .services.cache_service import CacheService, create_storage_backend
+from .common.monitoring import Monitoring
 
 
 class SolaceAiConnector:
@@ -32,6 +33,7 @@ class SolaceAiConnector:
         self.instance_name = self.config.get("instance_name", "solace_ai_connector")
         self.timer_manager = TimerManager(self.stop_signal)
         self.cache_service = self.setup_cache_service()
+        self.monitoring = Monitoring(config)
 
     def run(self):
         """Run the Solace AI Event Connector"""
@@ -43,6 +45,8 @@ class SolaceAiConnector:
             on_flow_creation = self.event_handlers.get("on_flow_creation")
             if on_flow_creation:
                 on_flow_creation(self.flows)
+
+            self.monitoring.set_readiness(True)
 
             log.info("Solace AI Event Connector started successfully")
         except Exception as e:
@@ -117,12 +121,23 @@ class SolaceAiConnector:
 
     def setup_logging(self):
         """Setup logging"""
+
         log_config = self.config.get("log", {})
         stdout_log_level = log_config.get("stdout_log_level", "INFO")
-        log_file_level = log_config.get("log_file_level", "DEBUG")
+        log_file_level = log_config.get("log_file_level", "INFO")
         log_file = log_config.get("log_file", "solace_ai_connector.log")
         log_format = log_config.get("log_format", "pipe-delimited")
-        setup_log(log_file, stdout_log_level, log_file_level, log_format)
+
+        # Get logback values
+        logback = log_config.get("logback", {})
+
+        setup_log(
+            log_file,
+            stdout_log_level,
+            log_file_level,
+            log_format,
+            logback,
+        )
 
     def setup_trace(self):
         """Setup trace"""
@@ -219,3 +234,6 @@ class SolaceAiConnector:
         self.cache_service.stop()  # Stop the cache service
         if self.trace_thread:
             self.trace_thread.join()
+
+        self.monitoring.set_liveness(False)
+        self.monitoring.set_readiness(False)

@@ -65,7 +65,7 @@ class LiteLLMBase(ComponentBase):
         """initialize a load balancer"""
         try:
             self.router = litellm.Router(model_list=self.load_balancer)
-            log.debug("Load balancer initialized with models: %s", self.load_balancer)
+            log.debug("Litellm Load balancer was initialized")
         except Exception as e:
             raise ValueError(f"Error initializing load balancer: {e}")
 

@@ -2,7 +2,9 @@ import threading
 import queue
 import traceback
 import pprint
+import time
 from abc import abstractmethod
+from typing import Any
 from ..common.log import log
 from ..common.utils import resolve_config_values
 from ..common.utils import get_source_expression
@@ -11,6 +13,7 @@ from ..common.message import Message
 from ..common.trace_message import TraceMessage
 from ..common.event import Event, EventType
 from ..flow.request_response_flow_controller import RequestResponseFlowController
+from ..common.monitoring import Monitoring
 
 DEFAULT_QUEUE_TIMEOUT_MS = 1000
 DEFAULT_QUEUE_MAX_DEPTH = 5
@@ -51,6 +54,7 @@ class ComponentBase:
         self.stop_thread_event = threading.Event()
         self.current_message = None
         self.current_message_has_been_discarded = False
+        self.event_message_repeat_sleep_time = 1
 
         self.log_identifier = f"[{self.instance_name}.{self.flow_name}.{self.name}] "
 
@@ -59,24 +63,47 @@ class ComponentBase:
         self.setup_communications()
         self.setup_broker_request_response()
 
+    def grow_sleep_time(self):
+        if self.event_message_repeat_sleep_time < 60:
+            self.event_message_repeat_sleep_time *= 2
+
+    def reset_sleep_time(self):
+        self.event_message_repeat_sleep_time = 1
+
     def create_thread_and_run(self):
         self.thread = threading.Thread(target=self.run)
         self.thread.start()
         return self.thread
 
     def run(self):
+        # Start the micro monitoring thread
+        monitoring_thread = threading.Thread(target=self.run_micro_monitoring)
+        monitoring_thread.start()
+        # Process events until the stop signal is set
         while not self.stop_signal.is_set():
             event = None
             try:
                 event = self.get_next_event()
                 if event is not None:
                     self.process_event_with_tracing(event)
+                self.reset_sleep_time()
             except AssertionError as e:
-                raise e
+                try:
+                    time.sleep(self.event_message_repeat_sleep_time)
+                except KeyboardInterrupt:
+                    self.handle_component_error(e, event)
+                self.grow_sleep_time()
+                self.handle_component_error(e, event)
             except Exception as e:
+                try:
+                    time.sleep(self.event_message_repeat_sleep_time)
+                except KeyboardInterrupt:
+                    self.handle_component_error(e, event)
+                self.grow_sleep_time()
                 self.handle_component_error(e, event)
 
         self.stop_component()
+        monitoring_thread.join()
 
     def process_event_with_tracing(self, event):
         if self.trace_queue:
@@ -452,3 +479,23 @@ class ComponentBase:
         raise ValueError(
             f"Broker request response controller not found for component {self.name}"
         )
+
+    def get_metrics(self) -> dict[str, Any]:
+        return {}
+
+    def run_micro_monitoring(self) -> None:
+        """
+        Start the metric collection and sending process in a loop.
+        """
+        monitoring = Monitoring()
+        try:
+            while not self.stop_signal.is_set():
+                # Collect and send metrics every 10 seconds
+                metrics = self.get_metrics()
+                for metric_name, metric_value in metrics.items():
+                    pass
+                    # monitoring.send_metric(metric_name, metric_value)
+                    # log.debug("Sent metric %s: %s", metric_name, metric_value)
+                time.sleep(60)
+        except KeyboardInterrupt:
+            log.info("Monitoring stopped.")

@@ -439,3 +439,7 @@ class BrokerRequestResponse(BrokerBase):
         if self.response_thread:
             self.response_thread.join()
         super().cleanup()
+
+    def get_metrics(self):
+        # override because it removes messaging_service from the BrokerBase
+        return {}
