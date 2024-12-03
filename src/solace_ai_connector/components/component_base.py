@@ -91,14 +91,14 @@ class ComponentBase:
                 try:
                     time.sleep(self.event_message_repeat_sleep_time)
                 except KeyboardInterrupt:
-                    raise e
+                    self.handle_component_error(e, event)
                 self.grow_sleep_time()
-                raise e
+                self.handle_component_error(e, event)
             except Exception as e:
                 try:
                     time.sleep(self.event_message_repeat_sleep_time)
                 except KeyboardInterrupt:
-                    raise e
+                    self.handle_component_error(e, event)
                 self.grow_sleep_time()
                 self.handle_component_error(e, event)
 

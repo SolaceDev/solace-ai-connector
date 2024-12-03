@@ -121,12 +121,40 @@ class SolaceAiConnector:
 
     def setup_logging(self):
         """Setup logging"""
+        # Default rolling values
+        file_name_pattern = "${LOG_FILE}.%d{yyyy-MM-dd}.%i.gz"
+        max_file_size = "100MB"
+        max_history = 7
+        total_size_cap = "1GB"
+
         log_config = self.config.get("log", {})
         stdout_log_level = log_config.get("stdout_log_level", "INFO")
-        log_file_level = log_config.get("log_file_level", "DEBUG")
+        log_file_level = log_config.get("log_file_level", "INFO")
         log_file = log_config.get("log_file", "solace_ai_connector.log")
         log_format = log_config.get("log_format", "pipe-delimited")
-        setup_log(log_file, stdout_log_level, log_file_level, log_format)
+
+        # Get logback values
+        logback = log_config.get("logback", {})
+        if logback:
+            rollingpolicy = logback.get("rollingpolicy", {})
+            if rollingpolicy:
+                file_name_pattern = rollingpolicy.get(
+                    "file_name_pattern", "${LOG_FILE}.%d{yyyy-MM-dd}.%i.gz"
+                )
+                max_file_size = rollingpolicy.get("max-file-size", "100MB")
+                max_history = rollingpolicy.get("max-history", 7)
+                total_size_cap = rollingpolicy.get("total-size-cap", "1GB")
+
+        setup_log(
+            log_file,
+            stdout_log_level,
+            log_file_level,
+            log_format,
+            file_name_pattern,
+            max_file_size,
+            max_history,
+            total_size_cap,
+        )
 
     def setup_trace(self):
         """Setup trace"""
