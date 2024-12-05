@@ -18,7 +18,7 @@
 # The response will be sent to Solace topic `demo/rag/query/response`
 #
 # Dependencies:
-# pip install -U langchain_openai openai chromadb langchain-chroma
+# pip install -U langchain_openai openai chromadb langchain-chroma langchain-core~=0.3.0 langchain~=0.3.0
 #
 # Required ENV variables:
 # - OPENAI_API_KEY
