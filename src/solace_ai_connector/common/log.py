@@ -120,7 +120,7 @@ def setup_log(
                 maxBytes=max_file_size,
             )
             file_handler.namer = (
-                lambda name: file_name_pattern.replace("{LOG_FILE}", logFilePath)
+                lambda name: file_name_pattern.replace("${LOG_FILE}", logFilePath)
                 .replace("%d{yyyy-MM-dd}", datetime.now().strftime("%Y-%m-%d"))
                 .replace("%i", str(name.split(".")[-1]))
             )
