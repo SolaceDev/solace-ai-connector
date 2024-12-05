@@ -6,14 +6,11 @@ import json
 import queue
 from copy import deepcopy
 
-# from typing import Dict, Any
-
 from ...common.log import log
 from .broker_base import BrokerBase
 from ...common.message import Message
 from ...common.utils import ensure_slash_on_end, ensure_slash_on_start
 
-# from ...common.event import Event, EventType
 
 info = {
     "class_name": "BrokerRequestResponse",
@@ -76,9 +73,15 @@ info = {
             "name": "response_topic_insertion_expression",
             "required": False,
             "description": (
-                "Expression to insert the reply topic into the request message. "
-                "If not set, the reply topic will only be added to the request_response_metadata."
-                ),
+                "Expression to insert the reply topic into the "
+                "request message. "
+                "If not set, the reply topic will only be added to the "
+                "request_response_metadata. The expression uses the "
+                "same format as other data expressions: "
+                "(e.g input.payload:myObj.replyTopic). "
+                "If there is no object type in the expression, "
+                "it will default to 'input.payload'."
+            ),
             "default": "",
         },
         {
@@ -166,6 +169,7 @@ info = {
 
 
 class BrokerRequestResponse(BrokerBase):
+    """Request-Response broker component for the Solace AI Event Connector"""
 
     def __init__(self, **kwargs):
         super().__init__(info, **kwargs)
@@ -188,9 +192,6 @@ class BrokerRequestResponse(BrokerBase):
         self.streaming_complete_expression = self.get_config(
             "streaming_complete_expression"
         )
-        self.response_topic_insertion_expression = self.get_config(
-            "response_topic_insertion_expression"
-        )
         self.broker_type = self.broker_properties.get("broker_type", "solace")
         self.broker_properties["temporary_queue"] = True
         self.broker_properties["queue_name"] = self.reply_queue_name
@@ -205,6 +206,15 @@ class BrokerRequestResponse(BrokerBase):
             },
         ]
         self.test_mode = False
+
+        self.response_topic_insertion_expression = self.get_config(
+            "response_topic_insertion_expression"
+        )
+        if self.response_topic_insertion_expression:
+            if ":" not in self.response_topic_insertion_expression:
+                self.response_topic_insertion_expression = (
+                    f"input.payload:{self.response_topic_insertion_expression}"
+                )
 
         if self.broker_type == "test" or self.broker_type == "test_streaming":
             self.test_mode = True
@@ -268,6 +278,10 @@ class BrokerRequestResponse(BrokerBase):
             payload = self.decode_payload(payload)
             topic = broker_message.get("topic")
             user_properties = broker_message.get("user_properties", {})
+
+        if not user_properties:
+            log.error("Received response without user properties: %s", payload)
+            return
 
         streaming_complete_expression = None
         metadata_json = user_properties.get(
@@ -416,7 +430,7 @@ class BrokerRequestResponse(BrokerBase):
                 self.response_topic_insertion_expression, self.response_topic
             )
             data["payload"] = tmp_message.get_payload()
-            data["user_properties"] = tmp_message.get_user_properties()            
+            data["user_properties"] = tmp_message.get_user_properties()
 
         if self.test_mode:
             if self.broker_type == "test_streaming":
