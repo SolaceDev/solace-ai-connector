@@ -73,6 +73,15 @@ info = {
             "default": "",
         },
         {
+            "name": "response_topic_insertion_expression",
+            "required": False,
+            "description": (
+                "Expression to insert the reply topic into the request message. "
+                "If not set, the reply topic will only be added to the request_response_metadata."
+                ),
+            "default": "",
+        },
+        {
             "name": "response_queue_prefix",
             "required": False,
             "description": "Prefix for reply queues",
@@ -178,6 +187,9 @@ class BrokerRequestResponse(BrokerBase):
         self.streaming = self.get_config("streaming")
         self.streaming_complete_expression = self.get_config(
             "streaming_complete_expression"
+        )
+        self.response_topic_insertion_expression = self.get_config(
+            "response_topic_insertion_expression"
         )
         self.broker_type = self.broker_properties.get("broker_type", "solace")
         self.broker_properties["temporary_queue"] = True
@@ -390,7 +402,21 @@ class BrokerRequestResponse(BrokerBase):
         ] = json.dumps(metadata)
         data["user_properties"][
             "__solace_ai_connector_broker_request_response_topic__"
-        ] = self.response_topic
+        ] = topic
+
+        # If we are configured to also insert the response topic into the request message
+        # then create a temporary message to do so
+        if self.response_topic_insertion_expression:
+            tmp_message = Message(
+                payload=data["payload"],
+                user_properties=data["user_properties"],
+                topic=data["topic"],
+            )
+            tmp_message.set_data(
+                self.response_topic_insertion_expression, self.response_topic
+            )
+            data["payload"] = tmp_message.get_payload()
+            data["user_properties"] = tmp_message.get_user_properties()            
 
         if self.test_mode:
             if self.broker_type == "test_streaming":
