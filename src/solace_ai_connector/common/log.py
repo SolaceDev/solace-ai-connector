@@ -111,19 +111,18 @@ def setup_log(
             total_size_cap = convert_to_bytes(total_size_cap)
 
             # Generate the log file name using the pattern
-            log_file_name = (
-                file_name_pattern.replace(
-                    "%d{yyyy-MM-dd}", datetime.now().strftime("%Y-%m-%d")
-                )
-                .replace("%i", "0")
-                .replace("${LOG_FILE}", logFilePath)
-            )
+            log_file_name = logFilePath
 
             # Overwrite the file handler with a rotating file handler
             file_handler = logging.handlers.RotatingFileHandler(
                 filename=log_file_name,
                 backupCount=max_history,
                 maxBytes=max_file_size,
+            )
+            file_handler.namer = (
+                lambda name: file_name_pattern.replace("{LOG_FILE}", logFilePath)
+                .replace("%d{yyyy-MM-dd}", datetime.now().strftime("%Y-%m-%d"))
+                .replace("%i", str(name.split(".")[-1]))
             )
     else:
         file_handler = logging.FileHandler(filename=logFilePath, mode="a")
