@@ -480,22 +480,48 @@ class ComponentBase:
             f"Broker request response controller not found for component {self.name}"
         )
 
+    def get_metrics_with_header(self) -> dict[dict[str, Any], Any]:
+        metrics = {}
+
+        pure_metrics = self.get_metrics()
+        for metric, value in pure_metrics.items():
+            key = tuple(
+                [
+                    ("flow", self.flow_name),
+                    ("flow_index", self.index),
+                    ("component", self.name),
+                    ("component_index", self.component_index),
+                    ("metric", metric),
+                ]
+            )
+
+            value = {"value": value, "timestamp": int(time.time())}
+            log.debug(
+                "Metrics - flow: %s, component: %s, metric: %s, value: %s",
+                self.flow_name,
+                self.name,
+                metric,
+                value,
+            )
+
+            metrics[key] = value
+        return metrics
+
     def get_metrics(self) -> dict[str, Any]:
         return {}
 
     def run_micro_monitoring(self) -> None:
         """
-        Start the metric collection and sending process in a loop.
+        Start the metric collection process in a loop.
         """
         monitoring = Monitoring()
         try:
             while not self.stop_signal.is_set():
-                # Collect and send metrics every 10 seconds
-                metrics = self.get_metrics()
-                for metric_name, metric_value in metrics.items():
-                    pass
-                    # monitoring.send_metric(metric_name, metric_value)
-                    # log.debug("Sent metric %s: %s", metric_name, metric_value)
-                time.sleep(60)
+                # Collect metrics
+                metrics = self.get_metrics_with_header()
+                monitoring.collect_metrics(metrics)
+                # Wait for the next interval
+                sleep_interval = monitoring.get_interval()
+                time.sleep(sleep_interval)
         except KeyboardInterrupt:
             log.info("Monitoring stopped.")

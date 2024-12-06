@@ -112,7 +112,11 @@ class BrokerBase(ComponentBase):
         return str(uuid.uuid4())
 
     def get_metrics(self):
+        required_metrics = ["SOLCLIENT_STATS_RX_ACKED"]
+        stats_dict = {}
         metrics: "ApiMetrics" = self.messaging_service.messaging_service.metrics()
-        str_metrics = str(metrics)
-        stats_dict = json.loads(str_metrics)
+        for metric_key in required_metrics:
+            metric = Metric(metric_key)
+            stats_dict[metric_key] = metrics.get_value(Metric(metric))
+
         return stats_dict

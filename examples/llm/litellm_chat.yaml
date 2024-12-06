@@ -33,9 +33,16 @@
 
 ---
 log:
-  stdout_log_level: INFO
+  stdout_log_level: DEBUG
   log_file_level: DEBUG
-  log_file: solace_ai_connector.log
+  log_file: ${LOG_FILE}
+  log_format: jsonl
+  logback: 
+    rollingpolicy:
+      file-name-pattern: "${LOG_FILE}.%d{yyyy-MM-dd}.%i.gz"
+      max-file-size: 600B
+      max-history: 2
+      total-size-cap: 21KB #1GB
 
 shared_config:
   - broker_config: &broker_connection

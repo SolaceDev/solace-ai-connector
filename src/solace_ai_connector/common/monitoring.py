@@ -1,18 +1,16 @@
-from typing import Any
-from datadog import initialize, statsd
-
-from .log import log
+from typing import Any, List
 
 
 class Monitoring:
     """
-    A singleton class to collect and send metrics to Datadog.
+    A singleton class to collect and send metrics.
     """
 
     _instance = None
     _initialized = False
     _ready = False
     _live = False
+    _interval = 60
 
     def __new__(cls, *args, **kwargs):
         if not cls._instance:
@@ -29,37 +27,8 @@ class Monitoring:
         if self._initialized:
             return
 
-        self.enabled = False
-
-        monitoring = config.get("monitoring", {})
-        if monitoring is not {}:
-            self.enabled = monitoring.get("enabled", False)
-            tags = monitoring.get("tags", [])
-            if "host" not in monitoring:
-                log.error(
-                    "Monitoring configuration is missing host. Disabling monitoring."
-                )
-                self.enabled = False
-            else:
-                host = monitoring.get("host")
-            if "port" not in monitoring:
-                log.error(
-                    "Monitoring configuration is missing port. Disabling monitoring."
-                )
-                self.enabled = False
-            else:
-                port = monitoring.get("port")
-
-        # Initialize Datadog with provided options
-        if self.enabled:
-            options = {
-                "statsd_constant_tags": tags,
-                "statsd_host": host,
-                "statsd_port": port,
-            }
-
-            initialize(**options)
         self._initialized = True
+        self._collected_metrics = {}
 
     def set_readiness(self, ready: bool) -> None:
         """
@@ -77,12 +46,35 @@ class Monitoring:
         """
         self._live = live
 
-    def send_metric(self, metric_name: str, metric_value: Any) -> None:
+    def set_interval(self, interval: int) -> None:
         """
-        Send a metric to Datadog.
+        Set the interval for the MetricCollector.
 
-        :param metric_name: Name of the metric
-        :param metric_value: Value of the metric
+        :param interval: Interval
         """
-        if self.enabled:
-            statsd.gauge(metric_name, metric_value)
+        self._interval = interval
+
+    def get_interval(self) -> int:
+        """
+        Get the interval for the MetricCollector.
+
+        :return: Interval
+        """
+        return self._interval
+
+    def collect_metrics(self, metrics: dict[dict[str, Any]]) -> None:
+        """
+        Collect metrics.
+
+        :param metrics: List of metrics
+        """
+        for key, value in metrics.items():
+            self._collected_metrics[key] = value
+
+    def get_collected_metrics(self) -> List[dict[str, Any]]:
+        """
+        Retrieve collected metrics.
+
+        :return: Dictionary of collected metrics
+        """
+        return self._collected_metrics
