@@ -116,7 +116,10 @@ def main():
     signal.signal(signal.SIGTERM, lambda s, f: shutdown())
 
     # Start the application
-    app.run()
+    try:
+        app.run()
+    except KeyboardInterrupt:
+        shutdown()
 
     try:
         app.wait_for_flows()
@@ -126,5 +129,4 @@ def main():
 
 if __name__ == "__main__":
     # Read in the configuration yaml filenames from the args
-
     main()
