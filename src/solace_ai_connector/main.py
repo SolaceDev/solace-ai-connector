@@ -110,7 +110,7 @@ def main():
         app.stop()
         app.cleanup()
         print("Solace AI Connector exited successfully!")
-        os._exit(0)
+        sys.exit(0)
 
     signal.signal(signal.SIGINT, lambda s, f: shutdown())
     signal.signal(signal.SIGTERM, lambda s, f: shutdown())
@@ -118,11 +118,10 @@ def main():
     # Start the application
     try:
         app.run()
-    except KeyboardInterrupt:
-        shutdown()
-
-    try:
         app.wait_for_flows()
+    except Exception as e:
+        print(f"Error running Solace AI Connector: {e}", file=sys.stderr)
+        shutdown()
     except KeyboardInterrupt:
         shutdown()
 

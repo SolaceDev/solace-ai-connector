@@ -89,14 +89,14 @@ class ComponentBase:
                 self.reset_sleep_time()
             except AssertionError as e:
                 try:
-                    time.sleep(self.event_message_repeat_sleep_time)
+                    self.stop_signal.wait(timeout=self.event_message_repeat_sleep_time)
                 except KeyboardInterrupt:
                     self.handle_component_error(e, event)
                 self.grow_sleep_time()
                 self.handle_component_error(e, event)
             except Exception as e:
                 try:
-                    time.sleep(self.event_message_repeat_sleep_time)
+                    self.stop_signal.wait(timeout=self.event_message_repeat_sleep_time)
                 except KeyboardInterrupt:
                     self.handle_component_error(e, event)
                 self.grow_sleep_time()
@@ -522,6 +522,6 @@ class ComponentBase:
                 monitoring.collect_metrics(metrics)
                 # Wait for the next interval
                 sleep_interval = monitoring.get_interval()
-                time.sleep(sleep_interval)
+                self.stop_signal.wait(timeout=sleep_interval)
         except KeyboardInterrupt:
             log.info("Monitoring stopped.")

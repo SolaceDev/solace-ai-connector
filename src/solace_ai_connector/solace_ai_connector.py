@@ -109,15 +109,32 @@ class SolaceAiConnector:
         """Clean up resources and ensure all threads are properly joined"""
         log.info("Cleaning up Solace AI Event Connector")
         for flow in self.flows:
-            flow.cleanup()
+            try:
+                flow.cleanup()
+            except Exception as e:
+                log.error(f"Error cleaning up flow: {e}")
         self.flows.clear()
+
+        # Clean up queues
+        for queue_name, queue in self.flow_input_queues.items():
+            try:
+                while not queue.empty():
+                    queue.get_nowait()
+            except Exception as e:
+                log.error(f"Error cleaning queue {queue_name}: {e}")
+        self.flow_input_queues.clear()
+
         if hasattr(self, "trace_queue") and self.trace_queue:
             self.trace_queue.put(None)  # Signal the trace thread to stop
         if self.trace_thread:
             self.trace_thread.join()
         if hasattr(self, "cache_check_thread"):
             self.cache_check_thread.join()
+        if hasattr(self, "error_queue"):
+            self.error_queue.put(None)
+
         self.timer_manager.cleanup()
+        log.info("Cleanup completed")
 
     def setup_logging(self):
         """Setup logging"""
@@ -230,10 +247,14 @@ class SolaceAiConnector:
         """Stop the Solace AI Event Connector"""
         log.info("Stopping Solace AI Event Connector")
         self.stop_signal.set()
+
+        # Stop core services first
         self.timer_manager.stop()  # Stop the timer manager first
         self.cache_service.stop()  # Stop the cache service
+
         if self.trace_thread:
             self.trace_thread.join()
 
+        # Update monitoring last
         self.monitoring.set_liveness(False)
         self.monitoring.set_readiness(False)
