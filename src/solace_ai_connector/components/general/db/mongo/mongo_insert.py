@@ -1,6 +1,6 @@
 """MongoDB Agent Component for handling database insert."""
 
-from .mongo_handler import MongoDBHandler
+from .mongo_handler import MongoHandler
 from ....component_base import ComponentBase
 
 
@@ -62,7 +62,7 @@ class MongoDBInsertComponent(ComponentBase):
         super().__init__(info, **kwargs)
 
         # Initialize MongoDB handler
-        self.db_handler = MongoDBHandler(
+        self.db_handler = MongoHandler(
             self.get_config("database_host"),
             self.get_config("database_port"),
             self.get_config("database_user"),
