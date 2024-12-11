@@ -136,9 +136,7 @@ class ComponentBase:
                 timeout = self.queue_timeout_ms or DEFAULT_QUEUE_TIMEOUT_MS
                 event = self.input_queue.get(timeout=timeout / 1000)
                 log.debug(
-                    "%sComponent received event %s from input queue",
-                    self.log_identifier,
-                    event,
+                    "%sComponent received event from input queue", self.log_identifier
                 )
                 return event
             except queue.Empty:

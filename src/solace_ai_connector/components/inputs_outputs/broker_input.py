@@ -88,6 +88,7 @@ DEFAULT_TIMEOUT_MS = 1000
 
 
 class BrokerInput(BrokerBase):
+
     def __init__(self, module_info=None, **kwargs):
         module_info = module_info or info
         super().__init__(module_info, **kwargs)
@@ -123,12 +124,7 @@ class BrokerInput(BrokerBase):
 
         topic = broker_message.get("topic")
         user_properties = broker_message.get("user_properties", {})
-        log.debug(
-            "Received message from broker: topic=%s, user_properties=%s, payload length=%d",
-            topic,
-            user_properties,
-            len(payload) if payload is not None else 0,
-        )
+        log.debug("Received message from broker: topic=%s", topic)
         return Message(payload=payload, topic=topic, user_properties=user_properties)
 
     def acknowledge_message(self, broker_message):
