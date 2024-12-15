@@ -297,29 +297,29 @@ class BrokerRequestResponse(BrokerBase):
             "streaming_complete_expression"
         )
 
+        # Update the metadata in the response
+        if metadata_stack:
+            user_properties[
+                "__solace_ai_connector_broker_request_reply_metadata__"
+            ] = json.dumps(metadata_stack)
+            # Put the last reply topic back in the user properties
+            user_properties[
+                "__solace_ai_connector_broker_request_response_topic__"
+            ] = metadata_stack[-1]["response_topic"]
+        else:
+            # Remove the metadata and reply topic from the user properties
+            user_properties.pop(
+                "__solace_ai_connector_broker_request_reply_metadata__", None
+            )
+            user_properties.pop(
+                "__solace_ai_connector_broker_request_response_topic__", None
+            )
+
         response = {
             "payload": payload,
             "topic": topic,
             "user_properties": user_properties,
         }
-
-        # Update the metadata in the response
-        if metadata_stack:
-            response["user_properties"][
-                "__solace_ai_connector_broker_request_reply_metadata__"
-            ] = json.dumps(metadata_stack)
-            # Put the last reply topic back in the user properties
-            response["user_properties"][
-                "__solace_ai_connector_broker_request_response_topic__"
-            ] = metadata_stack[-1]["response_topic"]
-        else:
-            # Remove the metadata and reply topic from the user properties
-            response["user_properties"].pop(
-                "__solace_ai_connector_broker_request_reply_metadata__", None
-            )
-            response["user_properties"].pop(
-                "__solace_ai_connector_broker_request_response_topic__", None
-            )
 
         message = Message(
             payload=payload,
