@@ -99,6 +99,10 @@ class BrokerBase(ComponentBase):
             "subscriptions": self.get_config("broker_subscriptions"),
             "trust_store_path": self.get_config("trust_store_path"),
             "temporary_queue": self.get_config("temporary_queue"),
+            "reconnection_strategy": self.get_config("reconnection_strategy"),
+            "retry_interval": self.get_config("retry_interval"),
+            "retry_count": self.get_config("retry_count"),
+            "retry_interval": self.get_config("retry_interval"),
         }
         return broker_properties
 
