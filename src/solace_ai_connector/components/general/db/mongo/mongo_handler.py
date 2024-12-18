@@ -50,12 +50,15 @@ class MongoHandler:
         if not documents:
             return []
         if not collection:
+            log.debug("No collection specified, using default collection: %s", self.collection)
             collection = self.collection
         if not isinstance(documents, dict) or not isinstance(documents, list):
+            log.error("Documents must be a dictionary or list of dictionaries")
             raise ValueError("Documents must be a dictionary or list of dictionaries")
         if isinstance(documents, dict):
             documents = [documents]
         if not isinstance(documents[0], dict):
+            log.error("Documents must be a dictionary or list of dictionaries")
             raise ValueError("Documents must be a dictionary or list of dictionaries")
         db = self.get_connection()
         result = db[collection].insert_many(documents)
@@ -82,13 +85,16 @@ class MongoHandler:
         # Validate each pipeline stage
         for stage in pipeline:
             if not isinstance(stage, dict) or not stage:
+                log.error("Each pipeline stage must be a non-empty dictionary")
                 raise ValueError("Each pipeline stage must be a non-empty dictionary")
             if not any(key.startswith('$') for key in stage.keys()):
+                log.error("Invalid pipeline stage: %s. Each stage must start with '$'", stage)
                 raise ValueError(f"Invalid pipeline stage: {stage}. Each stage must start with '$'")
                 
         try:
             db = self.get_connection()
-            if self.collection:
+            if not collection:
+                log.debug("No collection specified, using default collection: %s", self.collection)
                 collection = self.collection
             cursor = db[collection].aggregate(pipeline)
             result = list(cursor)

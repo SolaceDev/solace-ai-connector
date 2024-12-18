@@ -1,75 +1,17 @@
 """MongoDB Agent Component for handling database insert."""
 
-from .mongo_handler import MongoHandler
-from ....component_base import ComponentBase
+from .mongo_base import MongoDBBaseComponent, info as base_info
+
+info = base_info.copy()
+info["class_name"] = "MongoDBInsertComponent"
+info["description"] = "Inserts data into a MongoDB database."
 
 
-info = {
-    "class_name": "MongoDBInsertComponent",
-    "description": "Inserts given JSON data into a MongoDB database.",
-    "config_parameters": [
-        {
-            "name": "database_host",
-            "required": True,
-            "description": "MongoDB host",
-            "type": "string",
-        },
-        {
-            "name": "database_port",
-            "required": True,
-            "description": "MongoDB port",
-            "type": "integer",
-        },
-        {
-            "name": "database_user",
-            "required": False,
-            "description": "MongoDB user",
-            "type": "string",
-        },
-        {
-            "name": "database_password",
-            "required": False,
-            "description": "MongoDB password",
-            "type": "string",
-        },
-        {
-            "name": "database_name",
-            "required": True,
-            "description": "Database name",
-            "type": "string",
-        },
-        {
-            "name": "database_collection",
-            "required": False,
-            "description": "Collection name - if not provided, all collections will be used",
-        },
-    ],
-}
-
-
-class MongoDBInsertComponent(ComponentBase):
+class MongoDBInsertComponent(MongoDBBaseComponent):
     """Component for handling MongoDB database operations."""
 
     def __init__(self, **kwargs):
-        """Initialize the MongoDB component.
-
-        Args:
-            **kwargs: Additional keyword arguments.
-
-        Raises:
-            ValueError: If required database configuration is missing.
-        """
         super().__init__(info, **kwargs)
-
-        # Initialize MongoDB handler
-        self.db_handler = MongoHandler(
-            self.get_config("database_host"),
-            self.get_config("database_port"),
-            self.get_config("database_user"),
-            self.get_config("database_password"),
-            self.get_config("database_collection"),
-            self.get_config("database_name"),
-        )
 
     def invoke(self, message, data):
         if not data:
