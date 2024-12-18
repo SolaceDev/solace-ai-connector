@@ -1,12 +1,12 @@
-# MongoDBInsertComponent
+# MongoDBBaseComponent
 
-Inserts data into a MongoDB database.
+Base MongoDB database component
 
 ## Configuration Parameters
 
 ```yaml
 component_name: <user-supplied-name>
-component_module: mongo_insert
+component_module: mongo_base
 component_config:
   database_host: <string>
   database_port: <integer>

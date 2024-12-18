@@ -52,12 +52,12 @@ class MongoHandler:
         if not collection:
             log.debug("No collection specified, using default collection: %s", self.collection)
             collection = self.collection
-        if not isinstance(documents, dict) or not isinstance(documents, list):
+        if not isinstance(documents, dict) and not isinstance(documents, list):
             log.error("Documents must be a dictionary or list of dictionaries")
             raise ValueError("Documents must be a dictionary or list of dictionaries")
         if isinstance(documents, dict):
             documents = [documents]
-        if not isinstance(documents[0], dict):
+        if not documents or not isinstance(documents[0], dict):
             log.error("Documents must be a dictionary or list of dictionaries")
             raise ValueError("Documents must be a dictionary or list of dictionaries")
         db = self.get_connection()

@@ -1,5 +1,4 @@
 """MongoDB Agent Component for handling database search."""
-import json
 
 from .mongo_handler import MongoHandler
 from ....component_base import ComponentBase
