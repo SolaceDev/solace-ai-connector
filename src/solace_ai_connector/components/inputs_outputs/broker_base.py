@@ -48,20 +48,32 @@ class BrokerBase(ComponentBase):
         self.messages_to_ack = []
         self.connected = False
         self.needs_acknowledgement = True
+        self.connection_repeat_sleep_time = 5
 
     @abstractmethod
     def invoke(self, message, data):
         pass
 
     def connect(self):
-        if not self.connected:
-            self.messaging_service.connect()
-            self.connected = True
+        while not self.stop_signal.is_set():
+            if not self.connected:
+                try:
+                    self.messaging_service.connect()
+                    self.connected = self.messaging_service.is_connected
+                except Exception as e:
+                    log.error(
+                        f"Error connecting to broker: {e}. \n Retrying in {self.connection_repeat_sleep_time} seconds."
+                    )
+                    self.stop_signal.wait(timeout=self.connection_repeat_sleep_time)
+                    self.grow_sleep_time()
+            else:
+                self.reset_sleep_time()
+                break
 
     def disconnect(self):
         if self.connected:
             self.messaging_service.disconnect()
-            self.connected = False
+            self.connected = self.messaging_service.is_connected
 
     def stop_component(self):
         self.disconnect()
@@ -124,3 +136,12 @@ class BrokerBase(ComponentBase):
             stats_dict[metric_key] = metrics.get_value(Metric(metric))
 
         return stats_dict
+
+    def grow_sleep_time(self):
+        if self.connection_repeat_sleep_time < 60:
+            self.connection_repeat_sleep_time *= 2
+            if self.connection_repeat_sleep_time > 60:
+                self.connection_repeat_sleep_time = 60
+
+    def reset_sleep_time(self):
+        self.connection_repeat_sleep_time = 1
