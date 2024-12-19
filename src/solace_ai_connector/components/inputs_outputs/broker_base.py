@@ -56,20 +56,9 @@ class BrokerBase(ComponentBase):
         pass
 
     def connect(self):
-        while not self.stop_signal.is_set():
-            if not self.connected:
-                try:
-                    self.messaging_service.connect()
-                    self.connected = self.messaging_service.is_connected
-                except Exception as e:
-                    log.error(
-                        f"Error connecting to broker: {e}. \n Retrying in {self.connection_repeat_sleep_time} seconds."
-                    )
-                    self.stop_signal.wait(timeout=self.connection_repeat_sleep_time)
-                    self.grow_sleep_time()
-            else:
-                self.reset_sleep_time()
-                break
+        if not self.connected:
+            self.messaging_service.connect()
+            self.connected = self.messaging_service.is_connected
 
     def disconnect(self):
         if self.connected:
@@ -137,12 +126,3 @@ class BrokerBase(ComponentBase):
             stats_dict[metric_key] = metrics.get_value(SolaceMetrics(metric))
 
         return stats_dict
-
-    def grow_sleep_time(self):
-        if self.connection_repeat_sleep_time < 60:
-            self.connection_repeat_sleep_time *= 2
-            if self.connection_repeat_sleep_time > 60:
-                self.connection_repeat_sleep_time = 60
-
-    def reset_sleep_time(self):
-        self.connection_repeat_sleep_time = 1
