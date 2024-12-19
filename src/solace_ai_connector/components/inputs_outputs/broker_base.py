@@ -8,7 +8,6 @@ from ..component_base import ComponentBase
 from ...common.message import Message
 from ...common.messaging.messaging_builder import MessagingServiceBuilder
 from ...common.utils import encode_payload, decode_payload
-from ...common.log import log
 
 # TBD - at the moment, there is no connection sharing supported. It should be possible
 # to share a connection between multiple components and even flows. The changes
@@ -52,20 +51,9 @@ class BrokerBase(ComponentBase):
         pass
 
     def connect(self):
-        while not self.stop_signal.is_set():
-            if not self.connected:
-                try:
-                    self.messaging_service.connect()
-                    self.connected = self.messaging_service.is_connected
-                except Exception as e:
-                    log.error(
-                        f"Error connecting to broker: {e}. \n Retrying in {self.connection_repeat_sleep_time} seconds."
-                    )
-                    self.stop_signal.wait(timeout=self.connection_repeat_sleep_time)
-                    self.grow_sleep_time()
-            else:
-                self.reset_sleep_time()
-                break
+        if not self.connected:
+            self.messaging_service.connect()
+            self.connected = self.messaging_service.is_connected
 
     def disconnect(self):
         if self.connected:
@@ -123,12 +111,3 @@ class BrokerBase(ComponentBase):
 
     def generate_uuid(self):
         return str(uuid.uuid4())
-
-    def grow_sleep_time(self):
-        if self.connection_repeat_sleep_time < 60:
-            self.connection_repeat_sleep_time *= 2
-            if self.connection_repeat_sleep_time > 60:
-                self.connection_repeat_sleep_time = 60
-
-    def reset_sleep_time(self):
-        self.connection_repeat_sleep_time = 1

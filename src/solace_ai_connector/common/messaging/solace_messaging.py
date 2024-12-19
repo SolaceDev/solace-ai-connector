@@ -142,6 +142,9 @@ class SolaceMessaging(Messaging):
                 .with_reconnection_retry_strategy(
                     RetryStrategy.forever_retry(retry_interval)
                 )
+                .with_connection_retry_strategy(
+                    RetryStrategy.forever_retry(retry_interval)
+                )
                 .build()
             )
         elif strategy and strategy == "parametrized_retry":
@@ -159,6 +162,9 @@ class SolaceMessaging(Messaging):
                 .with_reconnection_retry_strategy(
                     RetryStrategy.parametrized_retry(retry_count, retry_wait)
                 )
+                .with_connection_retry_strategy(
+                    RetryStrategy.parametrized_retry(retry_count, retry_wait)
+                )
                 .build()
             )
         else:
@@ -170,6 +176,9 @@ class SolaceMessaging(Messaging):
                 MessagingService.builder()
                 .from_properties(broker_props)
                 .with_reconnection_retry_strategy(
+                    RetryStrategy.parametrized_retry(20, 3000)
+                )
+                .with_connection_retry_strategy(
                     RetryStrategy.parametrized_retry(20, 3000)
                 )
                 .build()
