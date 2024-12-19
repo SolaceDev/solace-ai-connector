@@ -30,6 +30,7 @@ from ...common.utils import encode_payload, decode_payload
 
 
 class BrokerBase(ComponentBase):
+
     def __init__(self, module_info, **kwargs):
         super().__init__(module_info, **kwargs)
         self.broker_properties = self.get_broker_properties()
@@ -43,6 +44,7 @@ class BrokerBase(ComponentBase):
         self.messages_to_ack = []
         self.connected = False
         self.needs_acknowledgement = True
+        self.connection_repeat_sleep_time = 5
 
     @abstractmethod
     def invoke(self, message, data):
@@ -51,12 +53,12 @@ class BrokerBase(ComponentBase):
     def connect(self):
         if not self.connected:
             self.messaging_service.connect()
-            self.connected = True
+            self.connected = self.messaging_service.is_connected
 
     def disconnect(self):
         if self.connected:
             self.messaging_service.disconnect()
-            self.connected = False
+            self.connected = self.messaging_service.is_connected
 
     def stop_component(self):
         self.disconnect()
@@ -94,6 +96,10 @@ class BrokerBase(ComponentBase):
             "subscriptions": self.get_config("broker_subscriptions"),
             "trust_store_path": self.get_config("trust_store_path"),
             "temporary_queue": self.get_config("temporary_queue"),
+            "reconnection_strategy": self.get_config("reconnection_strategy"),
+            "retry_interval": self.get_config("retry_interval"),
+            "retry_count": self.get_config("retry_count"),
+            "retry_interval": self.get_config("retry_interval"),
         }
         return broker_properties
 
