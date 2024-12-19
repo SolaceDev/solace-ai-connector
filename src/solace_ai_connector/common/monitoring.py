@@ -1,4 +1,9 @@
 from typing import Any, List
+from enum import Enum
+
+
+class Metrics(Enum):
+    SOLCLIENT_STATS_RX_ACKED = 0
 
 
 class Monitoring:
@@ -29,6 +34,14 @@ class Monitoring:
 
         self._initialized = True
         self._collected_metrics = {}
+
+    def set_required_metrics(self, required_metrics: List[Metrics]) -> None:
+        """
+        Set the required metrics for the MetricCollector.
+
+        :param required_metrics: List of required metrics
+        """
+        self._required_metrics = required_metrics
 
     def set_readiness(self, ready: bool) -> None:
         """
@@ -62,14 +75,14 @@ class Monitoring:
         """
         return self._interval
 
-    def collect_metrics(self, metrics: dict[dict[str, Any]]) -> None:
+    def collect_metrics(self, metrics: dict[Metrics, dict[str, Any]]) -> None:
         """
         Collect metrics.
 
-        :param metrics: List of metrics
+        :param metrics: Dictionary of metrics
         """
         for key, value in metrics.items():
-            self._collected_metrics[key] = value
+            self._collected_metrics[key.value] = value
 
     def get_collected_metrics(self) -> List[dict[str, Any]]:
         """
