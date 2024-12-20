@@ -63,6 +63,8 @@ class ComponentBase:
         self.setup_communications()
         self.setup_broker_request_response()
 
+        self.monitoring = Monitoring()
+
     def grow_sleep_time(self):
         if self.event_message_repeat_sleep_time < 60:
             self.event_message_repeat_sleep_time *= 2
@@ -329,7 +331,11 @@ class ComponentBase:
             "request_expiry_ms": request_expiry_ms,
         }
 
-        for key in ["response_topic_prefix", "response_queue_prefix", "response_topic_insertion_expression"]:
+        for key in [
+            "response_topic_prefix",
+            "response_queue_prefix",
+            "response_topic_insertion_expression",
+        ]:
             if key in self.broker_request_response_config:
                 rrc_config[key] = self.broker_request_response_config[key]
 
@@ -475,29 +481,25 @@ class ComponentBase:
 
     def get_metrics_with_header(self) -> dict[dict[str, Any], Any]:
         metrics = {}
+        required_metrics = self.monitoring.get_required_metrics()
 
         pure_metrics = self.get_metrics()
         for metric, value in pure_metrics.items():
-            key = tuple(
-                [
-                    ("flow", self.flow_name),
-                    ("flow_index", self.index),
-                    ("component", self.name),
-                    ("component_index", self.component_index),
-                    ("metric", metric),
-                ]
-            )
+            # filter metrics
+            if metric in required_metrics:
+                key = tuple(
+                    [
+                        ("flow", self.flow_name),
+                        ("flow_index", self.index),
+                        ("component", self.name),
+                        ("component_index", self.component_index),
+                        ("metric", metric),
+                    ]
+                )
 
-            value = {"value": value, "timestamp": int(time.time())}
-            log.debug(
-                "Metrics - flow: %s, component: %s, metric: %s, value: %s",
-                self.flow_name,
-                self.name,
-                metric,
-                value,
-            )
+                value = {"value": value, "timestamp": int(time.time())}
 
-            metrics[key] = value
+                metrics[key] = value
         return metrics
 
     def get_metrics(self) -> dict[str, Any]:
@@ -507,14 +509,13 @@ class ComponentBase:
         """
         Start the metric collection process in a loop.
         """
-        monitoring = Monitoring()
         try:
             while not self.stop_signal.is_set():
                 # Collect metrics
                 metrics = self.get_metrics_with_header()
-                monitoring.collect_metrics(metrics)
+                self.monitoring.collect_metrics(metrics)
                 # Wait for the next interval
-                sleep_interval = monitoring.get_interval()
+                sleep_interval = self.monitoring.get_interval()
                 self.stop_signal.wait(timeout=sleep_interval)
         except KeyboardInterrupt:
             log.info("Monitoring stopped.")

@@ -122,7 +122,7 @@ class BrokerBase(ComponentBase):
         stats_dict = {}
         metrics: "ApiMetrics" = self.messaging_service.messaging_service.metrics()
         for metric_key in required_metrics:
-            metric = SolaceMetrics(metric_key)
-            stats_dict[metric_key] = metrics.get_value(SolaceMetrics(metric))
+            metric = SolaceMetrics(metric_key.value)
+            stats_dict[metric_key.value] = metrics.get_value(SolaceMetrics(metric))
 
         return stats_dict
