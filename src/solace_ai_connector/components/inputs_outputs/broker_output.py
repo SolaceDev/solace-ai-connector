@@ -93,6 +93,7 @@ info = {
 
 
 class BrokerOutput(BrokerBase):
+
     def __init__(self, module_info=None, **kwargs):
         module_info = module_info or info
         super().__init__(module_info, **kwargs)
@@ -152,3 +153,6 @@ class BrokerOutput(BrokerBase):
             message.call_acknowledgements()
         else:
             log.error("No message found in context for acknowledgement")
+
+    def get_metrics(self):
+        return {}

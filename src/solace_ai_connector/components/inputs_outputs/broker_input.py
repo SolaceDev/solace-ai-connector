@@ -1,8 +1,12 @@
 """Input broker component for the Solace AI Event Connector"""
 
+from solace.messaging.utils.manageable import ApiMetrics, Metric as SolaceMetrics
+
 from ...common.log import log
 from .broker_base import BrokerBase
 from ...common.message import Message
+from ...common.monitoring import Metrics
+
 
 info = {
     "class_name": "BrokerInput",
@@ -133,3 +137,18 @@ class BrokerInput(BrokerBase):
     def get_acknowledgement_callback(self):
         current_broker_message = self.current_broker_message
         return lambda: self.acknowledge_message(current_broker_message)
+
+    def get_metrics(self):
+        required_metrics = [
+            Metrics.SOLCLIENT_STATS_RX_ACKED,
+            Metrics.SOLCLIENT_STATS_TX_TOTAL_CONNECTION_ATTEMPTS,
+        ]
+        stats_dict = {}
+        metrics: "ApiMetrics" = self.messaging_service.messaging_service.metrics()
+        for metric_key in required_metrics:
+            metric = SolaceMetrics(metric_key.value)
+            stats_dict[metric_key.value] = metrics.get_value(SolaceMetrics(metric))
+
+        stats_dict[Metrics.IS_CONNECTED.value] = self.messaging_service.is_connected()
+
+        return stats_dict

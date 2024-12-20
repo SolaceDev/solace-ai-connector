@@ -266,7 +266,7 @@ class SolaceMessaging(Messaging):
             log.debug("Error disconnecting: %s", exception)
 
     def is_connected(self):
-        return self.messaging_service.is_connected()
+        return self.messaging_service.is_connected
 
     def send_message(
         self,

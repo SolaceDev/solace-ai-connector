@@ -1,18 +1,14 @@
 """Base class for broker input/output components for the Solace AI Event Connector"""
 
 import uuid
-import json
 from typing import List
 
 from abc import abstractmethod
 
-from solace.messaging.utils.manageable import ApiMetrics, Metric as SolaceMetrics
 from ..component_base import ComponentBase
 from ...common.message import Message
 from ...common.messaging.messaging_builder import MessagingServiceBuilder
 from ...common.utils import encode_payload, decode_payload
-from ...common.log import log
-from ...common.monitoring import Metrics
 
 # TBD - at the moment, there is no connection sharing supported. It should be possible
 # to share a connection between multiple components and even flows. The changes
@@ -58,12 +54,12 @@ class BrokerBase(ComponentBase):
     def connect(self):
         if not self.connected:
             self.messaging_service.connect()
-            self.connected = self.messaging_service.is_connected
+            self.connected = self.messaging_service.is_connected()
 
     def disconnect(self):
         if self.connected:
             self.messaging_service.disconnect()
-            self.connected = self.messaging_service.is_connected
+            self.connected = self.messaging_service.is_connected()
 
     def stop_component(self):
         self.disconnect()
@@ -116,13 +112,3 @@ class BrokerBase(ComponentBase):
 
     def generate_uuid(self):
         return str(uuid.uuid4())
-
-    def get_metrics(self):
-        required_metrics = [Metrics.SOLCLIENT_STATS_RX_ACKED]
-        stats_dict = {}
-        metrics: "ApiMetrics" = self.messaging_service.messaging_service.metrics()
-        for metric_key in required_metrics:
-            metric = SolaceMetrics(metric_key.value)
-            stats_dict[metric_key.value] = metrics.get_value(SolaceMetrics(metric))
-
-        return stats_dict

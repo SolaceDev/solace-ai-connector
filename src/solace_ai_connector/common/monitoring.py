@@ -5,6 +5,10 @@ from threading import Lock
 
 class Metrics(Enum):
     SOLCLIENT_STATS_RX_ACKED = "SOLCLIENT_STATS_RX_ACKED"
+    SOLCLIENT_STATS_TX_TOTAL_CONNECTION_ATTEMPTS = (
+        "SOLCLIENT_STATS_TX_TOTAL_CONNECTION_ATTEMPTS"
+    )
+    IS_CONNECTED = "IS_CONNECTED"
 
 
 class Monitoring:
@@ -132,9 +136,17 @@ class Monitoring:
                 metric_timestamp = value.timestamp
 
                 if metric in [
-                    Metrics.SOLCLIENT_STATS_RX_ACKED
+                    Metrics.SOLCLIENT_STATS_RX_ACKED,
+                    Metrics.SOLCLIENT_STATS_TX_TOTAL_CONNECTION_ATTEMPTS,
                 ]:  # add metrics that need to be aggregated by sum
                     aggregated_metrics[new_key].value += sum(metric_value)
+
+                if metric in [
+                    metric.IS_CONNECTED
+                ]:  # add metrics that need to be aggregated by max
+                    aggregated_metrics[new_key].value = (
+                        aggregated_metrics[new_key].value or metric_value
+                    )
 
                 # set timestamp to the latest
                 if metric_timestamp > aggregated_timestamp:
