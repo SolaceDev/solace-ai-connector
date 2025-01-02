@@ -20,7 +20,7 @@ class Monitoring:
     _initialized = False
     _ready = False
     _live = False
-    _interval = 3
+    _interval = 10
 
     def __new__(cls, *args, **kwargs):
         if not cls._instance:
@@ -122,6 +122,7 @@ class Monitoring:
         """
         aggregated_metrics = {}
         for key, value in self._collected_metrics.items():
+            # remove flow_index and component_index from key
             new_key = tuple(
                 item for item in key if item[0] not in ["flow_index", "component_index"]
             )

@@ -134,7 +134,9 @@ class SolaceMessaging(Messaging):
         if strategy and strategy == "forever_retry":
             retry_interval = self.broker_properties.get("retry_interval")
             if not retry_interval:
-                log.warning("retry_interval not provided, using default value of 3000")
+                log.warning(
+                    "retry_interval not provided, using default value of 3000 milliseconds"
+                )
                 retry_interval = 3000
             self.messaging_service = (
                 MessagingService.builder()
@@ -185,7 +187,10 @@ class SolaceMessaging(Messaging):
             )
 
         # Blocking connect thread
-        self.messaging_service.connect()
+        result = self.messaging_service.connect_async()
+        if result.result() is None:
+            log.error("Failed to connect to broker")
+            return False
 
         # Event Handling for the messaging service
         self.service_handler = ServiceEventHandler()
