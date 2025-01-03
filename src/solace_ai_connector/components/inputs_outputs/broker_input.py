@@ -147,8 +147,8 @@ class BrokerInput(BrokerBase):
         metrics: "ApiMetrics" = self.messaging_service.messaging_service.metrics()
         for metric_key in required_metrics:
             metric = SolaceMetrics(metric_key.value)
-            stats_dict[metric_key.value] = metrics.get_value(SolaceMetrics(metric))
+            stats_dict[metric_key] = metrics.get_value(SolaceMetrics(metric))
 
-        stats_dict[Metrics.IS_CONNECTED.value] = self.messaging_service.is_connected()
+        stats_dict[Metrics.IS_CONNECTED] = self.messaging_service.is_connected()
 
         return stats_dict

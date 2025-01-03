@@ -63,7 +63,7 @@ class Monitoring:
         """
         Initialize the MetricCollector.
         """
-        self._required_metrics = [metric.value for metric in Metrics]
+        self._required_metrics = [metric for metric in Metrics]
 
     def get_required_metrics(self) -> List[Metrics]:
         """
@@ -113,7 +113,7 @@ class Monitoring:
         """
         return self._interval
 
-    def collect_metrics(self, metrics: dict[Metrics, dict[str, Any]]) -> None:
+    def collect_metrics(self, metrics: dict[Metrics, dict[Metrics, Any]]) -> None:
         """
         Collect metrics.
 
@@ -131,7 +131,9 @@ class Monitoring:
         """
         return self._collected_metrics
 
-    def get_aggregated_metrics(self) -> List[dict[str, Any]]:
+    def get_aggregated_metrics(
+        self, required_metrics: List[Metrics] = None
+    ) -> List[dict[str, Any]]:
         """
         Retrieve collected metrics.
 
@@ -139,6 +141,13 @@ class Monitoring:
         """
         aggregated_metrics = {}
         for key, value in self._collected_metrics.items():
+            # get metric
+            metric = next(item[1] for item in key if item[0] == "metric")
+
+            # skip metrics that are not required
+            if required_metrics and metric not in required_metrics:
+                continue
+
             # remove flow_index and component_index from key
             new_key = tuple(
                 item for item in key if item[0] not in ["flow_index", "component_index"]
@@ -148,7 +157,6 @@ class Monitoring:
                 aggregated_metrics[new_key] = value
             else:
                 # aggregate metrics: sum
-                metric = key.metric
                 aggregated_timestamp = aggregated_metrics[new_key].timestamp
                 metric_value = value.value
                 metric_timestamp = value.timestamp
@@ -169,8 +177,5 @@ class Monitoring:
                 # set timestamp to the latest
                 if metric_timestamp > aggregated_timestamp:
                     aggregated_metrics[new_key].timestamp = metric_timestamp
-
-                # set type
-                aggregated_metrics[new_key].type = Metrics.get_type(metric)
 
         return aggregated_metrics

@@ -14,6 +14,7 @@ from ..common.trace_message import TraceMessage
 from ..common.event import Event, EventType
 from ..flow.request_response_flow_controller import RequestResponseFlowController
 from ..common.monitoring import Monitoring
+from ..common.monitoring import Metrics
 
 DEFAULT_QUEUE_TIMEOUT_MS = 1000
 DEFAULT_QUEUE_MAX_DEPTH = 5
@@ -479,7 +480,7 @@ class ComponentBase:
             f"Broker request response controller not found for component {self.name}"
         )
 
-    def get_metrics_with_header(self) -> dict[dict[str, Any], Any]:
+    def get_metrics_with_header(self) -> dict[dict[Metrics, Any], Any]:
         metrics = {}
         required_metrics = self.monitoring.get_required_metrics()
 
@@ -502,7 +503,7 @@ class ComponentBase:
                 metrics[key] = value
         return metrics
 
-    def get_metrics(self) -> dict[str, Any]:
+    def get_metrics(self) -> dict[Metrics, Any]:
         return {}
 
     def run_micro_monitoring(self) -> None:
