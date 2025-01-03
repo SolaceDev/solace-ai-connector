@@ -10,6 +10,23 @@ class Metrics(Enum):
     )
     IS_CONNECTED = "IS_CONNECTED"
 
+    @staticmethod
+    def get_type(metric: "Metrics") -> str:
+        """
+        Get the type of the metric.
+
+        :param metric: Metric
+        :return: Type of the metric
+        """
+        if metric in [
+            Metrics.SOLCLIENT_STATS_RX_ACKED,
+            Metrics.SOLCLIENT_STATS_TX_TOTAL_CONNECTION_ATTEMPTS,
+            Metrics.IS_CONNECTED,
+        ]:
+            return "integer"
+        # Add more cases here if needed
+        return "unknown"
+
 
 class Monitoring:
     """
@@ -152,5 +169,8 @@ class Monitoring:
                 # set timestamp to the latest
                 if metric_timestamp > aggregated_timestamp:
                     aggregated_metrics[new_key].timestamp = metric_timestamp
+
+                # set type
+                aggregated_metrics[new_key].type = Metrics.get_type(metric)
 
         return aggregated_metrics
