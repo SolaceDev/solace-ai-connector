@@ -133,7 +133,7 @@ class Monitoring:
 
     def get_aggregated_metrics(
         self, required_metrics: List[Metrics] = None
-    ) -> List[dict[str, Any]]:
+    ) -> dict[tuple, dict[str, Any]]:
         """
         Retrieve collected metrics.
 
