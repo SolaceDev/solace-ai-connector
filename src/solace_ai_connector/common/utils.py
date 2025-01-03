@@ -392,7 +392,7 @@ def decode_payload(payload, encoding, payload_format):
     return payload
 
 
-def get_data_value(data_object, expression):
+def get_data_value(data_object, expression, resolve_none_colon=False):
     # If the data_object is a value, return it
     if (
         not isinstance(data_object, dict)
@@ -401,13 +401,11 @@ def get_data_value(data_object, expression):
     ):
         return data_object
     
-    if not data_object or not expression:
-        return data_object
-    
     if ":" not in expression:
-        if expression in data_object:
-            return data_object[expression]
-        return data_object
+        if resolve_none_colon:
+            return (data_object or {}).get(expression)
+        else:
+            return data_object
 
     data_name = expression.split(":")[1]
 
