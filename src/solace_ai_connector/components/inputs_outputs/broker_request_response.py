@@ -332,7 +332,7 @@ class BrokerRequestResponse(BrokerBase):
             return
 
         streaming_complete_expression = None
-        metadata_json = get_data_value(user_properties, self.user_properties_reply_metadata_key)
+        metadata_json = get_data_value(user_properties, self.user_properties_reply_metadata_key, True)
         if not metadata_json:
             log.error("Received response without metadata: %s", payload)
             return
@@ -432,7 +432,8 @@ class BrokerRequestResponse(BrokerBase):
 
         existing_metadata_json = get_data_value(
             data["user_properties"],
-            self.user_properties_reply_metadata_key
+            self.user_properties_reply_metadata_key,
+            True
         )
         if existing_metadata_json:
             try:
