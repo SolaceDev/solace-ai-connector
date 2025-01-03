@@ -401,12 +401,9 @@ def get_data_value(data_object, expression, resolve_none_colon=False):
     ):
         return data_object
     
-    if not data_object or not expression:
-        return data_object
-    
     if ":" not in expression:
         if resolve_none_colon:
-            return data_object.get(expression)
+            return (data_object or {}).get(expression)
         else:
             return data_object
 
