@@ -79,7 +79,7 @@ class Monitoring:
 
         :param required_metrics: List of required metrics
         """
-        self._required_metrics = [metric.value for metric in required_metrics]
+        self._required_metrics = [metric for metric in required_metrics]
 
     def set_readiness(self, ready: bool) -> None:
         """
