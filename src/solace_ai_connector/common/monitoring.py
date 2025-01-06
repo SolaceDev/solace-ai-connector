@@ -186,9 +186,9 @@ class Monitoring:
                 {
                     "flow": metric_dict.get("flow"),
                     "component": metric_dict.get("component"),
-                    "metric": metric_dict.get("metric").value,
-                    "timestamp": value.timestamp,
-                    "value": value.value,
+                    "metric": metric_dict.get("metric"),
+                    "timestamp": value["timestamp"],
+                    "value": value["value"],
                 }
             )
 
