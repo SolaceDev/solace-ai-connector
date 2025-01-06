@@ -149,6 +149,8 @@ class BrokerInput(BrokerBase):
             metric = SolaceMetrics(metric_key.value)
             stats_dict[metric_key] = metrics.get_value(SolaceMetrics(metric))
 
-        stats_dict[Metrics.IS_CONNECTED] = self.messaging_service.is_connected()
+        stats_dict[Metrics.IS_CONNECTED] = (
+            1 if self.messaging_service.is_connected() else 0
+        )
 
         return stats_dict

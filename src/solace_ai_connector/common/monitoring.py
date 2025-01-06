@@ -133,7 +133,7 @@ class Monitoring:
 
     def get_aggregated_metrics(
         self, required_metrics: List[Metrics] = None
-    ) -> dict[tuple, dict[str, Any]]:
+    ) -> List[dict[str, Any]]:
         """
         Retrieve collected metrics.
 
@@ -178,4 +178,18 @@ class Monitoring:
                 if metric_timestamp > aggregated_timestamp:
                     aggregated_metrics[new_key].timestamp = metric_timestamp
 
-        return aggregated_metrics
+        # convert to dictionary
+        formatted_metrics = []
+        for key, value in aggregated_metrics.items():
+            metric_dict = dict(key)
+            formatted_metrics.append(
+                {
+                    "flow": metric_dict.get("flow"),
+                    "component": metric_dict.get("component"),
+                    "metric": metric_dict.get("metric").value,
+                    "timestamp": value.timestamp,
+                    "value": value.value,
+                }
+            )
+
+        return formatted_metrics
