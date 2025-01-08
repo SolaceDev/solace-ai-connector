@@ -2,7 +2,7 @@ name: CI
 on:
   push:
     branches:
-      - main
+      - include_ws_config
   pull_request:
     types: [opened, synchronize]
 
