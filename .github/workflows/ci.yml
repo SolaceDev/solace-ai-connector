@@ -14,10 +14,12 @@ permissions:
 
 jobs:
   ci:
-    uses: SolaceDev/solace-public-workflows/.github/workflows/hatch_ci.yml@main
+    uses: SolaceDev/solace-public-workflows/.github/workflows/hatch_ci.yml@ws_conf_test
     with:
       min-python-version: "3.10"
-      whitesource_product_name: "solaceai"
+      whitesource_product_name: "cicd_playground"
+
+
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
