@@ -2,6 +2,8 @@ from typing import Any, List
 from enum import Enum
 from threading import Lock
 
+from ..common.messaging.solace_messaging import ConnectionStatus
+
 
 class Metrics(Enum):
     SOLCLIENT_STATS_RX_ACKED = "SOLCLIENT_STATS_RX_ACKED"
@@ -33,8 +35,6 @@ class Monitoring:
 
     _instance = None
     _initialized = False
-    _ready = False
-    _live = False
     _interval = 10
 
     def __new__(cls, *args, **kwargs):
@@ -80,14 +80,6 @@ class Monitoring:
         """
         self._required_metrics = [metric for metric in required_metrics]
 
-    def is_connected(self) -> int:
-        """
-        Get the connection status of the broker.
-
-        :return: Connection status
-        """
-        return 1 if self._live and self._ready else 0
-
     def set_interval(self, interval: int) -> None:
         """
         Set the interval for the MetricCollector.
@@ -116,15 +108,18 @@ class Monitoring:
         """
         Get the connection status of the broker.
         """
-        status = 1
+        status = ConnectionStatus.CONNECTED
         for _, value in self._connection_status.items():
             # if a module is disconnected, the status is disconnected
-            if value == 0:
-                status = 0
+            if value == ConnectionStatus.DISCONNECTED:
+                status = ConnectionStatus.DISCONNECTED
                 break
             # if a module is connecting, the status is connecting
-            if status == 1 and value == 2:
-                status = 2
+            if (
+                status == ConnectionStatus.CONNECTED
+                and value == ConnectionStatus.RECONNECTING
+            ):
+                status = ConnectionStatus.RECONNECTING
 
         return value
 

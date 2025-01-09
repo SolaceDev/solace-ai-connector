@@ -4,6 +4,8 @@ import logging
 import os
 import certifi
 import threading
+import time
+from enum import Enum
 
 from solace.messaging.messaging_service import (
     MessagingService,
@@ -35,14 +37,20 @@ from .messaging import Messaging
 from ..log import log
 
 
-_is_connected = False
+class ConnectionStatus(Enum):
+    RECONNECTING = 2
+    CONNECTED = 1
+    DISCONNECTED = 0
+
+
+_connection_status = ConnectionStatus.DISCONNECTED
 _lock = threading.Lock()
 
 
-def change_connection_status(status: bool):
-    global _is_connected
+def change_connection_status(status: ConnectionStatus):
+    global _connection_status
     with _lock:
-        _is_connected = status
+        _connection_status = status
 
 
 class MessageHandlerImpl(MessageHandler):
@@ -82,17 +90,17 @@ class ServiceEventHandler(
 ):
 
     def on_reconnected(self, service_event: ServiceEvent):
-        change_connection_status(True)
+        change_connection_status(ConnectionStatus.CONNECTED)
         log.debug("Reconnected to broker: %s", service_event.get_cause())
         log.debug("Message: %s", service_event.get_message())
 
     def on_reconnecting(self, event: "ServiceEvent"):
-        change_connection_status(False)
+        change_connection_status(ConnectionStatus.RECONNECTING)
         log.debug("Reconnecting - Error cause: %s", event.get_cause())
         log.debug("Message: %s", event.get_message())
 
     def on_service_interrupted(self, event: "ServiceEvent"):
-        change_connection_status(False)
+        change_connection_status(ConnectionStatus.DISCONNECTED)
         log.debug("Service interrupted - Error cause: %s", event.get_cause())
         log.debug("Message: %s", event.get_message())
 
@@ -123,7 +131,7 @@ class SolaceMessaging(Messaging):
         # set_python_solace_log_level("DEBUG")
 
     def __del__(self):
-        change_connection_status(False)
+        change_connection_status(ConnectionStatus.DISCONNECTED)
         self.disconnect()
 
     def connect(self):
@@ -203,10 +211,14 @@ class SolaceMessaging(Messaging):
 
         # Blocking connect thread
         result = self.messaging_service.connect_async()
+        while not result.done():
+            log.debug("Connecting to broker...")
+            time.sleep(5)
+
         if result.result() is None:
             log.error("Failed to connect to broker")
             return False
-        change_connection_status(True)
+        change_connection_status(ConnectionStatus.CONNECTED)
 
         # Event Handling for the messaging service
         self.service_handler = ServiceEventHandler()
@@ -283,12 +295,12 @@ class SolaceMessaging(Messaging):
     def disconnect(self):
         try:
             self.messaging_service.disconnect()
-            change_connection_status(False)
+            change_connection_status(ConnectionStatus.DISCONNECTED)
         except Exception as exception:  # pylint: disable=broad-except
             log.debug("Error disconnecting: %s", exception)
 
-    def is_connected(self):
-        return _is_connected
+    def get_connection_status(self):
+        return _connection_status
 
     def send_message(
         self,

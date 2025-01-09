@@ -138,8 +138,8 @@ class BrokerInput(BrokerBase):
         current_broker_message = self.current_broker_message
         return lambda: self.acknowledge_message(current_broker_message)
 
-    def is_connected(self):
-        return 1 if self.messaging_service.is_connected() else 0
+    def get_connection_status(self):
+        return self.messaging_service.get_connection_status()
 
     def get_metrics(self):
         required_metrics = [

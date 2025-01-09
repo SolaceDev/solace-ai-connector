@@ -10,6 +10,7 @@ from ..common.utils import resolve_config_values
 from ..common.utils import get_source_expression
 from ..transforms.transforms import Transforms
 from ..common.message import Message
+from ..common.messaging.solace_messaging import ConnectionStatus
 from ..common.trace_message import TraceMessage
 from ..common.event import Event, EventType
 from ..flow.request_response_flow_controller import RequestResponseFlowController
@@ -81,7 +82,9 @@ class ComponentBase:
     def run(self):
         # Start the micro monitoring thread
         monitoring_thread = threading.Thread(target=self.run_micro_monitoring)
-        connection_status_thread = threading.Thread(target=self.get_connection_status)
+        connection_status_thread = threading.Thread(
+            target=self.run_connection_status_monitoring
+        )
         monitoring_thread.start()
         connection_status_thread.start()
         # Process events until the stop signal is set
@@ -510,10 +513,10 @@ class ComponentBase:
     def get_metrics(self) -> dict[Metrics, Any]:
         return {}
 
-    def is_connected(self) -> int:
+    def get_connection_status(self) -> ConnectionStatus:
         pass
 
-    def get_connection_status(self) -> None:
+    def run_connection_status_monitoring(self) -> None:
         """
         Get connection status
         """
@@ -528,7 +531,7 @@ class ComponentBase:
                             ("component_index", self.component_index),
                         ]
                     )
-                    value = {"value": self.is_connected()}
+                    value = {"value": self.get_connection_status()}
 
                     print(key, value)
 

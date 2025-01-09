@@ -7,6 +7,7 @@ from abc import abstractmethod
 
 from ..component_base import ComponentBase
 from ...common.message import Message
+from ...common.messaging.solace_messaging import ConnectionStatus
 from ...common.messaging.messaging_builder import MessagingServiceBuilder
 from ...common.utils import encode_payload, decode_payload
 
@@ -43,7 +44,7 @@ class BrokerBase(ComponentBase):
             )
         self.current_broker_message = None
         self.messages_to_ack = []
-        self.connected = False
+        self.connected = ConnectionStatus.DISCONNECTED
         self.needs_acknowledgement = True
         self.connection_repeat_sleep_time = 5
 
@@ -52,14 +53,14 @@ class BrokerBase(ComponentBase):
         pass
 
     def connect(self):
-        if not self.connected:
+        if self.connected == ConnectionStatus.DISCONNECTED:
             self.messaging_service.connect()
-            self.connected = self.messaging_service.is_connected()
+            self.connected = ConnectionStatus.CONNECTED
 
     def disconnect(self):
-        if self.connected:
+        if self.connected == ConnectionStatus.CONNECTED:
             self.messaging_service.disconnect()
-            self.connected = self.messaging_service.is_connected()
+            self.connected = ConnectionStatus.DISCONNECTED
 
     def stop_component(self):
         self.disconnect()
