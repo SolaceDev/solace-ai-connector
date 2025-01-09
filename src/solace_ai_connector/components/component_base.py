@@ -81,7 +81,9 @@ class ComponentBase:
     def run(self):
         # Start the micro monitoring thread
         monitoring_thread = threading.Thread(target=self.run_micro_monitoring)
+        connection_status_thread = threading.Thread(target=self.get_connection_status)
         monitoring_thread.start()
+        connection_status_thread.start()
         # Process events until the stop signal is set
         while not self.stop_signal.is_set():
             event = None
@@ -107,6 +109,7 @@ class ComponentBase:
 
         self.stop_component()
         monitoring_thread.join()
+        connection_status_thread.join()
 
     def process_event_with_tracing(self, event):
         if self.trace_queue:
@@ -493,6 +496,7 @@ class ComponentBase:
                         ("flow", self.flow_name),
                         ("flow_index", self.index),
                         ("component", self.name),
+                        ("component_module", self.config.get("component_module")),
                         ("component_index", self.component_index),
                         ("metric", metric),
                     ]
@@ -505,6 +509,34 @@ class ComponentBase:
 
     def get_metrics(self) -> dict[Metrics, Any]:
         return {}
+
+    def is_connected(self) -> int:
+        pass
+
+    def get_connection_status(self) -> None:
+        """
+        Get connection status
+        """
+        try:
+            if self.config.get("component_module") == "broker_input":
+                while not self.stop_signal.is_set():
+                    key = tuple(
+                        [
+                            ("flow", self.flow_name),
+                            ("flow_index", self.index),
+                            ("component", self.name),
+                            ("component_index", self.component_index),
+                        ]
+                    )
+                    value = {"value": self.is_connected()}
+
+                    print(key, value)
+
+                    self.monitoring.set_connection_status(key, value)
+                    # Wait 1 second for the next interval
+                    self.stop_signal.wait(timeout=1)
+        except KeyboardInterrupt:
+            log.info("Monitoring connection status stopped.")
 
     def run_micro_monitoring(self) -> None:
         """

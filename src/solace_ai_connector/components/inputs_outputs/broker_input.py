@@ -138,6 +138,9 @@ class BrokerInput(BrokerBase):
         current_broker_message = self.current_broker_message
         return lambda: self.acknowledge_message(current_broker_message)
 
+    def is_connected(self):
+        return 1 if self.messaging_service.is_connected() else 0
+
     def get_metrics(self):
         required_metrics = [
             Metrics.SOLCLIENT_STATS_RX_ACKED,
@@ -148,9 +151,5 @@ class BrokerInput(BrokerBase):
         for metric_key in required_metrics:
             metric = SolaceMetrics(metric_key.value)
             stats_dict[metric_key] = metrics.get_value(SolaceMetrics(metric))
-
-        stats_dict[Metrics.IS_CONNECTED] = (
-            1 if self.messaging_service.is_connected() else 0
-        )
 
         return stats_dict

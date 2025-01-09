@@ -3,6 +3,7 @@
 import logging
 import os
 import certifi
+import threading
 
 from solace.messaging.messaging_service import (
     MessagingService,
@@ -32,6 +33,16 @@ from solace import SOLACE_LOGGING_CONFIG
 
 from .messaging import Messaging
 from ..log import log
+
+
+_is_connected = False
+_lock = threading.Lock()
+
+
+def change_connection_status(status: bool):
+    global _is_connected
+    with _lock:
+        _is_connected = status
 
 
 class MessageHandlerImpl(MessageHandler):
@@ -71,14 +82,17 @@ class ServiceEventHandler(
 ):
 
     def on_reconnected(self, service_event: ServiceEvent):
+        change_connection_status(True)
         log.debug("Reconnected to broker: %s", service_event.get_cause())
         log.debug("Message: %s", service_event.get_message())
 
     def on_reconnecting(self, event: "ServiceEvent"):
+        change_connection_status(False)
         log.debug("Reconnecting - Error cause: %s", event.get_cause())
         log.debug("Message: %s", event.get_message())
 
     def on_service_interrupted(self, event: "ServiceEvent"):
+        change_connection_status(False)
         log.debug("Service interrupted - Error cause: %s", event.get_cause())
         log.debug("Message: %s", event.get_message())
 
@@ -109,6 +123,7 @@ class SolaceMessaging(Messaging):
         # set_python_solace_log_level("DEBUG")
 
     def __del__(self):
+        change_connection_status(False)
         self.disconnect()
 
     def connect(self):
@@ -191,6 +206,7 @@ class SolaceMessaging(Messaging):
         if result.result() is None:
             log.error("Failed to connect to broker")
             return False
+        change_connection_status(True)
 
         # Event Handling for the messaging service
         self.service_handler = ServiceEventHandler()
@@ -267,11 +283,12 @@ class SolaceMessaging(Messaging):
     def disconnect(self):
         try:
             self.messaging_service.disconnect()
+            change_connection_status(False)
         except Exception as exception:  # pylint: disable=broad-except
             log.debug("Error disconnecting: %s", exception)
 
     def is_connected(self):
-        return self.messaging_service.is_connected
+        return _is_connected
 
     def send_message(
         self,

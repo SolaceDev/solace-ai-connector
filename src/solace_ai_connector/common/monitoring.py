@@ -8,7 +8,6 @@ class Metrics(Enum):
     SOLCLIENT_STATS_TX_TOTAL_CONNECTION_ATTEMPTS = (
         "SOLCLIENT_STATS_TX_TOTAL_CONNECTION_ATTEMPTS"
     )
-    IS_CONNECTED = "IS_CONNECTED"
 
     @staticmethod
     def get_type(metric: "Metrics") -> str:
@@ -21,7 +20,6 @@ class Metrics(Enum):
         if metric in [
             Metrics.SOLCLIENT_STATS_RX_ACKED,
             Metrics.SOLCLIENT_STATS_TX_TOTAL_CONNECTION_ATTEMPTS,
-            Metrics.IS_CONNECTED,
         ]:
             return "integer"
         # Add more cases here if needed
@@ -56,6 +54,7 @@ class Monitoring:
 
         self._initialized = True
         self._collected_metrics = {}
+        self._connection_status = {}
         self._lock = Lock()
         self._initialize_metrics()
 
@@ -81,21 +80,13 @@ class Monitoring:
         """
         self._required_metrics = [metric for metric in required_metrics]
 
-    def set_readiness(self, ready: bool) -> None:
+    def is_connected(self) -> int:
         """
-        Set the readiness status of the MetricCollector.
+        Get the connection status of the broker.
 
-        :param ready: Readiness status
+        :return: Connection status
         """
-        self._ready = ready
-
-    def set_liveness(self, live: bool) -> None:
-        """
-        Set the liveness status of the MetricCollector.
-
-        :param live: Liveness status
-        """
-        self._live = live
+        return 1 if self._live and self._ready else 0
 
     def set_interval(self, interval: int) -> None:
         """
@@ -112,6 +103,30 @@ class Monitoring:
         :return: Interval
         """
         return self._interval
+
+    def set_connection_status(self, key, value: int) -> None:
+        """
+        Set the connection status of the broker.
+
+        :param key: Key
+        """
+        self._connection_status[key] = value
+
+    def get_connection_status(self) -> int:
+        """
+        Get the connection status of the broker.
+        """
+        status = 1
+        for _, value in self._connection_status.items():
+            # if a module is disconnected, the status is disconnected
+            if value == 0:
+                status = 0
+                break
+            # if a module is connecting, the status is connecting
+            if status == 1 and value == 2:
+                status = 2
+
+        return value
 
     def collect_metrics(self, metrics: dict[Metrics, dict[Metrics, Any]]) -> None:
         """
@@ -148,9 +163,12 @@ class Monitoring:
             if required_metrics and metric not in required_metrics:
                 continue
 
-            # remove flow_index and component_index from key
+            # filter flow, flow_index, component, component_index from key
             new_key = tuple(
-                item for item in key if item[0] not in ["flow_index", "component_index"]
+                item
+                for item in key
+                if item[0]
+                not in ["flow", "flow_index", "component_module", "component_index"]
             )
 
             if new_key not in aggregated_metrics:
@@ -167,13 +185,6 @@ class Monitoring:
                 ]:  # add metrics that need to be aggregated by sum
                     aggregated_metrics[new_key].value += sum(metric_value)
 
-                if metric in [
-                    metric.IS_CONNECTED
-                ]:  # add metrics that need to be aggregated by max
-                    aggregated_metrics[new_key].value = (
-                        aggregated_metrics[new_key].value or metric_value
-                    )
-
                 # set timestamp to the latest
                 if metric_timestamp > aggregated_timestamp:
                     aggregated_metrics[new_key].timestamp = metric_timestamp
@@ -184,7 +195,6 @@ class Monitoring:
             metric_dict = dict(key)
             formatted_metrics.append(
                 {
-                    "flow": metric_dict.get("flow"),
                     "component": metric_dict.get("component"),
                     "metric": metric_dict.get("metric"),
                     "timestamp": value["timestamp"],

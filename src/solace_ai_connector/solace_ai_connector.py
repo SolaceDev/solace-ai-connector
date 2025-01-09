@@ -47,8 +47,6 @@ class SolaceAiConnector:
             if on_flow_creation:
                 on_flow_creation(self.flows)
 
-            self.monitoring.set_readiness(True)
-
             log.info("Solace AI Event Connector started successfully")
         except Exception as e:
             log.error("Error during Solace AI Event Connector startup: %s", str(e))
@@ -256,7 +254,3 @@ class SolaceAiConnector:
 
         if self.trace_thread:
             self.trace_thread.join()
-
-        # Update monitoring last
-        self.monitoring.set_liveness(False)
-        self.monitoring.set_readiness(False)
