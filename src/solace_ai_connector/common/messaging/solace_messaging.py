@@ -94,8 +94,8 @@ class ServiceEventHandler(
 
     def on_reconnected(self, service_event: ServiceEvent):
         change_connection_status(ConnectionStatus.CONNECTED)
-        log.debug("Reconnected to broker: %s", service_event.get_cause())
-        log.debug("Message: %s", service_event.get_message())
+        log.error("Reconnected to broker: %s", service_event.get_cause())
+        log.error("Message: %s", service_event.get_message())
 
     def on_reconnecting(self, event: "ServiceEvent"):
         change_connection_status(ConnectionStatus.RECONNECTING)
@@ -105,8 +105,8 @@ class ServiceEventHandler(
                 not self.stop_signal.is_set()
                 and _connection_status == ConnectionStatus.RECONNECTING
             ):
-                log.debug("Reconnecting to broker: %s", event.get_cause())
-                log.debug("Message: %s", event.get_message())
+                log.error("Reconnecting to broker: %s", event.get_cause())
+                log.error("Message: %s", event.get_message())
                 self.stop_signal.wait(timeout=1)
 
         log_thread = threading.Thread(target=log_reconnecting)
@@ -226,7 +226,7 @@ class SolaceMessaging(Messaging):
         # Blocking connect thread
         result = self.messaging_service.connect_async()
         while not (self.stop_signal.is_set() or result.done()):
-            log.debug("Connecting to broker...")
+            log.info("Connecting to broker...")
             self.stop_signal.wait(timeout=1)
 
         if result.result() is None:
