@@ -225,9 +225,14 @@ class SolaceMessaging(Messaging):
 
         # Blocking connect thread
         result = self.messaging_service.connect_async()
-        while not (self.stop_signal.is_set() or result.done()):
-            log.info("Connecting to broker...")
-            self.stop_signal.wait(timeout=60)
+
+        def log_connecting():
+            while not (self.stop_signal.is_set() or result.done()):
+                log.info("Connecting to broker...")
+                self.stop_signal.wait(timeout=60)
+
+        log_thread = threading.Thread(target=log_connecting)
+        log_thread.start()
 
         if result.result() is None:
             log.error("Failed to connect to broker")
