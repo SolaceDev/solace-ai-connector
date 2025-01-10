@@ -107,7 +107,7 @@ class ServiceEventHandler(
             ):
                 log.error("Reconnecting to broker: %s", event.get_cause())
                 log.error("Message: %s", event.get_message())
-                self.stop_signal.wait(timeout=1)
+                self.stop_signal.wait(timeout=60)
 
         log_thread = threading.Thread(target=log_reconnecting)
         log_thread.start()
@@ -227,7 +227,7 @@ class SolaceMessaging(Messaging):
         result = self.messaging_service.connect_async()
         while not (self.stop_signal.is_set() or result.done()):
             log.info("Connecting to broker...")
-            self.stop_signal.wait(timeout=1)
+            self.stop_signal.wait(timeout=60)
 
         if result.result() is None:
             log.error("Failed to connect to broker")
