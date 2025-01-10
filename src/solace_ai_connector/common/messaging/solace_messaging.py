@@ -226,10 +226,18 @@ class SolaceMessaging(Messaging):
         # Blocking connect thread
         result = self.messaging_service.connect_async()
 
+        # log connection attempts
+        # note: the connection/reconnection handler API does not log connection attempts
+        self.stop_connection_log = threading.Event()
+
         def log_connecting():
-            while not (self.stop_signal.is_set() or result.done()):
+            while not (
+                self.stop_signal.is_set()
+                or self.stop_connection_log.is_set()
+                or result.done()
+            ):
                 log.info("Connecting to broker...")
-                self.stop_signal.wait(timeout=60)
+                self.stop_signal.wait(timeout=30)
 
         log_thread = threading.Thread(target=log_connecting)
         log_thread.start()
@@ -237,6 +245,8 @@ class SolaceMessaging(Messaging):
         if result.result() is None:
             log.error("Failed to connect to broker")
             return False
+        self.stop_connection_log.set()
+
         change_connection_status(ConnectionStatus.CONNECTED)
 
         # Event Handling for the messaging service
