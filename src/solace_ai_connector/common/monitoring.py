@@ -121,7 +121,7 @@ class Monitoring:
             ):
                 status = ConnectionStatus.RECONNECTING
 
-        return value
+        return status
 
     def collect_metrics(self, metrics: dict[Metrics, dict[Metrics, Any]]) -> None:
         """
