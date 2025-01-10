@@ -89,6 +89,9 @@ class ServiceEventHandler(
     ReconnectionListener, ReconnectionAttemptListener, ServiceInterruptionListener
 ):
 
+    def __init__(self, stop_signal):
+        self.stop_signal = stop_signal
+
     def on_reconnected(self, service_event: ServiceEvent):
         change_connection_status(ConnectionStatus.CONNECTED)
         log.debug("Reconnected to broker: %s", service_event.get_cause())
@@ -96,8 +99,18 @@ class ServiceEventHandler(
 
     def on_reconnecting(self, event: "ServiceEvent"):
         change_connection_status(ConnectionStatus.RECONNECTING)
-        log.debug("Reconnecting - Error cause: %s", event.get_cause())
-        log.debug("Message: %s", event.get_message())
+
+        def log_reconnecting():
+            while (
+                not self.stop_signal.is_set()
+                and _connection_status == ConnectionStatus.RECONNECTING
+            ):
+                log.debug("Reconnecting to broker: %s", event.get_cause())
+                log.debug("Message: %s", event.get_message())
+                self.stop_signal.wait(timeout=1)
+
+        log_thread = threading.Thread(target=log_reconnecting)
+        log_thread.start()
 
     def on_service_interrupted(self, event: "ServiceEvent"):
         change_connection_status(ConnectionStatus.DISCONNECTED)
@@ -118,13 +131,14 @@ def set_python_solace_log_level(level: str):
 # Create SolaceMessaging class inheriting from Messaging
 class SolaceMessaging(Messaging):
 
-    def __init__(self, broker_properties: dict):
+    def __init__(self, broker_properties: dict, stop_signal):
         super().__init__(broker_properties)
         self.persistent_receivers = []
         self.messaging_service = None
         self.service_handler = None
         self.publisher = None
         self.persistent_receiver: PersistentMessageReceiver = None
+        self.stop_signal = stop_signal
         # MessagingService.set_core_messaging_log_level(
         #     level="DEBUG", file="/home/efunnekotter/core.log"
         # )
@@ -211,9 +225,9 @@ class SolaceMessaging(Messaging):
 
         # Blocking connect thread
         result = self.messaging_service.connect_async()
-        while not result.done():
+        while not (self.stop_signal.is_set() or result.done()):
             log.debug("Connecting to broker...")
-            time.sleep(5)
+            self.stop_signal.wait(timeout=1)
 
         if result.result() is None:
             log.error("Failed to connect to broker")
@@ -221,7 +235,7 @@ class SolaceMessaging(Messaging):
         change_connection_status(ConnectionStatus.CONNECTED)
 
         # Event Handling for the messaging service
-        self.service_handler = ServiceEventHandler()
+        self.service_handler = ServiceEventHandler(self.stop_signal)
         self.messaging_service.add_reconnection_listener(self.service_handler)
         self.messaging_service.add_reconnection_attempt_listener(self.service_handler)
         self.messaging_service.add_service_interruption_listener(self.service_handler)

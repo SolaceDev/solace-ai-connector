@@ -38,7 +38,9 @@ class BrokerBase(ComponentBase):
         self.broker_properties = self.get_broker_properties()
         if self.broker_properties["broker_type"] not in ["test", "test_streaming"]:
             self.messaging_service = (
-                MessagingServiceBuilder(self.flow_lock_manager, self.flow_kv_store)
+                MessagingServiceBuilder(
+                    self.flow_lock_manager, self.flow_kv_store, self.stop_signal
+                )
                 .from_properties(self.broker_properties)
                 .build()
             )
