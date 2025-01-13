@@ -531,7 +531,7 @@ class ComponentBase:
                             ("component_index", self.component_index),
                         ]
                     )
-                    value = {"value": self.get_connection_status()}
+                    value = self.get_connection_status()
                     self.monitoring.set_connection_status(key, value)
                     # Wait 1 second for the next interval
                     self.stop_signal.wait(timeout=1)

@@ -108,18 +108,25 @@ class Monitoring:
         """
         Get the connection status of the broker.
         """
-        status = ConnectionStatus.CONNECTED
+        started = True
+        # default status is disconnected
+        status = ConnectionStatus.DISCONNECTED
         for _, value in self._connection_status.items():
-            # if a module is disconnected, the status is disconnected
-            if value == ConnectionStatus.DISCONNECTED:
-                status = ConnectionStatus.DISCONNECTED
-                break
+            if started:
+                status = value
+                started = False
+
             # if a module is connecting, the status is connecting
             if (
                 status == ConnectionStatus.CONNECTED
                 and value == ConnectionStatus.RECONNECTING
             ):
                 status = ConnectionStatus.RECONNECTING
+
+            # if a module is disconnected, the status is disconnected
+            if value == ConnectionStatus.DISCONNECTED:
+                status = ConnectionStatus.DISCONNECTED
+                break
 
         return status
 
