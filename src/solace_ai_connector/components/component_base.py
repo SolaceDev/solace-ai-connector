@@ -521,7 +521,7 @@ class ComponentBase:
         Get connection status
         """
         try:
-            if self.config.get("component_module") == "broker_input":
+            if self.config.get("component_module") in {"broker_input", "broker_output"}:
                 while not self.stop_signal.is_set():
                     key = tuple(
                         [

@@ -39,7 +39,10 @@ class BrokerBase(ComponentBase):
         if self.broker_properties["broker_type"] not in ["test", "test_streaming"]:
             self.messaging_service = (
                 MessagingServiceBuilder(
-                    self.flow_lock_manager, self.flow_kv_store, self.stop_signal
+                    self.flow_lock_manager,
+                    self.flow_kv_store,
+                    self.name,
+                    self.stop_signal,
                 )
                 .from_properties(self.broker_properties)
                 .build()
@@ -48,7 +51,6 @@ class BrokerBase(ComponentBase):
         self.messages_to_ack = []
         self.connected = ConnectionStatus.DISCONNECTED
         self.needs_acknowledgement = True
-        self.connection_repeat_sleep_time = 5
 
     @abstractmethod
     def invoke(self, message, data):

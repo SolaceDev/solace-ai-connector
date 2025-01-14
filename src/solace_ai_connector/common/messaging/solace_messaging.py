@@ -4,7 +4,6 @@ import logging
 import os
 import certifi
 import threading
-import time
 from enum import Enum
 
 from solace.messaging.messaging_service import (
@@ -89,13 +88,20 @@ class ServiceEventHandler(
     ReconnectionListener, ReconnectionAttemptListener, ServiceInterruptionListener
 ):
 
-    def __init__(self, stop_signal):
+    def __init__(self, stop_signal, error_prefix=""):
         self.stop_signal = stop_signal
+        self.error_prefix = error_prefix
 
     def on_reconnected(self, service_event: ServiceEvent):
         change_connection_status(ConnectionStatus.CONNECTED)
-        log.error("Reconnected to broker: %s", service_event.get_cause())
-        log.error("Message: %s", service_event.get_message())
+        log.error(
+            f"{self.error_prefix} Reconnected to broker: %s",
+            service_event.get_cause(),
+        )
+        log.error(
+            f"{self.error_prefix} Message: %s",
+            service_event.get_message(),
+        )
 
     def on_reconnecting(self, event: "ServiceEvent"):
         change_connection_status(ConnectionStatus.RECONNECTING)
@@ -105,8 +111,14 @@ class ServiceEventHandler(
                 not self.stop_signal.is_set()
                 and _connection_status == ConnectionStatus.RECONNECTING
             ):
-                log.error("Reconnecting to broker: %s", event.get_cause())
-                log.error("Message: %s", event.get_message())
+                log.error(
+                    f"{self.error_prefix} Reconnecting to broker: %s",
+                    event.get_cause(),
+                )
+                log.error(
+                    f"{self.error_prefix} Message: %s",
+                    event.get_message(),
+                )
                 self.stop_signal.wait(timeout=60)
 
         log_thread = threading.Thread(target=log_reconnecting)
@@ -114,8 +126,11 @@ class ServiceEventHandler(
 
     def on_service_interrupted(self, event: "ServiceEvent"):
         change_connection_status(ConnectionStatus.DISCONNECTED)
-        log.debug("Service interrupted - Error cause: %s", event.get_cause())
-        log.debug("Message: %s", event.get_message())
+        log.debug(
+            f"{self.error_prefix} Service interrupted - Error cause: %s",
+            event.get_cause(),
+        )
+        log.debug(f"{self.error_prefix} Message: %s", event.get_message())
 
 
 def set_python_solace_log_level(level: str):
@@ -131,7 +146,7 @@ def set_python_solace_log_level(level: str):
 # Create SolaceMessaging class inheriting from Messaging
 class SolaceMessaging(Messaging):
 
-    def __init__(self, broker_properties: dict, stop_signal):
+    def __init__(self, broker_properties: dict, broker_name, stop_signal):
         super().__init__(broker_properties)
         self.persistent_receivers = []
         self.messaging_service = None
@@ -139,6 +154,7 @@ class SolaceMessaging(Messaging):
         self.publisher = None
         self.persistent_receiver: PersistentMessageReceiver = None
         self.stop_signal = stop_signal
+        self.error_prefix = f"broker[{broker_name}]:"
         # MessagingService.set_core_messaging_log_level(
         #     level="DEBUG", file="/home/efunnekotter/core.log"
         # )
@@ -172,7 +188,7 @@ class SolaceMessaging(Messaging):
             retry_interval = self.broker_properties.get("retry_interval")
             if not retry_interval:
                 log.warning(
-                    "retry_interval not provided, using default value of 3000 milliseconds"
+                    f"{self.error_prefix} retry_interval not provided, using default value of 3000 milliseconds"
                 )
                 retry_interval = 3000
             self.messaging_service = (
@@ -190,10 +206,14 @@ class SolaceMessaging(Messaging):
             retry_count = self.broker_properties.get("retry_count")
             retry_wait = self.broker_properties.get("retry_wait")
             if not retry_count:
-                log.warning("retry_count not provided, using default value of 20")
+                log.warning(
+                    f"{self.error_prefix} retry_count not provided, using default value of 20"
+                )
                 retry_count = 20
             if not retry_wait:
-                log.warning("retry_wait not provided, using default value of 3000")
+                log.warning(
+                    f"{self.error_prefix} retry_wait not provided, using default value of 3000"
+                )
                 retry_wait = 3000
             self.messaging_service = (
                 MessagingService.builder()
@@ -209,7 +229,7 @@ class SolaceMessaging(Messaging):
         else:
             # default
             log.info(
-                "Using default reconnection strategy. 20 retries with 3000ms interval"
+                f"{self.error_prefix} Using default reconnection strategy. 20 retries with 3000ms interval"
             )
             self.messaging_service = (
                 MessagingService.builder()
@@ -236,21 +256,21 @@ class SolaceMessaging(Messaging):
                 or self.stop_connection_log.is_set()
                 or result.done()
             ):
-                log.info("Connecting to broker...")
+                log.info(f"{self.error_prefix} Connecting to broker...")
                 self.stop_signal.wait(timeout=30)
 
         log_thread = threading.Thread(target=log_connecting)
         log_thread.start()
 
         if result.result() is None:
-            log.error("Failed to connect to broker")
+            log.error(f"{self.error_prefix} Failed to connect to broker")
             return False
         self.stop_connection_log.set()
 
         change_connection_status(ConnectionStatus.CONNECTED)
 
         # Event Handling for the messaging service
-        self.service_handler = ServiceEventHandler(self.stop_signal)
+        self.service_handler = ServiceEventHandler(self.stop_signal, self.error_prefix)
         self.messaging_service.add_reconnection_listener(self.service_handler)
         self.messaging_service.add_reconnection_attempt_listener(self.service_handler)
         self.messaging_service.add_service_interruption_listener(self.service_handler)
@@ -296,7 +316,7 @@ class SolaceMessaging(Messaging):
             self.persistent_receiver.start()
 
             log.debug(
-                "Persistent receiver started... Bound to Queue [%s] (Temporary: %s)",
+                f"{self.error_prefix} Persistent receiver started... Bound to Queue [%s] (Temporary: %s)",
                 queue.get_name(),
                 temporary,
             )
@@ -304,7 +324,7 @@ class SolaceMessaging(Messaging):
         # Handle API exception
         except PubSubPlusClientError as exception:
             log.warning(
-                "Error creating persistent receiver for queue [%s], %s",
+                f"{self.error_prefix} Error creating persistent receiver for queue [%s], %s",
                 queue_name,
                 exception,
             )
@@ -317,7 +337,7 @@ class SolaceMessaging(Messaging):
             for subscription in subscriptions:
                 sub = TopicSubscription.of(subscription.get("topic"))
                 self.persistent_receiver.add_subscription(sub)
-                log.debug("Subscribed to topic: %s", subscription)
+                log.debug(f"{self.error_prefix} Subscribed to topic: %s", subscription)
 
         return self.persistent_receiver
 
@@ -326,7 +346,7 @@ class SolaceMessaging(Messaging):
             self.messaging_service.disconnect()
             change_connection_status(ConnectionStatus.DISCONNECTED)
         except Exception as exception:  # pylint: disable=broad-except
-            log.debug("Error disconnecting: %s", exception)
+            log.debug(f"{self.error_prefix} Error disconnecting: %s", exception)
 
     def get_connection_status(self):
         return _connection_status
@@ -381,4 +401,6 @@ class SolaceMessaging(Messaging):
         if "_original_message" in broker_message:
             self.persistent_receiver.ack(broker_message["_original_message"])
         else:
-            log.warning("Cannot acknowledge message: original Solace message not found")
+            log.warning(
+                f"{self.error_prefix} Cannot acknowledge message: original Solace message not found"
+            )
