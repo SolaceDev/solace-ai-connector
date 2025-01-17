@@ -88,9 +88,14 @@ class ServiceEventHandler(
     ReconnectionListener, ReconnectionAttemptListener, ServiceInterruptionListener
 ):
 
-    def __init__(self, stop_signal, error_prefix=""):
+    def __init__(
+        self, stop_signal, strategy, retry_count, retry_interval, error_prefix=""
+    ):
         self.stop_signal = stop_signal
         self.error_prefix = error_prefix
+        self.strategy = strategy
+        self.retry_count = retry_count
+        self.retry_interval = retry_interval
 
     def on_reconnected(self, service_event: ServiceEvent):
         change_connection_status(ConnectionStatus.CONNECTED)
@@ -107,10 +112,21 @@ class ServiceEventHandler(
         change_connection_status(ConnectionStatus.RECONNECTING)
 
         def log_reconnecting():
+
             while (
                 not self.stop_signal.is_set()
                 and _connection_status == ConnectionStatus.RECONNECTING
             ):
+                # update retry count
+                if self.strategy and self.strategy == "parametrized_retry":
+                    if self.retry_count <= 0:
+                        log.error(
+                            f"{self.error_prefix} Reconnection attempts exhausted. Stopping..."
+                        )
+                        break
+                    else:
+                        self.retry_count -= 1
+
                 log.error(
                     f"{self.error_prefix} Reconnecting to broker: %s",
                     event.get_cause(),
@@ -119,7 +135,7 @@ class ServiceEventHandler(
                     f"{self.error_prefix} Message: %s",
                     event.get_message(),
                 )
-                self.stop_signal.wait(timeout=60)
+                self.stop_signal.wait(timeout=self.retry_interval / 1000)
 
         log_thread = threading.Thread(target=log_reconnecting)
         log_thread.start()
@@ -184,6 +200,8 @@ class SolaceMessaging(Messaging):
             or "/usr/share/ca-certificates/mozilla/",
         }
         strategy = self.broker_properties.get("reconnection_strategy")
+        retry_interval = 3000  # default
+        retry_count = 20  # default
         if strategy and strategy == "forever_retry":
             retry_interval = self.broker_properties.get("retry_interval")
             if not retry_interval:
@@ -204,25 +222,25 @@ class SolaceMessaging(Messaging):
             )
         elif strategy and strategy == "parametrized_retry":
             retry_count = self.broker_properties.get("retry_count")
-            retry_wait = self.broker_properties.get("retry_wait")
+            retry_interval = self.broker_properties.get("retry_wait")
             if not retry_count:
                 log.warning(
                     f"{self.error_prefix} retry_count not provided, using default value of 20"
                 )
                 retry_count = 20
-            if not retry_wait:
+            if not retry_interval:
                 log.warning(
                     f"{self.error_prefix} retry_wait not provided, using default value of 3000"
                 )
-                retry_wait = 3000
+                retry_interval = 3000
             self.messaging_service = (
                 MessagingService.builder()
                 .from_properties(broker_props)
                 .with_reconnection_retry_strategy(
-                    RetryStrategy.parametrized_retry(retry_count, retry_wait)
+                    RetryStrategy.parametrized_retry(retry_count, retry_interval)
                 )
                 .with_connection_retry_strategy(
-                    RetryStrategy.parametrized_retry(retry_count, retry_wait)
+                    RetryStrategy.parametrized_retry(retry_count, retry_interval)
                 )
                 .build()
             )
@@ -235,10 +253,10 @@ class SolaceMessaging(Messaging):
                 MessagingService.builder()
                 .from_properties(broker_props)
                 .with_reconnection_retry_strategy(
-                    RetryStrategy.parametrized_retry(20, 3000)
+                    RetryStrategy.parametrized_retry(retry_count, retry_interval)
                 )
                 .with_connection_retry_strategy(
-                    RetryStrategy.parametrized_retry(20, 3000)
+                    RetryStrategy.parametrized_retry(retry_count, retry_interval)
                 )
                 .build()
             )
@@ -251,13 +269,24 @@ class SolaceMessaging(Messaging):
         self.stop_connection_log = threading.Event()
 
         def log_connecting():
+            temp_retry_count = retry_count
             while not (
                 self.stop_signal.is_set()
                 or self.stop_connection_log.is_set()
                 or result.done()
             ):
+                # update retry count
+                if strategy and strategy == "parametrized_retry":
+                    if temp_retry_count <= 0:
+                        log.error(
+                            f"{self.error_prefix} Connection attempts exhausted. Stopping..."
+                        )
+                        break
+                    else:
+                        temp_retry_count -= 1
+
                 log.info(f"{self.error_prefix} Connecting to broker...")
-                self.stop_signal.wait(timeout=30)
+                self.stop_signal.wait(timeout=retry_interval / 1000)
 
         log_thread = threading.Thread(target=log_connecting)
         log_thread.start()
@@ -270,7 +299,9 @@ class SolaceMessaging(Messaging):
         change_connection_status(ConnectionStatus.CONNECTED)
 
         # Event Handling for the messaging service
-        self.service_handler = ServiceEventHandler(self.stop_signal, self.error_prefix)
+        self.service_handler = ServiceEventHandler(
+            self.stop_signal, strategy, retry_count, retry_interval, self.error_prefix
+        )
         self.messaging_service.add_reconnection_listener(self.service_handler)
         self.messaging_service.add_reconnection_attempt_listener(self.service_handler)
         self.messaging_service.add_service_interruption_listener(self.service_handler)
