@@ -245,10 +245,11 @@ class SolaceMessaging(Messaging):
                 .build()
             )
         else:
-            # default
+            # set default
             log.info(
                 f"{self.error_prefix} Using default reconnection strategy. 20 retries with 3000ms interval"
             )
+            strategy = "parametrized_retry"
             self.messaging_service = (
                 MessagingService.builder()
                 .from_properties(broker_props)
