@@ -143,7 +143,7 @@ class BrokerInput(BrokerBase):
 
     def get_metrics(self):
         required_metrics = [
-            Metrics.SOLCLIENT_STATS_RX_ACKED,
+            Metrics.SOLCLIENT_STATS_RX_SETTLE_ACCEPTED,
             Metrics.SOLCLIENT_STATS_TX_TOTAL_CONNECTION_ATTEMPTS,
         ]
         stats_dict = {}

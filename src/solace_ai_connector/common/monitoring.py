@@ -6,7 +6,7 @@ from ..common.messaging.solace_messaging import ConnectionStatus
 
 
 class Metrics(Enum):
-    SOLCLIENT_STATS_RX_ACKED = "SOLCLIENT_STATS_RX_ACKED"
+    SOLCLIENT_STATS_RX_SETTLE_ACCEPTED = "SOLCLIENT_STATS_RX_SETTLE_ACCEPTED"
     SOLCLIENT_STATS_TX_TOTAL_CONNECTION_ATTEMPTS = (
         "SOLCLIENT_STATS_TX_TOTAL_CONNECTION_ATTEMPTS"
     )
@@ -20,7 +20,7 @@ class Metrics(Enum):
         :return: Type of the metric
         """
         if metric in [
-            Metrics.SOLCLIENT_STATS_RX_ACKED,
+            Metrics.SOLCLIENT_STATS_RX_SETTLE_ACCEPTED,
             Metrics.SOLCLIENT_STATS_TX_TOTAL_CONNECTION_ATTEMPTS,
         ]:
             return "integer"

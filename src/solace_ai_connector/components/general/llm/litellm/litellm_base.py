@@ -74,7 +74,7 @@ class LiteLLMBase(ComponentBase):
         response = self.router.completion(
             model=self.load_balancer[0]["model_name"], messages=messages, stream=stream
         )
-        log.debug("Load balancer response: %s", response)
+        log.debug("Load balancer responded")
         return response
 
     def invoke(self, message, data):

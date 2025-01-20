@@ -195,9 +195,7 @@ class ComponentBase:
 
         # Finally send the message to the next component - or if this is the last component,
         # the component will override send_message and do whatever it needs to do with the message
-        log.debug(
-            "%sSending message from %s: %s", self.log_identifier, self.name, message
-        )
+        log.debug("%sSending message from %s", self.log_identifier, self.name)
         self.send_message(message)
 
     @abstractmethod
