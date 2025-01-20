@@ -47,7 +47,7 @@ flows:
           payload_format: json
 
       # Send messages back to broker
-      - component_name: send_response
+      - component_name: solace_output
         component_module: broker_output
         component_config:
           <<: *broker_connection
