@@ -72,17 +72,17 @@ flows:
           load_balancer:
             - model_name: "gpt-4o" # model alias
               litellm_params:
-                    model: openai/${OPENAI_MODEL_NAME}
+                    model: ${OPENAI_MODEL_NAME}
                     api_key: ${OPENAI_API_KEY}
                     api_base: ${OPENAI_API_ENDPOINT}
                     temperature: 0.01
                     # add any other parameters here
-            # - model_name: "claude-3-5-sonnet" # model alias
-            #   litellm_params:
-            #         model: ${ANTHROPIC_MODEL_NAME}
-            #         api_key: ${ANTHROPIC_API_KEY}
-            #         api_base: ${ANTHROPIC_API_ENDPOINT}
-            #         # add any other parameters here
+            - model_name: "claude-3-5-sonnet" # model alias
+              litellm_params:
+                    model: ${ANTHROPIC_MODEL_NAME}
+                    api_key: ${ANTHROPIC_API_KEY}
+                    api_base: ${ANTHROPIC_API_ENDPOINT}
+                    # add any other parameters here
             # add more models here
         input_transforms:
           - type: copy
