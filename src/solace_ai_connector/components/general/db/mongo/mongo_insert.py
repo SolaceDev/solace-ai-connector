@@ -11,7 +11,7 @@ info["config_parameters"].extend([
             {
             "name": "data_types",
             "required": False,
-            "description": "An array of key value pairs to specify the data types for each field in the data. Used for non-JSON types like Date. Supports nested dotted names",
+            "description": "Key value pairs to specify the data types for each field in the data. Used for non-JSON types like Date. Supports nested dotted names",
         },
 ])
 
@@ -22,6 +22,17 @@ class MongoDBInsertComponent(MongoDBBaseComponent):
     def __init__(self, **kwargs):
         super().__init__(info, **kwargs)
         self.data_types_map = self.get_config("data_types")
+        if self.data_types_map:
+            if not isinstance(self.data_types_map, dict):
+                raise ValueError(
+                    "Invalid data types provided for MongoDB insert. Expected a dictionary."
+                )
+            for key, field_type in self.data_types_map.items():
+                if not isinstance(key, str) or not isinstance(field_type, str):
+                    raise ValueError(
+                        "Invalid data types provided for MongoDB insert. Expected a dictionary with string key and value."
+                    )
+            
 
     def invoke(self, message, data):
         if not data or not isinstance(data, dict) and not isinstance(data, list):
