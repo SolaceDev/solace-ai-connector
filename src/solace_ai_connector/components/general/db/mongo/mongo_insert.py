@@ -15,6 +15,7 @@ info["config_parameters"].extend([
         },
 ])
 
+POSSIBLE_TYPES = ["date", "timestamp", "int", "int32", "int64", "float", "double", "bool", "string", "null"]
 
 class MongoDBInsertComponent(MongoDBBaseComponent):
     """Component for handling MongoDB database operations."""
@@ -28,9 +29,10 @@ class MongoDBInsertComponent(MongoDBBaseComponent):
                     "Invalid data types provided for MongoDB insert. Expected a dictionary."
                 )
             for key, field_type in self.data_types_map.items():
-                if not isinstance(key, str) or not isinstance(field_type, str):
+                if not isinstance(key, str) or not isinstance(field_type, str) or field_type.lower() not in POSSIBLE_TYPES:
                     raise ValueError(
-                        "Invalid data types provided for MongoDB insert. Expected a dictionary with string key and value."
+                        "Invalid data types provided for MongoDB insert. Expected a dictionary with key value pairs where key is a string and value is a string from the following list: "
+                        + ", ".join(POSSIBLE_TYPES)
                     )
             
 
