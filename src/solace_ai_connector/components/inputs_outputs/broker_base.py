@@ -29,6 +29,8 @@ from ...common.utils import encode_payload, decode_payload
 #    the message_service object.
 
 base_info = {
+    "class_name": "BrokerBase",
+    "description": "Base class for broker input/output components",
     "config_parameters": [
         {
             "name": "broker_type",
@@ -73,7 +75,7 @@ base_info = {
             "description": "Number of reconnection retries. Only used if reconnection_strategy is parametrized_retry",
             "default": 10,
         },
-    ]
+    ],
 }
 
 
