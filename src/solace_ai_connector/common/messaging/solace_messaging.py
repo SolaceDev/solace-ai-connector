@@ -42,14 +42,9 @@ class ConnectionStatus(Enum):
     DISCONNECTED = 0
 
 
-_connection_status = ConnectionStatus.DISCONNECTED
-_lock = threading.Lock()
-
-
-def change_connection_status(status: ConnectionStatus):
-    global _connection_status
-    with _lock:
-        _connection_status = status
+def change_connection_status(connection_properties: dict, status):
+    with connection_properties["lock"]:
+        connection_properties["status"] = status
 
 
 class MessageHandlerImpl(MessageHandler):
@@ -89,16 +84,23 @@ class ServiceEventHandler(
 ):
 
     def __init__(
-        self, stop_signal, strategy, retry_count, retry_interval, error_prefix=""
+        self,
+        stop_signal,
+        strategy,
+        retry_count,
+        retry_interval,
+        connection_properties,
+        error_prefix="",
     ):
         self.stop_signal = stop_signal
         self.error_prefix = error_prefix
         self.strategy = strategy
         self.retry_count = retry_count
         self.retry_interval = retry_interval
+        self.connection_properties = connection_properties
 
     def on_reconnected(self, service_event: ServiceEvent):
-        change_connection_status(ConnectionStatus.CONNECTED)
+        change_connection_status(self.connection_properties, ConnectionStatus.CONNECTED)
         log.error(
             f"{self.error_prefix} Reconnected to broker: %s",
             service_event.get_cause(),
@@ -109,13 +111,16 @@ class ServiceEventHandler(
         )
 
     def on_reconnecting(self, event: "ServiceEvent"):
-        change_connection_status(ConnectionStatus.RECONNECTING)
+        change_connection_status(
+            self.connection_properties, ConnectionStatus.RECONNECTING
+        )
 
         def log_reconnecting():
 
             while (
                 not self.stop_signal.is_set()
-                and _connection_status == ConnectionStatus.RECONNECTING
+                and self.connection_properties["status"]
+                == ConnectionStatus.RECONNECTING
             ):
                 # update retry count
                 if self.strategy and self.strategy == "parametrized_retry":
@@ -141,7 +146,9 @@ class ServiceEventHandler(
         log_thread.start()
 
     def on_service_interrupted(self, event: "ServiceEvent"):
-        change_connection_status(ConnectionStatus.DISCONNECTED)
+        change_connection_status(
+            self.connection_properties, ConnectionStatus.DISCONNECTED
+        )
         log.debug(
             f"{self.error_prefix} Service interrupted - Error cause: %s",
             event.get_cause(),
@@ -170,6 +177,11 @@ class SolaceMessaging(Messaging):
         self.publisher = None
         self.persistent_receiver: PersistentMessageReceiver = None
         self.stop_signal = stop_signal
+        self.connection_properties = {
+            "status": ConnectionStatus.DISCONNECTED,
+            "lock": threading.Lock(),
+        }
+
         self.error_prefix = f"broker[{broker_name}]:"
         # MessagingService.set_core_messaging_log_level(
         #     level="DEBUG", file="/home/efunnekotter/core.log"
@@ -177,7 +189,9 @@ class SolaceMessaging(Messaging):
         # set_python_solace_log_level("DEBUG")
 
     def __del__(self):
-        change_connection_status(ConnectionStatus.DISCONNECTED)
+        change_connection_status(
+            self.connection_properties, ConnectionStatus.DISCONNECTED
+        )
         self.disconnect()
 
     def connect(self):
@@ -297,11 +311,16 @@ class SolaceMessaging(Messaging):
             return False
         self.stop_connection_log.set()
 
-        change_connection_status(ConnectionStatus.CONNECTED)
+        change_connection_status(self.connection_properties, ConnectionStatus.CONNECTED)
 
         # Event Handling for the messaging service
         self.service_handler = ServiceEventHandler(
-            self.stop_signal, strategy, retry_count, retry_interval, self.error_prefix
+            self.stop_signal,
+            strategy,
+            retry_count,
+            retry_interval,
+            self.connection_properties,
+            self.error_prefix,
         )
         self.messaging_service.add_reconnection_listener(self.service_handler)
         self.messaging_service.add_reconnection_attempt_listener(self.service_handler)
@@ -376,12 +395,14 @@ class SolaceMessaging(Messaging):
     def disconnect(self):
         try:
             self.messaging_service.disconnect()
-            change_connection_status(ConnectionStatus.DISCONNECTED)
+            change_connection_status(
+                self.connection_properties, ConnectionStatus.DISCONNECTED
+            )
         except Exception as exception:  # pylint: disable=broad-except
             log.debug(f"{self.error_prefix} Error disconnecting: %s", exception)
 
     def get_connection_status(self):
-        return _connection_status
+        return self.connection_properties["status"]
 
     def send_message(
         self,
