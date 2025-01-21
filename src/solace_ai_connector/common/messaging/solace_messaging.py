@@ -142,7 +142,7 @@ class ServiceEventHandler(
                 )
                 self.stop_signal.wait(timeout=self.retry_interval / 1000)
 
-        log_thread = threading.Thread(target=log_reconnecting)
+        log_thread = threading.Thread(target=log_reconnecting, daemon=True)
         log_thread.start()
 
     def on_service_interrupted(self, event: "ServiceEvent"):
@@ -303,7 +303,7 @@ class SolaceMessaging(Messaging):
                 log.info(f"{self.error_prefix} Connecting to broker...")
                 self.stop_signal.wait(timeout=retry_interval / 1000)
 
-        log_thread = threading.Thread(target=log_connecting)
+        log_thread = threading.Thread(target=log_connecting, daemon=True)
         log_thread.start()
 
         if result.result() is None:
