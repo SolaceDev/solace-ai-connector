@@ -101,7 +101,6 @@ class BrokerBase(ComponentBase):
         self.messages_to_ack = []
         self.connected = ConnectionStatus.DISCONNECTED
         self.needs_acknowledgement = True
-        self.connection_repeat_sleep_time = 5
 
     @abstractmethod
     def invoke(self, message, data):
