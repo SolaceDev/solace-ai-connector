@@ -2,6 +2,8 @@
 
 import litellm
 
+from litellm.router import RetryPolicy
+from litellm.router import AllowedFailsPolicy
 from ....component_base import ComponentBase
 from .....common.log import log
 
@@ -42,6 +44,30 @@ litellm_info_base = {
             "default": False,
             "type": "boolean",
         },
+        {
+            "name": "timeout",
+            "required": False,
+            "description": "Request timeout in seconds",
+            "default": 60,
+        },
+        {
+            "name": "retry_policy",
+            "required": False,
+            "description": (
+                "Retry policy for the load balancer. "
+                "Find more at https://docs.litellm.ai/docs/routing#cooldowns"
+            ),
+            "default": "",
+        },
+        {
+            "name": "allowed_fails_policy",
+            "required": False,
+            "description": (
+                "Allowed fails policy for the load balancer. "
+                "Find more at https://docs.litellm.ai/docs/routing#cooldowns"
+            ),
+            "default": "",
+        },
     ],
 }
 
@@ -55,7 +81,10 @@ class LiteLLMBase(ComponentBase):
 
     def init(self):
         litellm.suppress_debug_info = True
-        self.load_balancer = self.get_config("load_balancer")
+        self.timeout = self.get_config("timeout")
+        self.retry_policy_config = self.get_config("retry_policy")
+        self.allowed_fails_policy_config = self.get_config("allowed_fails_policy")
+        self.load_balancer_config = self.get_config("load_balancer")
         self.set_response_uuid_in_user_properties = self.get_config(
             "set_response_uuid_in_user_properties"
         )
@@ -64,7 +93,61 @@ class LiteLLMBase(ComponentBase):
     def init_load_balancer(self):
         """initialize a load balancer"""
         try:
-            self.router = litellm.Router(model_list=self.load_balancer)
+
+            if self.retry_policy_config:
+                retry_policy = RetryPolicy(
+                    ContentPolicyViolationErrorRetries=self.retry_policy_config.get(
+                        "ContentPolicyViolationErrorRetries", None
+                    ),
+                    AuthenticationErrorRetries=self.retry_policy_config.get(
+                        "AuthenticationErrorRetries", None
+                    ),
+                    BadRequestErrorRetries=self.retry_policy_config.get(
+                        "BadRequestErrorRetries", None
+                    ),
+                    TimeoutErrorRetries=self.retry_policy_config.get(
+                        "TimeoutErrorRetries", None
+                    ),
+                    RateLimitErrorRetries=self.retry_policy_config.get(
+                        "RateLimitErrorRetries", None
+                    ),
+                    InternalServerErrorRetries=self.retry_policy_config.get(
+                        "InternalServerErrorRetries", None
+                    ),
+                )
+            else:
+                retry_policy = RetryPolicy()
+
+            if self.allowed_fails_policy_config:
+                allowed_fails_policy = AllowedFailsPolicy(
+                    ContentPolicyViolationErrorAllowedFails=self.allowed_fails_policy_config.get(
+                        "ContentPolicyViolationErrorAllowedFails", None
+                    ),
+                    RateLimitErrorAllowedFails=self.allowed_fails_policy_config.get(
+                        "RateLimitErrorAllowedFails", None
+                    ),
+                    BadRequestErrorAllowedFails=self.allowed_fails_policy_config.get(
+                        "BadRequestErrorAllowedFails", None
+                    ),
+                    AuthenticationErrorAllowedFails=self.allowed_fails_policy_config.get(
+                        "AuthenticationErrorAllowedFails", None
+                    ),
+                    TimeoutErrorAllowedFails=self.allowed_fails_policy_config.get(
+                        "TimeoutErrorAllowedFails", None
+                    ),
+                    InternalServerErrorAllowedFails=self.allowed_fails_policy_config.get(
+                        "InternalServerErrorAllowedFails", None
+                    ),
+                )
+            else:
+                allowed_fails_policy = AllowedFailsPolicy()
+
+            self.router = litellm.Router(
+                model_list=self.load_balancer_config,
+                retry_policy=retry_policy,
+                allowed_fails_policy=allowed_fails_policy,
+                timeout=self.timeout,
+            )
             log.debug("Litellm Load balancer was initialized")
         except Exception as e:
             raise ValueError(f"Error initializing load balancer: {e}")
@@ -72,7 +155,9 @@ class LiteLLMBase(ComponentBase):
     def load_balance(self, messages, stream):
         """load balance the messages"""
         response = self.router.completion(
-            model=self.load_balancer[0]["model_name"], messages=messages, stream=stream
+            model=self.load_balancer_config[0]["model_name"],
+            messages=messages,
+            stream=stream,
         )
         log.debug("Load balancer responded")
         return response
