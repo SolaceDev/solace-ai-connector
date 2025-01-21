@@ -30,6 +30,56 @@ from ...common.utils import encode_payload, decode_payload
 #    queue binding and that object is used to retrieve the next message rather than
 #    the message_service object.
 
+base_info = {
+    "class_name": "BrokerBase",
+    "description": "Base class for broker input/output components",
+    "config_parameters": [
+        {
+            "name": "broker_type",
+            "required": True,
+            "description": "Type of broker (Solace, MQTT, etc.)",
+        },
+        {
+            "name": "broker_url",
+            "required": True,
+            "description": "Broker URL (e.g. tcp://localhost:55555)",
+        },
+        {
+            "name": "broker_username",
+            "required": True,
+            "description": "Client username for broker",
+        },
+        {
+            "name": "broker_password",
+            "required": True,
+            "description": "Client password for broker",
+        },
+        {
+            "name": "broker_vpn",
+            "required": True,
+            "description": "Client VPN for broker",
+        },
+        {
+            "name": "reconnection_strategy",
+            "required": False,
+            "description": "Reconnection strategy for the broker (forever_retry, parametrized_retry)",
+            "default": "forever_retry",
+        },
+        {
+            "name": "retry_interval",
+            "required": False,
+            "description": "Reconnection retry interval in seconds for the broker",
+            "default": 10000,  # in milliseconds
+        },
+        {
+            "name": "retry_count",
+            "required": False,
+            "description": "Number of reconnection retries. Only used if reconnection_strategy is parametrized_retry",
+            "default": 10,
+        },
+    ],
+}
+
 
 class BrokerBase(ComponentBase):
 
@@ -51,6 +101,7 @@ class BrokerBase(ComponentBase):
         self.messages_to_ack = []
         self.connected = ConnectionStatus.DISCONNECTED
         self.needs_acknowledgement = True
+        self.connection_repeat_sleep_time = 5
 
     @abstractmethod
     def invoke(self, message, data):
