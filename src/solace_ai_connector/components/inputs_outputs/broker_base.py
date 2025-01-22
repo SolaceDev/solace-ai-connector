@@ -122,7 +122,10 @@ class BrokerBase(ComponentBase):
     def decode_payload(self, payload):
         encoding = self.get_config("payload_encoding")
         payload_format = self.get_config("payload_format")
-        return decode_payload(payload, encoding, payload_format)
+        try:
+            return decode_payload(payload, encoding, payload_format)
+        except Exception as e:
+            return None
 
     def encode_payload(self, payload):
         encoding = self.get_config("payload_encoding")

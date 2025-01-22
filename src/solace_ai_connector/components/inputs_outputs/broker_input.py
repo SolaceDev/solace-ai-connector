@@ -105,6 +105,10 @@ class BrokerInput(BrokerBase):
         payload = broker_message.get("payload")
         payload = self.decode_payload(payload)
 
+        if payload is None:
+            self.acknowledge_message(broker_message)
+            return None
+
         topic = broker_message.get("topic")
         user_properties = broker_message.get("user_properties", {})
         log.debug("Received message from broker: topic=%s", topic)
