@@ -182,7 +182,7 @@ class Monitoring:
                 metric_timestamp = value.timestamp
 
                 if metric in [
-                    Metrics.SOLCLIENT_STATS_RX_ACKED,
+                    Metrics.SOLCLIENT_STATS_RX_SETTLE_ACCEPTED,
                     Metrics.SOLCLIENT_STATS_TX_TOTAL_CONNECTION_ATTEMPTS,
                 ]:  # add metrics that need to be aggregated by sum
                     aggregated_metrics[new_key].value += sum(metric_value)

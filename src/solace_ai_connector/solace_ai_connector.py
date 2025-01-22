@@ -166,7 +166,7 @@ class SolaceAiConnector:
             self.trace_queue = queue.Queue()
             # Start a new thread to handle trace messages
             self.trace_thread = threading.Thread(
-                target=self.handle_trace, args=(trace_file,)
+                target=self.handle_trace, args=(trace_file,), daemon=True
             )
             self.trace_thread.start()
 

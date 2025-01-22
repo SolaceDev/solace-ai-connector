@@ -75,15 +75,17 @@ class ComponentBase:
         self.event_message_repeat_sleep_time = 1
 
     def create_thread_and_run(self):
-        self.thread = threading.Thread(target=self.run)
+        self.thread = threading.Thread(target=self.run, daemon=True)
         self.thread.start()
         return self.thread
 
     def run(self):
         # Start the micro monitoring thread
-        monitoring_thread = threading.Thread(target=self.run_micro_monitoring)
+        monitoring_thread = threading.Thread(
+            target=self.run_micro_monitoring, daemon=True
+        )
         connection_status_thread = threading.Thread(
-            target=self.run_connection_status_monitoring
+            target=self.run_connection_status_monitoring, daemon=True
         )
         monitoring_thread.start()
         connection_status_thread.start()
