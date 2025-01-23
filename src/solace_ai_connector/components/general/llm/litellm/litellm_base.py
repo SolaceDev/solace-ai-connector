@@ -165,3 +165,10 @@ class LiteLLMBase(ComponentBase):
     def invoke(self, message, data):
         """invoke the model"""
         pass
+
+    def nack_reaction_to_exception(self, exception):
+        """get the nack reaction to an exception"""
+        if exception in {litellm.APIConnectionError}:
+            return "failed"
+        else:
+            return "rejected"

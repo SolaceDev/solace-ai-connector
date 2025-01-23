@@ -5,10 +5,13 @@ from typing import Dict, List, Any
 import queue
 import re
 from copy import deepcopy
+from solace.messaging.config.message_acknowledgement_configuration import Outcome
+
 from .messaging import Messaging
 
 
 class DevBroker(Messaging):
+
     def __init__(self, broker_properties: dict, flow_lock_manager, flow_kv_store):
         super().__init__(broker_properties)
         self.flow_lock_manager = flow_lock_manager
@@ -85,6 +88,20 @@ class DevBroker(Messaging):
             self.subscriptions[subscription].append(queue_name)
 
     def ack_message(self, message):
+        pass
+
+    def nack_message(self, broker_message, outcome: Outcome):
+        """
+        This method handles the negative acknowledgment (nack) of a broker message.
+        If the broker message contains an "_original_message" key, it settles the message
+        with the given outcome using the persistent receiver. If the "_original_message"
+        key is not found, it logs a warning indicating that the original Solace message
+        could not be found and therefore cannot be dropped.
+
+        Args:
+            broker_message (dict): The broker message to be nacked.
+            outcome (Outcome): The outcome to be used for settling the message.
+        """
         pass
 
     def _get_matching_queue_names(self, topic: str) -> List[str]:
