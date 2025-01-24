@@ -34,7 +34,7 @@ from solace import SOLACE_LOGGING_CONFIG
 
 from .messaging import Messaging
 from ..log import log
-from ...common.imports import Message_NACK_Outcome
+from ...common import Message_NACK_Outcome
 
 
 class ConnectionStatus(Enum):

@@ -7,7 +7,7 @@ import re
 from copy import deepcopy
 
 from .messaging import Messaging
-from ...common.imports import Message_NACK_Outcome
+from ...common import Message_NACK_Outcome
 
 
 class DevBroker(Messaging):

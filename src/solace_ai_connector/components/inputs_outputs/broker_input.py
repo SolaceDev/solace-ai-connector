@@ -8,7 +8,7 @@ from .broker_base import base_info
 from ...common.log import log
 from ...common.message import Message
 from ...common.monitoring import Metrics
-from ...common.imports import Message_NACK_Outcome
+from ...common import Message_NACK_Outcome
 
 
 info = copy.deepcopy(base_info)

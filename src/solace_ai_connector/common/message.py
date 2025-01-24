@@ -8,7 +8,7 @@ import pprint
 from .log import log
 from .trace_message import TraceMessage
 from .utils import set_data_value, get_data_value
-from ..common.imports import Message_NACK_Outcome
+from ..common import Message_NACK_Outcome
 
 
 class Message:
