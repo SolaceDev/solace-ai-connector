@@ -5,6 +5,7 @@ import json
 import yaml
 import pprint
 
+from solace.messaging.config.message_acknowledgement_configuration import Outcome
 
 from .log import log
 from .trace_message import TraceMessage
@@ -288,7 +289,7 @@ class Message:
         for callback in ack_callbacks:
             callback()
 
-    def call_negative_acknowledgements(self, nack="rejected"):
+    def call_negative_acknowledgements(self, nack=Outcome.REJECTED):
         """Call all the ack callbacks. This is used to notify the previous components that the
         message has been acknowledged."""
         nack_callbacks = self.nack_callbacks

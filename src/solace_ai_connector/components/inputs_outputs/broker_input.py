@@ -114,14 +114,14 @@ class BrokerInput(BrokerBase):
     def acknowledge_message(self, broker_message):
         self.messaging_service.ack_message(broker_message)
 
-    def negative_acknowledge_message(self, broker_message, nack="rejected"):
+    def negative_acknowledge_message(self, broker_message, nack=Outcome.REJECTED):
         """
         Negative acknowledge a message
         Args:
             broker_message: The message to NACK
             nack: The type of NACK to send (FAILED or REJECTED)
         """
-        if nack.lower() == "failed":
+        if nack == Outcome.FAILED:
             self.messaging_service.nack_message(broker_message, Outcome.FAILED)
         else:
             self.messaging_service.nack_message(broker_message, Outcome.REJECTED)

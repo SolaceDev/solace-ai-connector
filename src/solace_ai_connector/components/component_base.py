@@ -5,6 +5,8 @@ import pprint
 import time
 from abc import abstractmethod
 from typing import Any
+from solace.messaging.config.message_acknowledgement_configuration import Outcome
+
 from ..common.log import log
 from ..common.utils import resolve_config_values
 from ..common.utils import get_source_expression
@@ -523,7 +525,7 @@ class ComponentBase:
     def nack_reaction_to_exception(self, exception_type):
         """This should be overridden by the component if it needs to determine
         NACK reaction regarding the exception type."""
-        return "rejected"
+        return Outcome.REJECTED
 
     def get_metrics_with_header(self) -> dict[dict[Metrics, Any], Any]:
         metrics = {}

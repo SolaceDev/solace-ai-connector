@@ -2,9 +2,11 @@
 
 import litellm
 
+from solace.messaging.config.message_acknowledgement_configuration import Outcome
 from litellm.exceptions import APIConnectionError
 from litellm.router import RetryPolicy
 from litellm.router import AllowedFailsPolicy
+
 from ....component_base import ComponentBase
 from .....common.log import log
 
@@ -170,6 +172,6 @@ class LiteLLMBase(ComponentBase):
     def nack_reaction_to_exception(self, exception_type):
         """get the nack reaction to an exception"""
         if exception_type in {APIConnectionError}:
-            return "failed"
+            return Outcome.FAILED
         else:
-            return "rejected"
+            return Outcome.REJECTED
