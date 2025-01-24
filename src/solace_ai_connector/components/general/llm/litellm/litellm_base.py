@@ -60,7 +60,6 @@ litellm_info_base = {
                 "Retry policy for the load balancer. "
                 "Find more at https://docs.litellm.ai/docs/routing#cooldowns"
             ),
-            "default": "",
         },
         {
             "name": "allowed_fails_policy",
@@ -69,7 +68,6 @@ litellm_info_base = {
                 "Allowed fails policy for the load balancer. "
                 "Find more at https://docs.litellm.ai/docs/routing#cooldowns"
             ),
-            "default": "",
         },
     ],
 }
