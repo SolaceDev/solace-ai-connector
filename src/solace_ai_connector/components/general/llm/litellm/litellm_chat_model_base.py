@@ -1,8 +1,6 @@
 """LiteLLM chat model component"""
 
 import uuid
-from litellm import ContentPolicyViolationError
-from litellm import BadRequestError
 from .litellm_base import LiteLLMBase
 from .litellm_base import litellm_info_base
 from .....common.message import Message
@@ -138,10 +136,6 @@ class LiteLLMChatModelBase(LiteLLMBase):
         try:
             response = self.load_balance(messages, stream=False)
             return {"content": response.choices[0].message.content}
-        except BadRequestError as e:
-            log.error("OpenAI error: %s", e)
-            raise e
-
         except Exception as e:
             log.error("Error invoking LiteLLM: %s", e)
             raise e
@@ -185,9 +179,6 @@ class LiteLLMChatModelBase(LiteLLMBase):
                             )
                         current_batch = ""
                         first_chunk = False
-        except ContentPolicyViolationError as e:
-            log.error("Content policy violation: %s", e)
-            raise e
         except Exception as e:
             log.error("Error invoking LiteLLM: %s", e)
             raise e
