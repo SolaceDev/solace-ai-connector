@@ -133,8 +133,6 @@ class BrokerInput(BrokerBase):
     def get_negative_acknowledgement_callback(self):
         """
         Get a callback function for negative acknowledgement
-        Args:
-            nack: The type of NACK to send (FAILED or REJECTED)
         """
         current_broker_message = self.current_broker_message
 

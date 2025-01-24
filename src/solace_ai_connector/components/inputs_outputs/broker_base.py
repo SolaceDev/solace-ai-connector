@@ -166,7 +166,7 @@ class BrokerBase(ComponentBase):
         pass
 
     @abstractmethod
-    def get_negative_acknowledgement_callback(self, nack):
+    def get_negative_acknowledgement_callback(self):
         """Base method for getting NACK callback"""
         return None
 

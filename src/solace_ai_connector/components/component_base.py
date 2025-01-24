@@ -510,7 +510,7 @@ class ComponentBase:
             exception,
             traceback.format_exc(),
         )
-        nack = self.nack_reaction_to_exception(exception)
+        nack = self.nack_reaction_to_exception(type(exception))
         message.call_negative_acknowledgements(nack)
         self.handle_error(exception, Event(EventType.MESSAGE, message))
 
@@ -520,7 +520,7 @@ class ComponentBase:
         return None
 
     @abstractmethod
-    def nack_reaction_to_exception(self, exception):
+    def nack_reaction_to_exception(self, exception_type):
         """This should be overridden by the component if it needs to determine
         NACK reaction regarding the exception type."""
         return "rejected"

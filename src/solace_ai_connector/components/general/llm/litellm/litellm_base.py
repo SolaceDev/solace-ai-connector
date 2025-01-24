@@ -2,6 +2,7 @@
 
 import litellm
 
+from litellm.exceptions import APIConnectionError
 from litellm.router import RetryPolicy
 from litellm.router import AllowedFailsPolicy
 from ....component_base import ComponentBase
@@ -166,9 +167,9 @@ class LiteLLMBase(ComponentBase):
         """invoke the model"""
         pass
 
-    def nack_reaction_to_exception(self, exception):
+    def nack_reaction_to_exception(self, exception_type):
         """get the nack reaction to an exception"""
-        if exception in {litellm.APIConnectionError}:
+        if exception_type in {APIConnectionError}:
             return "failed"
         else:
             return "rejected"
