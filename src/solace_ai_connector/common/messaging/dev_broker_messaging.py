@@ -5,9 +5,9 @@ from typing import Dict, List, Any
 import queue
 import re
 from copy import deepcopy
-from solace.messaging.config.message_acknowledgement_configuration import Outcome
 
 from .messaging import Messaging
+from ...common.imports import Message_NACK_Outcome
 
 
 class DevBroker(Messaging):
@@ -90,7 +90,7 @@ class DevBroker(Messaging):
     def ack_message(self, message):
         pass
 
-    def nack_message(self, broker_message, outcome: Outcome):
+    def nack_message(self, broker_message, outcome: Message_NACK_Outcome):
         """
         This method handles the negative acknowledgment (nack) of a broker message.
         If the broker message contains an "_original_message" key, it settles the message
@@ -100,7 +100,7 @@ class DevBroker(Messaging):
 
         Args:
             broker_message (dict): The broker message to be nacked.
-            outcome (Outcome): The outcome to be used for settling the message.
+            outcome (Message_NACK_Outcome): The outcome to be used for settling the message.
         """
         pass
 

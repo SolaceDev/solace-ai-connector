@@ -2,12 +2,13 @@
 
 import copy
 from solace.messaging.utils.manageable import ApiMetrics, Metric as SolaceMetrics
-from solace.messaging.config.message_acknowledgement_configuration import Outcome
-from ...common.log import log
+
 from .broker_base import BrokerBase
 from .broker_base import base_info
+from ...common.log import log
 from ...common.message import Message
 from ...common.monitoring import Metrics
+from ...common.imports import Message_NACK_Outcome
 
 
 info = copy.deepcopy(base_info)
@@ -114,17 +115,23 @@ class BrokerInput(BrokerBase):
     def acknowledge_message(self, broker_message):
         self.messaging_service.ack_message(broker_message)
 
-    def negative_acknowledge_message(self, broker_message, nack=Outcome.REJECTED):
+    def negative_acknowledge_message(
+        self, broker_message, nack=Message_NACK_Outcome.REJECTED
+    ):
         """
         Negative acknowledge a message
         Args:
             broker_message: The message to NACK
             nack: The type of NACK to send (FAILED or REJECTED)
         """
-        if nack == Outcome.FAILED:
-            self.messaging_service.nack_message(broker_message, Outcome.FAILED)
+        if nack == Message_NACK_Outcome.FAILED:
+            self.messaging_service.nack_message(
+                broker_message, Message_NACK_Outcome.FAILED
+            )
         else:
-            self.messaging_service.nack_message(broker_message, Outcome.REJECTED)
+            self.messaging_service.nack_message(
+                broker_message, Message_NACK_Outcome.REJECTED
+            )
 
     def get_acknowledgement_callback(self):
         current_broker_message = self.current_broker_message

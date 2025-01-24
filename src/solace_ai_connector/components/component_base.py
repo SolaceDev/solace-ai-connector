@@ -5,7 +5,6 @@ import pprint
 import time
 from abc import abstractmethod
 from typing import Any
-from solace.messaging.config.message_acknowledgement_configuration import Outcome
 
 from ..common.log import log
 from ..common.utils import resolve_config_values
@@ -18,6 +17,7 @@ from ..common.event import Event, EventType
 from ..flow.request_response_flow_controller import RequestResponseFlowController
 from ..common.monitoring import Monitoring
 from ..common.monitoring import Metrics
+from ..common.imports import Message_NACK_Outcome
 
 DEFAULT_QUEUE_TIMEOUT_MS = 1000
 DEFAULT_QUEUE_MAX_DEPTH = 5
@@ -525,7 +525,7 @@ class ComponentBase:
     def nack_reaction_to_exception(self, exception_type):
         """This should be overridden by the component if it needs to determine
         NACK reaction regarding the exception type."""
-        return Outcome.REJECTED
+        return Message_NACK_Outcome.REJECTED
 
     def get_metrics_with_header(self) -> dict[dict[Metrics, Any], Any]:
         metrics = {}

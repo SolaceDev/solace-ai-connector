@@ -28,13 +28,13 @@ from solace.messaging.errors.pubsubplus_client_error import PubSubPlusClientErro
 from solace.messaging.config.missing_resources_creation_configuration import (
     MissingResourcesCreationStrategy,
 )
-from solace.messaging.config.message_acknowledgement_configuration import Outcome
 from solace.messaging.resources.topic_subscription import TopicSubscription
 from solace.messaging.resources.topic import Topic
 from solace import SOLACE_LOGGING_CONFIG
 
 from .messaging import Messaging
 from ..log import log
+from ...common.imports import Message_NACK_Outcome
 
 
 class ConnectionStatus(Enum):
@@ -363,7 +363,9 @@ class SolaceMessaging(Messaging):
                 .with_missing_resources_creation_strategy(
                     MissingResourcesCreationStrategy.CREATE_ON_START
                 )
-                .with_required_message_outcome_support(Outcome.FAILED, Outcome.REJECTED)
+                .with_required_message_outcome_support(
+                    Message_NACK_Outcome.FAILED, Message_NACK_Outcome.REJECTED
+                )
                 .build(queue)
             )
             self.persistent_receiver.start()
@@ -460,7 +462,7 @@ class SolaceMessaging(Messaging):
                 f"{self.error_prefix} Cannot acknowledge message: original Solace message not found"
             )
 
-    def nack_message(self, broker_message, outcome: Outcome):
+    def nack_message(self, broker_message, outcome: Message_NACK_Outcome):
         """
         This method handles the negative acknowledgment (nack) of a broker message.
         If the broker message contains an "_original_message" key, it settles the message
@@ -470,7 +472,7 @@ class SolaceMessaging(Messaging):
 
         Args:
             broker_message (dict): The broker message to be nacked.
-            outcome (Outcome): The outcome to be used for settling the message.
+            outcome (Message_NACK_Outcome): The outcome to be used for settling the message.
         """
         if "_original_message" in broker_message:
             self.persistent_receiver.settle(
