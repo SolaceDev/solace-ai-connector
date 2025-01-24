@@ -288,7 +288,7 @@ class Message:
         for callback in ack_callbacks:
             callback()
 
-    def call_negative_acknowledgements(self, nack="failed"):
+    def call_negative_acknowledgements(self, nack="rejected"):
         """Call all the ack callbacks. This is used to notify the previous components that the
         message has been acknowledged."""
         nack_callbacks = self.nack_callbacks
