@@ -8,7 +8,7 @@ from litellm.router import AllowedFailsPolicy
 
 from ....component_base import ComponentBase
 from .....common.log import log
-from .....common.imports import Message_NACK_Outcome
+from .....common import Message_NACK_Outcome
 
 litellm_info_base = {
     "class_name": "LiteLLMChatModelBase",

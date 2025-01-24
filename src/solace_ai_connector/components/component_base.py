@@ -17,7 +17,7 @@ from ..common.event import Event, EventType
 from ..flow.request_response_flow_controller import RequestResponseFlowController
 from ..common.monitoring import Monitoring
 from ..common.monitoring import Metrics
-from ..common.imports import Message_NACK_Outcome
+from ..common import Message_NACK_Outcome
 
 DEFAULT_QUEUE_TIMEOUT_MS = 1000
 DEFAULT_QUEUE_MAX_DEPTH = 5
