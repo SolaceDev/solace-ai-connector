@@ -546,8 +546,6 @@ class ComponentBase:
                     ]
                 )
 
-                value = {"value": value, "timestamp": int(time.time())}
-
                 metrics[key] = value
         return metrics
 

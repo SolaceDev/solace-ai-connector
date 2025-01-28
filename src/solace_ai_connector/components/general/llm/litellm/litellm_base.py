@@ -177,10 +177,30 @@ class LiteLLMBase(ComponentBase):
         prompt_tokens = response.usage.prompt_tokens
         completion_tokens = response.usage.completion_tokens
         total_tokens = response.usage.total_tokens
-        self.stats[Metrics.LITELLM_STATS_PROMPT_TOKENS].append(prompt_tokens)
-        self.stats[Metrics.LITELLM_STATS_RESPONSE_TOKENS].append(completion_tokens)
-        self.stats[Metrics.LITELLM_STATS_TOTAL_TOKENS].append(total_tokens)
-        self.stats[Metrics.LITELLM_STATS_RESPONSE_TIME].append(processing_time)
+        self.stats[Metrics.LITELLM_STATS_PROMPT_TOKENS].append(
+            {
+                "value": prompt_tokens,
+                "timestamp": int(time.time()),
+            }
+        )
+        self.stats[Metrics.LITELLM_STATS_RESPONSE_TOKENS].append(
+            {
+                "value": completion_tokens,
+                "timestamp": int(time.time()),
+            }
+        )
+        self.stats[Metrics.LITELLM_STATS_TOTAL_TOKENS].append(
+            {
+                "value": total_tokens,
+                "timestamp": int(time.time()),
+            }
+        )
+        self.stats[Metrics.LITELLM_STATS_RESPONSE_TIME].append(
+            {
+                "value": processing_time,
+                "timestamp": int(time.time()),
+            }
+        )
         log.debug(
             "Completion tokens: %s, Prompt tokens: %s, Total tokens: %s",
             completion_tokens,

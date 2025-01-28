@@ -177,23 +177,28 @@ class Monitoring:
                 not in ["flow", "flow_index", "component_module", "component_index"]
             )
 
+            # initialize aggregated_metrics
             if new_key not in aggregated_metrics:
                 aggregated_metrics[new_key] = value
-            else:
-                # aggregate metrics: sum
+            elif metric in [
+                Metrics.SOLCLIENT_STATS_RX_SETTLE_ACCEPTED,
+                Metrics.SOLCLIENT_STATS_TX_TOTAL_CONNECTION_ATTEMPTS,
+            ]:  # add metrics that need to be aggregated by sum
                 aggregated_timestamp = aggregated_metrics[new_key].timestamp
                 metric_value = value.value
                 metric_timestamp = value.timestamp
-
-                if metric in [
-                    Metrics.SOLCLIENT_STATS_RX_SETTLE_ACCEPTED,
-                    Metrics.SOLCLIENT_STATS_TX_TOTAL_CONNECTION_ATTEMPTS,
-                ]:  # add metrics that need to be aggregated by sum
-                    aggregated_metrics[new_key].value += sum(metric_value)
+                aggregated_metrics[new_key].value += sum(metric_value)
 
                 # set timestamp to the latest
                 if metric_timestamp > aggregated_timestamp:
                     aggregated_metrics[new_key].timestamp = metric_timestamp
+            elif metric in [
+                Metrics.LITELLM_STATS_PROMPT_TOKENS,
+                Metrics.LITELLM_STATS_RESPONSE_TOKENS,
+                Metrics.LITELLM_STATS_TOTAL_TOKENS,
+                Metrics.LITELLM_STATS_RESPONSE_TIME,
+            ]:  # return metrics as is
+                aggregated_metrics[new_key] = value
 
         # convert to dictionary
         formatted_metrics = []
