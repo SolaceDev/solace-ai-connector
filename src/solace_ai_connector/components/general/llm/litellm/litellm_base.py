@@ -1,6 +1,7 @@
 """Base class for LiteLLM chat models"""
 
 import litellm
+import time
 
 from litellm.exceptions import APIConnectionError
 from litellm.router import RetryPolicy
@@ -9,6 +10,7 @@ from litellm.router import AllowedFailsPolicy
 from ....component_base import ComponentBase
 from .....common.log import log
 from .....common import Message_NACK_Outcome
+from .....common.monitoring import Metrics
 
 litellm_info_base = {
     "class_name": "LiteLLMChatModelBase",
@@ -90,6 +92,12 @@ class LiteLLMBase(ComponentBase):
             "set_response_uuid_in_user_properties"
         )
         self.router = None
+        self.stats = {
+            Metrics.LITELLM_STATS_PROMPT_TOKENS: [],
+            Metrics.LITELLM_STATS_RESPONSE_TOKENS: [],
+            Metrics.LITELLM_STATS_TOTAL_TOKENS: [],
+            Metrics.LITELLM_STATS_RESPONSE_TIME: [],
+        }
 
     def init_load_balancer(self):
         """initialize a load balancer"""
@@ -155,11 +163,31 @@ class LiteLLMBase(ComponentBase):
 
     def load_balance(self, messages, stream):
         """load balance the messages"""
+        start_time = time.time()
         response = self.router.completion(
             model=self.load_balancer_config[0]["model_name"],
             messages=messages,
             stream=stream,
         )
+        end_time = time.time()
+        processing_time = round(end_time - start_time, 3)
+        log.debug("Completion processing time: %s seconds", processing_time)
+
+        # Extract token usage details
+        prompt_tokens = response.usage.prompt_tokens
+        completion_tokens = response.usage.completion_tokens
+        total_tokens = response.usage.total_tokens
+        self.stats[Metrics.LITELLM_STATS_PROMPT_TOKENS].append(prompt_tokens)
+        self.stats[Metrics.LITELLM_STATS_RESPONSE_TOKENS].append(completion_tokens)
+        self.stats[Metrics.LITELLM_STATS_TOTAL_TOKENS].append(total_tokens)
+        self.stats[Metrics.LITELLM_STATS_RESPONSE_TIME].append(processing_time)
+        log.debug(
+            "Completion tokens: %s, Prompt tokens: %s, Total tokens: %s",
+            completion_tokens,
+            prompt_tokens,
+            total_tokens,
+        )
+
         log.debug("Load balancer responded")
         return response
 
@@ -173,3 +201,14 @@ class LiteLLMBase(ComponentBase):
             return Message_NACK_Outcome.FAILED
         else:
             return Message_NACK_Outcome.REJECTED
+
+    def reset_metrics(self):
+        self.stats = {
+            Metrics.LITELLM_STATS_PROMPT_TOKENS: [],
+            Metrics.LITELLM_STATS_RESPONSE_TOKENS: [],
+            Metrics.LITELLM_STATS_TOTAL_TOKENS: [],
+            Metrics.LITELLM_STATS_RESPONSE_TIME: [],
+        }
+
+    def get_metrics(self):
+        return self.stats
