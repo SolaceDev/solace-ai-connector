@@ -3,6 +3,7 @@
 import litellm
 import time
 
+from threading import Lock
 from litellm.exceptions import APIConnectionError
 from litellm.router import RetryPolicy
 from litellm.router import AllowedFailsPolicy
@@ -92,6 +93,7 @@ class LiteLLMBase(ComponentBase):
             "set_response_uuid_in_user_properties"
         )
         self.router = None
+        self._lock_stats = Lock()
         self.stats = {
             Metrics.LITELLM_STATS_PROMPT_TOKENS: [],
             Metrics.LITELLM_STATS_RESPONSE_TOKENS: [],
@@ -177,30 +179,31 @@ class LiteLLMBase(ComponentBase):
         prompt_tokens = response.usage.prompt_tokens
         completion_tokens = response.usage.completion_tokens
         total_tokens = response.usage.total_tokens
-        self.stats[Metrics.LITELLM_STATS_PROMPT_TOKENS].append(
-            {
-                "value": prompt_tokens,
-                "timestamp": int(time.time()),
-            }
-        )
-        self.stats[Metrics.LITELLM_STATS_RESPONSE_TOKENS].append(
-            {
-                "value": completion_tokens,
-                "timestamp": int(time.time()),
-            }
-        )
-        self.stats[Metrics.LITELLM_STATS_TOTAL_TOKENS].append(
-            {
-                "value": total_tokens,
-                "timestamp": int(time.time()),
-            }
-        )
-        self.stats[Metrics.LITELLM_STATS_RESPONSE_TIME].append(
-            {
-                "value": processing_time,
-                "timestamp": int(time.time()),
-            }
-        )
+        with self._lock_stats:
+            self.stats[Metrics.LITELLM_STATS_PROMPT_TOKENS].append(
+                {
+                    "value": prompt_tokens,
+                    "timestamp": int(time.time()),
+                }
+            )
+            self.stats[Metrics.LITELLM_STATS_RESPONSE_TOKENS].append(
+                {
+                    "value": completion_tokens,
+                    "timestamp": int(time.time()),
+                }
+            )
+            self.stats[Metrics.LITELLM_STATS_TOTAL_TOKENS].append(
+                {
+                    "value": total_tokens,
+                    "timestamp": int(time.time()),
+                }
+            )
+            self.stats[Metrics.LITELLM_STATS_RESPONSE_TIME].append(
+                {
+                    "value": processing_time,
+                    "timestamp": int(time.time()),
+                }
+            )
         log.debug(
             "Completion tokens: %s, Prompt tokens: %s, Total tokens: %s",
             completion_tokens,
@@ -223,12 +226,13 @@ class LiteLLMBase(ComponentBase):
             return Message_NACK_Outcome.REJECTED
 
     def reset_metrics(self):
-        self.stats = {
-            Metrics.LITELLM_STATS_PROMPT_TOKENS: [],
-            Metrics.LITELLM_STATS_RESPONSE_TOKENS: [],
-            Metrics.LITELLM_STATS_TOTAL_TOKENS: [],
-            Metrics.LITELLM_STATS_RESPONSE_TIME: [],
-        }
+        with self._lock_stats:
+            self.stats = {
+                Metrics.LITELLM_STATS_PROMPT_TOKENS: [],
+                Metrics.LITELLM_STATS_RESPONSE_TOKENS: [],
+                Metrics.LITELLM_STATS_TOTAL_TOKENS: [],
+                Metrics.LITELLM_STATS_RESPONSE_TIME: [],
+            }
 
     def get_metrics(self):
         return self.stats

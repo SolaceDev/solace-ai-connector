@@ -160,57 +160,76 @@ class Monitoring:
 
         :return: Dictionary of collected metrics
         """
+        aggregated_metrics = self._aggregate_metrics(required_metrics)
+        return self._format_metrics(aggregated_metrics)
+
+    def _aggregate_metrics(self, required_metrics: List[Metrics]) -> dict:
         aggregated_metrics = {}
         for key, value in self._collected_metrics.items():
-            # get metric
             metric = next(item[1] for item in key if item[0] == "metric")
-
-            # skip metrics that are not required
             if required_metrics and metric not in required_metrics:
                 continue
+            new_key = self._filter_key(key)
+            self._update_aggregated_metrics(aggregated_metrics, new_key, metric, value)
+        return aggregated_metrics
 
-            # filter flow, flow_index, component, component_index from key
-            new_key = tuple(
-                item
-                for item in key
-                if item[0]
-                not in ["flow", "flow_index", "component_module", "component_index"]
-            )
+    def _filter_key(self, key: tuple) -> tuple:
+        return tuple(
+            item
+            for item in key
+            if item[0]
+            not in ["flow", "flow_index", "component_module", "component_index"]
+        )
 
-            # initialize aggregated_metrics
-            if new_key not in aggregated_metrics:
-                aggregated_metrics[new_key] = value
-            elif metric in [
-                Metrics.SOLCLIENT_STATS_RX_SETTLE_ACCEPTED,
-                Metrics.SOLCLIENT_STATS_TX_TOTAL_CONNECTION_ATTEMPTS,
-            ]:  # add metrics that need to be aggregated by sum
-                aggregated_timestamp = aggregated_metrics[new_key].timestamp
-                metric_value = value.value
-                metric_timestamp = value.timestamp
-                aggregated_metrics[new_key].value += sum(metric_value)
+    def _update_aggregated_metrics(
+        self, aggregated_metrics: dict, new_key: tuple, metric: Metrics, value: Any
+    ) -> None:
+        if new_key not in aggregated_metrics:
+            aggregated_metrics[new_key] = value
+        elif metric in [
+            Metrics.SOLCLIENT_STATS_RX_SETTLE_ACCEPTED,
+            Metrics.SOLCLIENT_STATS_TX_TOTAL_CONNECTION_ATTEMPTS,
+        ]:
+            aggregated_timestamp = aggregated_metrics[new_key].timestamp
+            metric_value = value.value
+            metric_timestamp = value.timestamp
+            aggregated_metrics[new_key].value += sum(metric_value)
+            if metric_timestamp > aggregated_timestamp:
+                aggregated_metrics[new_key].timestamp = metric_timestamp
+        elif metric in [
+            Metrics.LITELLM_STATS_PROMPT_TOKENS,
+            Metrics.LITELLM_STATS_RESPONSE_TOKENS,
+            Metrics.LITELLM_STATS_TOTAL_TOKENS,
+            Metrics.LITELLM_STATS_RESPONSE_TIME,
+        ]:
+            aggregated_metrics[new_key] = value
 
-                # set timestamp to the latest
-                if metric_timestamp > aggregated_timestamp:
-                    aggregated_metrics[new_key].timestamp = metric_timestamp
-            elif metric in [
+    def _format_metrics(self, aggregated_metrics: dict) -> List[dict[str, Any]]:
+        formatted_metrics = []
+        for key, value in aggregated_metrics.items():
+            metric_dict = dict(key)
+            if metric_dict.get("metric") in [
                 Metrics.LITELLM_STATS_PROMPT_TOKENS,
                 Metrics.LITELLM_STATS_RESPONSE_TOKENS,
                 Metrics.LITELLM_STATS_TOTAL_TOKENS,
                 Metrics.LITELLM_STATS_RESPONSE_TIME,
-            ]:  # return metrics as is
-                aggregated_metrics[new_key] = value
-
-        # convert to dictionary
-        formatted_metrics = []
-        for key, value in aggregated_metrics.items():
-            metric_dict = dict(key)
-            formatted_metrics.append(
-                {
-                    "component": metric_dict.get("component"),
-                    "metric": metric_dict.get("metric"),
-                    "timestamp": value["timestamp"],
-                    "value": value["value"],
-                }
-            )
-
+            ]:
+                for sub_metric in value:
+                    formatted_metrics.append(
+                        {
+                            "component": metric_dict.get("component"),
+                            "metric": metric_dict.get("metric"),
+                            "timestamp": sub_metric["timestamp"],
+                            "value": sub_metric["value"],
+                        }
+                    )
+            else:
+                formatted_metrics.append(
+                    {
+                        "component": metric_dict.get("component"),
+                        "metric": metric_dict.get("metric"),
+                        "timestamp": value["timestamp"],
+                        "value": value["value"],
+                    }
+                )
         return formatted_metrics
