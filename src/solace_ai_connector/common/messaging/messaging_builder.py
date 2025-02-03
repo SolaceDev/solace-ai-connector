@@ -1,5 +1,7 @@
 """Class to build a Messaging Service object"""
 
+import os
+
 from .solace_messaging import SolaceMessaging
 from .dev_broker_messaging import DevBroker
 
@@ -16,12 +18,17 @@ class MessagingServiceBuilder:
         return self
 
     def build(self):
-        if self.broker_properties["broker_type"] == "solace":
-            return SolaceMessaging(self.broker_properties)
-        elif self.broker_properties["broker_type"] == "dev_broker":
+        dev_mode = self.broker_properties.get("dev_mode", os.getenv("SOLACE_DEV_MODE"))
+        if (
+            isinstance(dev_mode, bool) and dev_mode or
+            dev_mode and isinstance(dev_mode, str) and dev_mode.lower() == "true" or
+            self.broker_properties["broker_type"] == "dev_broker"
+        ):
             return DevBroker(
                 self.broker_properties, self.flow_lock_manager, self.flow_kv_store
             )
+        elif self.broker_properties["broker_type"] == "solace":
+            return SolaceMessaging(self.broker_properties)
 
         raise ValueError(
             f"Unsupported broker type: {self.broker_properties['broker_type']}"
