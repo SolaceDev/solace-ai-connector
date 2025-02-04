@@ -112,7 +112,7 @@ def main():
         print("Solace AI Connector exited successfully!")
         sys.exit(0)
 
-    def signal_handler(signum):
+    def signal_handler(signum, frame):
         if signum == signal.SIGINT:
             raise KeyboardInterrupt("CTRL+C pressed")
         elif signum == signal.SIGTERM:
