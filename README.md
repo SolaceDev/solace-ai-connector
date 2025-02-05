@@ -1,5 +1,8 @@
 # Solace AI Event Connector
 
+[![PyPI - Version](https://img.shields.io/pypi/v/solace-ai-connector.svg)](https://pypi.org/project/solace-ai-connector)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/solace-ai-connector.svg)](https://pypi.org/project/solace-ai-connector)
+
 ## Overview
 
 This project provides a standalone, Python-based application to allow Solace event brokers to connect to
