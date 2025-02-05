@@ -44,7 +44,13 @@ solace-ai-connector-gen-docs = "solace_ai_connector.tools.gen_component_docs:mai
 installer = "pip"
 dependencies = [
     "pip>=25.0",
-    "setuptools>=70.0"
+    "setuptools>=70.0",
+    "pytest",
+    "pytest-cov",
+    "pytest-randomly",
+    "pytest-rerunfailures",
+    "pytest-xdist",
+    "pytest-mock",
 ]
 
 # Specify minimum and maximum Python versions to test
