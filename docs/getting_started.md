@@ -4,7 +4,7 @@ This guide will help you get started with the Solace AI Event Connector.
 
 ## Prerequisites
 
-- Python 3.10 or later
+- Python 3.12 or later
 - A Solace PubSub+ event broker
 - A chat model to connect to (optional)
 
