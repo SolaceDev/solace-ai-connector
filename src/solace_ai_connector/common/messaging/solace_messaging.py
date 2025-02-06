@@ -332,6 +332,7 @@ class SolaceMessaging(Messaging):
                 raise KeyboardInterrupt("Stopping connection attempt")
 
             self.stop_connection_log.set()
+            log.info(f"{self.error_prefix} Successfully connected to broker.")
 
             # change connection status to connected
             change_connection_status(
