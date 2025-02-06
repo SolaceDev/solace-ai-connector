@@ -44,6 +44,11 @@ class ConnectionStatus(Enum):
     DISCONNECTED = 0
 
 
+class ConnectionStrategy(Enum):
+    FOREVER_RETRY = "forever_retry"
+    PARAMETRIZED_RETRY = "parametrized_retry"
+
+
 def change_connection_status(connection_properties: dict, status):
     with connection_properties["lock"]:
         connection_properties["status"] = status
@@ -125,7 +130,10 @@ class ServiceEventHandler(
                 == ConnectionStatus.RECONNECTING
             ):
                 # update retry count
-                if self.strategy and self.strategy == "parametrized_retry":
+                if (
+                    self.strategy
+                    and self.strategy == ConnectionStrategy.PARAMETRIZED_RETRY
+                ):
                     if self.retry_count <= 0:
                         log.error(
                             f"{self.error_prefix} Reconnection attempts exhausted. Stopping..."
@@ -221,7 +229,7 @@ class SolaceMessaging(Messaging):
             strategy = self.broker_properties.get("reconnection_strategy")
             retry_interval = 3000  # default
             retry_count = 20  # default
-            if strategy and strategy == "forever_retry":
+            if strategy and strategy == ConnectionStrategy.FOREVER_RETRY:
                 retry_interval = self.broker_properties.get("retry_interval")
                 if not retry_interval:
                     log.warning(
@@ -239,7 +247,7 @@ class SolaceMessaging(Messaging):
                     )
                     .build()
                 )
-            elif strategy and strategy == "parametrized_retry":
+            elif strategy and strategy == ConnectionStrategy.PARAMETRIZED_RETRY:
                 retry_count = self.broker_properties.get("retry_count")
                 retry_interval = self.broker_properties.get("retry_wait")
                 if not retry_count:
@@ -268,7 +276,7 @@ class SolaceMessaging(Messaging):
                 log.info(
                     f"{self.error_prefix} Using default reconnection strategy. 20 retries with 3000ms interval"
                 )
-                strategy = "parametrized_retry"
+                strategy = ConnectionStrategy.PARAMETRIZED_RETRY
                 self.messaging_service = (
                     MessagingService.builder()
                     .from_properties(broker_props)
@@ -296,7 +304,7 @@ class SolaceMessaging(Messaging):
                     or result.done()
                 ):
                     # update retry count
-                    if strategy and strategy == "parametrized_retry":
+                    if strategy and strategy == ConnectionStrategy.PARAMETRIZED_RETRY:
                         if temp_retry_count <= 0:
                             log.error(
                                 f"{self.error_prefix} Connection attempts exhausted. Stopping..."
