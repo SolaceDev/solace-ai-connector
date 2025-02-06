@@ -14,6 +14,7 @@ class Metrics(Enum):
     LITELLM_STATS_RESPONSE_TOKENS = "LITELLM_STATS_RESPONSE_TOKENS"
     LITELLM_STATS_TOTAL_TOKENS = "LITELLM_STATS_TOTAL_TOKENS"
     LITELLM_STATS_RESPONSE_TIME = "LITELLM_STATS_RESPONSE_TIME"
+    LITELLM_STATS_COST = "LITELLM_STATS_COST"
 
     @staticmethod
     def get_type(metric: "Metrics") -> str:
@@ -221,6 +222,7 @@ class Monitoring:
             Metrics.LITELLM_STATS_RESPONSE_TOKENS,
             Metrics.LITELLM_STATS_TOTAL_TOKENS,
             Metrics.LITELLM_STATS_RESPONSE_TIME,
+            Metrics.LITELLM_STATS_COST,
         ]:
             aggregated_metrics[new_key] = value
 
@@ -239,6 +241,7 @@ class Monitoring:
                 Metrics.LITELLM_STATS_RESPONSE_TOKENS,
                 Metrics.LITELLM_STATS_TOTAL_TOKENS,
                 Metrics.LITELLM_STATS_RESPONSE_TIME,
+                Metrics.LITELLM_STATS_COST,
             ]:
                 for sub_metric in value:
                     formatted_metrics.append(
