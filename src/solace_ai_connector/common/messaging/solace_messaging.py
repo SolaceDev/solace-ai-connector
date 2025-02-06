@@ -108,11 +108,8 @@ class ServiceEventHandler(
 
     def on_reconnected(self, service_event: ServiceEvent):
         change_connection_status(self.connection_properties, ConnectionStatus.CONNECTED)
-        log.error(
-            f"{self.error_prefix} Reconnected to broker: %s",
-            service_event.get_cause(),
-        )
-        log.error(
+        log.info(f"{self.error_prefix} Successfully reconnected to broker.")
+        log.debug(
             f"{self.error_prefix} Message: %s",
             service_event.get_message(),
         )
@@ -146,7 +143,7 @@ class ServiceEventHandler(
                     f"{self.error_prefix} Reconnecting to broker: %s",
                     event.get_cause(),
                 )
-                log.error(
+                log.debug(
                     f"{self.error_prefix} Message: %s",
                     event.get_message(),
                 )
@@ -159,7 +156,7 @@ class ServiceEventHandler(
         change_connection_status(
             self.connection_properties, ConnectionStatus.DISCONNECTED
         )
-        log.debug(
+        log.error(
             f"{self.error_prefix} Service interrupted - Error cause: %s",
             event.get_cause(),
         )
