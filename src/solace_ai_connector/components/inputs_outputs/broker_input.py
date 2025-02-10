@@ -1,12 +1,15 @@
 """Input broker component for the Solace AI Event Connector"""
 
 import copy
+import time
 from solace.messaging.utils.manageable import ApiMetrics, Metric as SolaceMetrics
-from ...common.log import log
+
 from .broker_base import BrokerBase
 from .broker_base import base_info
+from ...common.log import log
 from ...common.message import Message
 from ...common.monitoring import Metrics
+from ...common import Message_NACK_Outcome
 
 
 info = copy.deepcopy(base_info)
@@ -117,9 +120,38 @@ class BrokerInput(BrokerBase):
     def acknowledge_message(self, broker_message):
         self.messaging_service.ack_message(broker_message)
 
+    def negative_acknowledge_message(
+        self, broker_message, nack=Message_NACK_Outcome.REJECTED
+    ):
+        """
+        Negative acknowledge a message
+        Args:
+            broker_message: The message to NACK
+            nack: The type of NACK to send (FAILED or REJECTED)
+        """
+        if nack == Message_NACK_Outcome.FAILED:
+            self.messaging_service.nack_message(
+                broker_message, Message_NACK_Outcome.FAILED
+            )
+        else:
+            self.messaging_service.nack_message(
+                broker_message, Message_NACK_Outcome.REJECTED
+            )
+
     def get_acknowledgement_callback(self):
         current_broker_message = self.current_broker_message
         return lambda: self.acknowledge_message(current_broker_message)
+
+    def get_negative_acknowledgement_callback(self):
+        """
+        Get a callback function for negative acknowledgement
+        """
+        current_broker_message = self.current_broker_message
+
+        def callback(nack):
+            return self.negative_acknowledge_message(current_broker_message, nack)
+
+        return callback
 
     def get_connection_status(self):
         return self.messaging_service.get_connection_status()
@@ -133,6 +165,9 @@ class BrokerInput(BrokerBase):
         metrics: "ApiMetrics" = self.messaging_service.messaging_service.metrics()
         for metric_key in required_metrics:
             metric = SolaceMetrics(metric_key.value)
-            stats_dict[metric_key] = metrics.get_value(SolaceMetrics(metric))
+            stats_dict[metric_key] = {
+                "value": metrics.get_value(SolaceMetrics(metric)),
+                "timestamp": int(time.time()),
+            }
 
         return stats_dict
