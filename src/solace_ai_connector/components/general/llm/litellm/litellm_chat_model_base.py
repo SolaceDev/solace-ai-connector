@@ -299,6 +299,15 @@ class LiteLLMChatModelBase(LiteLLMBase):
     def send_metrics(
         self, prompt_tokens, completion_tokens, total_tokens, processing_time
     ):
+        """
+        Sends metrics related to the LLM's performance.
+
+        Args:
+            prompt_tokens (int): Number of tokens in the prompt.
+            completion_tokens (int): Number of tokens in the completion.
+            total_tokens (int): Total number of tokens (prompt + completion).
+            processing_time (float): Time taken to process the request.
+        """
         prompt_tokens_cost_usd_dollar, completion_tokens_cost_usd_dollar = (
             cost_per_token(
                 model=self.load_balancer_config[0]["model_name"],
