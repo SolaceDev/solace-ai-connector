@@ -418,6 +418,8 @@ class BrokerRequestResponse(BrokerBase):
 
         if last_piece:
             self.cache_service.remove_data(request_id)
+    
+        self.messaging_service.ack_message(broker_message)
 
     def invoke(self, message, data):
         request_id = str(uuid.uuid4())
