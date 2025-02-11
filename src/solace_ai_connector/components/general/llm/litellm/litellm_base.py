@@ -3,6 +3,7 @@
 import litellm
 
 from threading import Lock
+from litellm import ModelResponse
 from litellm.exceptions import APIConnectionError
 from litellm.router import RetryPolicy
 from litellm.router import AllowedFailsPolicy
