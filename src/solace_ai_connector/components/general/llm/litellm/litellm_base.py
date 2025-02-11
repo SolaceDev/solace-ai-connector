@@ -190,7 +190,7 @@ class LiteLLMBase(ComponentBase):
         else:
             return Message_NACK_Outcome.REJECTED
 
-    def reset_metrics(self):
+    def flush_metrics(self):
         with self._lock_stats:
             self.stats = {
                 Metrics.LITELLM_STATS_PROMPT_TOKENS: [],
