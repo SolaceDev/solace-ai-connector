@@ -170,7 +170,7 @@ class LiteLLMBase(ComponentBase):
                 model=self.load_balancer_config[0]["model_name"],
                 messages=messages,
                 stream=stream,
-                stream_options={"include_usage": True},
+                **({"stream_options": {"include_usage": True}} if stream else {}),
             )
         except Exception as e:
             log.error(f"LiteLLM API connection error: {e}")
