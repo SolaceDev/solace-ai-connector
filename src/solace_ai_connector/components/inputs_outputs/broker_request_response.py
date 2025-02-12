@@ -420,7 +420,7 @@ class BrokerRequestResponse(BrokerBase):
 
         if last_piece:
             self.cache_service.remove_data(request_id)
-    
+
     def invoke(self, message, data):
         request_id = str(uuid.uuid4())
 
