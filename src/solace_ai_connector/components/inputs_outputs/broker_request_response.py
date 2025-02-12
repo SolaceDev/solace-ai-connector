@@ -329,7 +329,7 @@ class BrokerRequestResponse(BrokerBase):
             topic = broker_message.get("topic")
             user_properties = broker_message.get("user_properties", {})
 
-        self.messaging_service.ack_message(broker_message)
+            self.messaging_service.ack_message(broker_message)
         
         if not user_properties:
             log.error("Received response without user properties: %s", payload)
