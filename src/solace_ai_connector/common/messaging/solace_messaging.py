@@ -405,7 +405,7 @@ class SolaceMessaging(Messaging):
             )
 
             # set maximum redelivery count for the queue
-            if max_redelivery_count:
+            if max_redelivery_count != None:
                 try:
                     end_point_props = {
                         "ENDPOINT_MAXMSG_REDELIVERY": str(max_redelivery_count),
