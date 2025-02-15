@@ -36,8 +36,15 @@ base_info = {
     "config_parameters": [
         {
             "name": "broker_type",
-            "required": True,
-            "description": "Type of broker (Solace, MQTT, etc.)",
+            "required": False,
+            "description": "Type of broker (solace, etc.)",
+            "default": "solace",
+        },
+        {
+            "name": "dev_mode",
+            "required": False,
+            "description": "Operate in development mode, which just uses local queues",
+            "default": "false",
         },
         {
             "name": "broker_url",

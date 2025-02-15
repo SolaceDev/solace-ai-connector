@@ -1,13 +1,12 @@
 """Output broker component for sending messages from the Solace AI Event Connector to a broker"""
 
-import copy
-from ...common.log import log
 from .broker_base import BrokerBase
 from .broker_base import base_info
+from ...common.log import log
+from ...common.utils import deep_merge
 from ...common.message import Message
 
-info = copy.deepcopy(base_info)
-info.update(
+info = deep_merge(base_info,
     {
         "class_name": "BrokerOutput",
         "description": (
@@ -15,38 +14,6 @@ info.update(
             "Note that this component requires that the data is transformed into the input schema."
         ),
         "config_parameters": [
-            {
-                "name": "broker_type",
-                "required": False,
-                "description": "Type of broker (Solace, MQTT, etc.)",
-                "default": "solace",
-            },
-            {
-                "name": "dev_mode",
-                "required": False,
-                "description": "Operate in development mode, which just uses local queues",
-                "default": "false",
-            },
-            {
-                "name": "broker_url",
-                "required": True,
-                "description": "Broker URL (e.g. tcp://localhost:55555)",
-            },
-            {
-                "name": "broker_username",
-                "required": True,
-                "description": "Client username for broker",
-            },
-            {
-                "name": "broker_password",
-                "required": True,
-                "description": "Client password for broker",
-            },
-            {
-                "name": "broker_vpn",
-                "required": True,
-                "description": "Client VPN for broker",
-            },
             {
                 "name": "payload_encoding",
                 "required": False,
