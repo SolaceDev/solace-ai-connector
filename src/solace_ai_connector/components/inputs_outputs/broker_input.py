@@ -12,91 +12,94 @@ from ...common.monitoring import Metrics
 from ...common import Message_NACK_Outcome
 
 
-info = {
-    "class_name": "BrokerInput",
-    "description": (
-        "Connect to a messaging broker and receive messages from it. "
-        "The component will output the payload, topic, and user properties of the message."
-    ),
-    "config_parameters": [
-        {
-            "name": "broker_type",
-            "required": False,
-            "description": "Type of broker (Solace, MQTT, etc.)",
-            "default": "solace",
-        },
-        {
-            "name": "dev_mode",
-            "required": False,
-            "description": "Operate in development mode, which just uses local queues",
-            "default": "false",
-        },
-        {
-            "name": "broker_url",
-            "required": True,
-            "description": "Broker URL (e.g. tcp://localhost:55555)",
-        },
-        {
-            "name": "broker_username",
-            "required": True,
-            "description": "Client username for broker",
-        },
-        {
-            "name": "broker_password",
-            "required": True,
-            "description": "Client password for broker",
-        },
-        {
-            "name": "broker_vpn",
-            "required": True,
-            "description": "Client VPN for broker",
-        },
-        {
-            "name": "broker_queue_name",
-            "required": False,
-            "description": "Queue name for broker, if not provided it will use a temporary queue",
-        },
-        {
-            "name": "temporary_queue",
-            "required": False,
-            "description": "Whether to create a temporary queue that will be deleted "
-            "after disconnection, defaulted to True if broker_queue_name is not provided",
-            "default": False,
-        },
-        {
-            "name": "broker_subscriptions",
-            "required": True,
-            "description": "Subscriptions for broker",
-        },
-        {
-            "name": "payload_encoding",
-            "required": False,
-            "description": "Encoding for the payload (utf-8, base64, gzip, none)",
-            "default": "utf-8",
-        },
-        {
-            "name": "payload_format",
-            "required": False,
-            "description": "Format for the payload (json, yaml, text)",
-            "default": "json",
-        },
-    ],
-    "output_schema": {
-        "type": "object",
-        "properties": {
-            "payload": {
-                "type": "string",
+info = copy.deepcopy(base_info)
+info.update(
+    {
+        "class_name": "BrokerInput",
+        "description": (
+            "Connect to a messaging broker and receive messages from it. "
+            "The component will output the payload, topic, and user properties of the message."
+        ),
+        "config_parameters": [
+            {
+                "name": "broker_type",
+                "required": False,
+                "description": "Type of broker (Solace, MQTT, etc.)",
+                "default": "solace",
             },
-            "topic": {
-                "type": "string",
+            {
+                "name": "dev_mode",
+                "required": False,
+                "description": "Operate in development mode, which just uses local queues",
+                "default": "false",
             },
-            "user_properties": {
-                "type": "object",
+            {
+                "name": "broker_url",
+                "required": True,
+                "description": "Broker URL (e.g. tcp://localhost:55555)",
             },
+            {
+                "name": "broker_username",
+                "required": True,
+                "description": "Client username for broker",
+            },
+            {
+                "name": "broker_password",
+                "required": True,
+                "description": "Client password for broker",
+            },
+            {
+                "name": "broker_vpn",
+                "required": True,
+                "description": "Client VPN for broker",
+            },
+            {
+                "name": "broker_queue_name",
+                "required": False,
+                "description": "Queue name for broker, if not provided it will use a temporary queue",
+            },
+            {
+                "name": "temporary_queue",
+                "required": False,
+                "description": "Whether to create a temporary queue that will be deleted "
+                "after disconnection, defaulted to True if broker_queue_name is not provided",
+                "default": False,
+            },
+            {
+                "name": "broker_subscriptions",
+                "required": True,
+                "description": "Subscriptions for broker",
+            },
+            {
+                "name": "payload_encoding",
+                "required": False,
+                "description": "Encoding for the payload (utf-8, base64, gzip, none)",
+                "default": "utf-8",
+            },
+            {
+                "name": "payload_format",
+                "required": False,
+                "description": "Format for the payload (json, yaml, text)",
+                "default": "json",
+            },
+        ],
+        "output_schema": {
+            "type": "object",
+            "properties": {
+                "payload": {
+                    "type": "string",
+                },
+                "topic": {
+                    "type": "string",
+                },
+                "user_properties": {
+                    "type": "object",
+                },
+            },
+            "required": ["payload", "topic", "user_properties"],
         },
-        "required": ["payload", "topic", "user_properties"],
-    },
-}
+    }
+)
 
 # We always need a timeout so that we can check if we should stop
 DEFAULT_TIMEOUT_MS = 1000
