@@ -2,7 +2,7 @@ import os
 import sys
 import re
 import yaml
-import atexit
+import signal
 
 from .solace_ai_connector import SolaceAiConnector
 
@@ -110,18 +110,24 @@ def main():
         app.stop()
         app.cleanup()
         print("Solace AI Connector exited successfully!")
-        os._exit(0)
+        sys.exit(0)
 
-    atexit.register(shutdown)
+    def signal_handler(signum, frame):
+        if signum == signal.SIGINT:
+            raise KeyboardInterrupt("CTRL+C pressed")
+        elif signum == signal.SIGTERM:
+            raise SystemExit("SIGTERM received")
+
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
 
     # Start the application
     try:
         app.run()
-    except KeyboardInterrupt:
-        shutdown()
-
-    try:
         app.wait_for_flows()
+    except Exception as e:
+        print(f"Error running Solace AI Connector: {e}", file=sys.stderr)
+        shutdown()
     except KeyboardInterrupt:
         shutdown()
 

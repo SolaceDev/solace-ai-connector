@@ -1,8 +1,16 @@
 """Input broker component for the Solace AI Event Connector"""
 
-from ...common.log import log
+import copy
+import time
+from solace.messaging.utils.manageable import ApiMetrics, Metric as SolaceMetrics
+
 from .broker_base import BrokerBase
+from .broker_base import base_info
+from ...common.log import log
 from ...common.message import Message
+from ...common.monitoring import Metrics
+from ...common import Message_NACK_Outcome
+
 
 info = {
     "class_name": "BrokerInput",
@@ -95,6 +103,7 @@ DEFAULT_TIMEOUT_MS = 1000
 
 
 class BrokerInput(BrokerBase):
+
     def __init__(self, module_info=None, **kwargs):
         module_info = module_info or info
         super().__init__(module_info, **kwargs)
@@ -130,17 +139,60 @@ class BrokerInput(BrokerBase):
 
         topic = broker_message.get("topic")
         user_properties = broker_message.get("user_properties", {})
-        log.debug(
-            "Received message from broker: topic=%s, user_properties=%s, payload length=%d",
-            topic,
-            user_properties,
-            len(payload) if payload is not None else 0,
-        )
+        log.debug("Received message from broker: topic=%s", topic)
         return Message(payload=payload, topic=topic, user_properties=user_properties)
 
     def acknowledge_message(self, broker_message):
         self.messaging_service.ack_message(broker_message)
 
+    def negative_acknowledge_message(
+        self, broker_message, nack=Message_NACK_Outcome.REJECTED
+    ):
+        """
+        Negative acknowledge a message
+        Args:
+            broker_message: The message to NACK
+            nack: The type of NACK to send (FAILED or REJECTED)
+        """
+        if nack == Message_NACK_Outcome.FAILED:
+            self.messaging_service.nack_message(
+                broker_message, Message_NACK_Outcome.FAILED
+            )
+        else:
+            self.messaging_service.nack_message(
+                broker_message, Message_NACK_Outcome.REJECTED
+            )
+
     def get_acknowledgement_callback(self):
         current_broker_message = self.current_broker_message
         return lambda: self.acknowledge_message(current_broker_message)
+
+    def get_negative_acknowledgement_callback(self):
+        """
+        Get a callback function for negative acknowledgement
+        """
+        current_broker_message = self.current_broker_message
+
+        def callback(nack):
+            return self.negative_acknowledge_message(current_broker_message, nack)
+
+        return callback
+
+    def get_connection_status(self):
+        return self.messaging_service.get_connection_status()
+
+    def get_metrics(self):
+        required_metrics = [
+            Metrics.SOLCLIENT_STATS_RX_SETTLE_ACCEPTED,
+            Metrics.SOLCLIENT_STATS_TX_TOTAL_CONNECTION_ATTEMPTS,
+        ]
+        stats_dict = {}
+        metrics: "ApiMetrics" = self.messaging_service.messaging_service.metrics()
+        for metric_key in required_metrics:
+            metric = SolaceMetrics(metric_key.value)
+            stats_dict[metric_key] = {
+                "value": metrics.get_value(SolaceMetrics(metric)),
+                "timestamp": int(time.time()),
+            }
+
+        return stats_dict
