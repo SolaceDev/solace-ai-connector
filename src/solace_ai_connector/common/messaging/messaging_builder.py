@@ -34,5 +34,5 @@ class MessagingServiceBuilder:
             return SolaceMessaging(self.broker_properties, self.broker_name, self.stop_signal)
 
         raise ValueError(
-            f"Unsupported broker type: {self.broker_properties['broker_type']}"
+            f"Unsupported broker type: {self.broker_properties['broker_type']}. Please either enable dev_mode or use a supported broker type."
         )
