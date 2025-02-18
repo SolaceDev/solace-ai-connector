@@ -76,15 +76,10 @@ class LangChainTextSplitter(LangChainBase):
         Returns:
             list: A list of strings representing the split text segments.
         """
-        if "text" not in data:
-            log.error("Text not provided in input data")
-            return []
-
         try:
-            text = data.get("text")
-            texts = self.component.split_text(text)
-            log.debug(f"Split text: {texts}")
-            return texts
+            chunks = self.component.split_text(data)
+            log.debug(f"Chunk: {chunks}")
+            return chunks
         except Exception as e:
             log.error(f"Error splitting text: {str(e)}")
             return []
