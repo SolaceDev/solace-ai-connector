@@ -19,10 +19,11 @@
 # - PGVECTOR_HOST
 # - PGVECTOR_PORT
 # - SOLACE_BROKER_INPUT_QUEUE_NAME
+# - SOLACE_BROKER_INPUT_TOPIC
 
 ---
 log:
-  stdout_log_level: DEBUG
+  stdout_log_level: INFO
   log_file_level: INFO
   log_file: solace_ai_connector.log
 
@@ -84,7 +85,7 @@ flows:
           embedding_component_config:
             api_key: ${OPENAI_API_KEY}
             base_url: ${OPENAI_API_ENDPOINT}
-            model: bedrock-cohere-embed-english-v3 #${OPENAI_EMBEDDING_MODEL_NAME}
+            model: ${OPENAI_EMBEDDING_MODEL_NAME}
         input_transforms:
           - type: copy
             source_value: topic:${SOLACE_BROKER_INPUT_TOPIC}
