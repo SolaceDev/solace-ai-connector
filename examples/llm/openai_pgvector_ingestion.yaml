@@ -65,7 +65,7 @@ flows:
             chunk_overlap: 1
         input_transforms:
           - type: copy
-            source_expression: input.payload:text
+            source_expression: input.payload
             dest_expression: user_data.input
         input_selection:
           source_expression: user_data.input
