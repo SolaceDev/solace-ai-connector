@@ -256,8 +256,8 @@ class LiteLLMBase(ComponentBase):
         """Validate the model config and throw a descriptive error if it's invalid."""
         for model in config:
             params = model.get('litellm_params', {})
-            if not all([params.get('model'), params.get('api_key'), params.get('api_base')]):
+            if not all([params.get('model'), params.get('api_key')]):
                 raise ValueError(
-                    f"Each model config must have model_name, api_key, and api_base defined and not be None.\n"
+                    f"Each model configuration requires both a model name and an API key, neither of which can be None.\n"
                     f"Received config: {model}"
                 )
