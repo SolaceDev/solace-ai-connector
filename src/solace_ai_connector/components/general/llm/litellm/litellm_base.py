@@ -258,6 +258,6 @@ class LiteLLMBase(ComponentBase):
             params = model.get('litellm_params', {})
             if not all([params.get('model'), params.get('api_key'), params.get('api_base')]):
                 raise ValueError(
-                    f"Each model config must have model, api_key, and api_base defined and not be None.\n"
+                    f"Each model config must have model_name, api_key, and api_base defined and not be None.\n"
                     f"Received config: {model}"
                 )
