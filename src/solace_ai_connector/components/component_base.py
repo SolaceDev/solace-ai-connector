@@ -82,6 +82,7 @@ class ComponentBase:
         return self.thread
 
     def run(self):
+        self.monitoring.register_callback(self.flush_metrics)
         # Start the micro monitoring thread
         monitoring_thread = threading.Thread(
             target=self.run_micro_monitoring, daemon=True
@@ -553,7 +554,7 @@ class ComponentBase:
         # This method should be overridden by components that need to provide metrics.
         return {}
 
-    def reset_metrics(self):
+    def flush_metrics(self):
         # This method is intentionally left empty because not all components need to reset metrics.
         # Components that require metric reset functionality should override this method.
         pass
@@ -597,6 +598,9 @@ class ComponentBase:
                 # Wait for the next interval
                 sleep_interval = self.monitoring.get_interval()
                 self.stop_signal.wait(timeout=sleep_interval)
-                self.reset_metrics()
+                # Reset metrics in automatic mode
+                if not self.monitoring.is_flush_manual():
+                    self.flush_metrics()
+                    log.debug("Automatically flushed metrics.")
         except KeyboardInterrupt:
             log.info("Monitoring stopped.")
