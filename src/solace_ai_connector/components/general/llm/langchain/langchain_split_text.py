@@ -12,11 +12,6 @@ info = {
     "description": "Split a long text into smaller parts using the LangChain text splitter module",
     "config_parameters": [
         {
-            "name": "enabled",
-            "required": False,
-            "description": "Disable/Enable the splitter",
-        },
-        {
             "name": "langchain_module",
             "required": True,
             "description": "The text split module - e.g. 'langchain_text_splitters'",
@@ -82,11 +77,6 @@ class LangChainTextSplitter(LangChainBase):
             list: A list of strings representing the split text segments.
         """
         try:
-            is_active = self.get_config("enabled", True)
-            if not is_active:
-                log.info("Text splitter is disabled.")
-                return data
-
             chunks = self.component.split_text(data)
             log.debug(f"Chunk: {chunks}")
             return chunks
