@@ -11,7 +11,8 @@ authors = [
 ]
 description = "Solace AI Connector - make it easy to connect Solace PubSub+ Event Brokers to AI/ML frameworks"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
+
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: Apache Software License",
@@ -43,12 +44,18 @@ solace-ai-connector-gen-docs = "solace_ai_connector.tools.gen_component_docs:mai
 installer = "pip"
 dependencies = [
     "pip>=25.0",
-    "setuptools>=70.0"
+    "setuptools>=70.0",
+    "pytest",
+    "pytest-cov",
+    "pytest-randomly",
+    "pytest-rerunfailures",
+    "pytest-xdist",
+    "pytest-mock",
 ]
 
 # Specify minimum and maximum Python versions to test
 [[tool.hatch.envs.hatch-test.matrix]]
-python = ["3.12"]
+python = ["3.11", "3.12"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/solace_ai_connector"]
