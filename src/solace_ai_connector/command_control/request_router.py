@@ -7,6 +7,8 @@ import logging
 import datetime
 from typing import Any, Dict, Optional
 
+from .schema_validator import SchemaValidator
+
 # Configure logger
 log = logging.getLogger(__name__)
 
@@ -25,6 +27,7 @@ class RequestRouter:
             entity_registry: The EntityRegistry instance to use for routing.
         """
         self.entity_registry = entity_registry
+        self.schema_validator = SchemaValidator()
 
     def route_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Route a request to the appropriate handler.
@@ -129,8 +132,28 @@ class RequestRouter:
         Returns:
             Optional[str]: An error message if validation fails, None otherwise.
         """
-        # TODO: Implement parameter validation against schema
-        # This is a placeholder for now
+        # Validate path parameters
+        path_param_schema = handler_info.get('path_params', {})
+        path_validation_error = self.schema_validator.validate_path_params(
+            path_params, path_param_schema)
+        if path_validation_error:
+            return path_validation_error
+            
+        # Validate query parameters
+        query_param_schema = handler_info.get('query_params', {})
+        query_validation_error = self.schema_validator.validate_query_params(
+            query_params, query_param_schema)
+        if query_validation_error:
+            return query_validation_error
+            
+        # Validate request body
+        body_schema = handler_info.get('request_body_schema')
+        if body_schema:
+            body_validation_error = self.schema_validator.validate_request_body(
+                body, body_schema)
+            if body_validation_error:
+                return body_validation_error
+                
         return None
 
     def _create_response(self, 

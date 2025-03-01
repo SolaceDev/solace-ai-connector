@@ -32,6 +32,9 @@ class CommandControlService:
         self.entity_registry = EntityRegistry()
         self.request_router = RequestRouter(self.entity_registry)
         self.instance_id = str(uuid.uuid4())
+        self.broker_adapter = None
+        if connector and hasattr(connector, 'broker_adapter'):
+            self.broker_adapter = connector.broker_adapter
         log.info("Command Control Service initialized with instance ID: %s", 
                  self.instance_id)
 
@@ -83,7 +86,8 @@ class CommandControlService:
             
             if success:
                 log.info("Entity registered: %s (%s)", entity_name, entity_id)
-                # TODO: Publish notification about new entity registration
+                # Publish notification about new entity registration
+                self.publish_registry()
                 return True
             else:
                 log.warning("Failed to register entity: %s (%s)", entity_name, entity_id)
@@ -186,8 +190,11 @@ class CommandControlService:
             error: Optional error information.
             duration_ms: Optional duration in milliseconds.
         """
-        # TODO: Implement trace emission
-        pass
+        if not self.broker_adapter:
+            log.warning("No broker adapter available, cannot emit trace")
+            return
+            
+        # TODO: Implement trace emission using the broker adapter
 
     def publish_status(self, 
                       entity_id: str,
@@ -202,8 +209,11 @@ class CommandControlService:
             status: The current status of the entity.
             details: Additional status details.
         """
-        # TODO: Implement status publication
-        pass
+        if not self.broker_adapter:
+            log.warning("No broker adapter available, cannot publish status")
+            return
+            
+        self.broker_adapter.publish_status(entity_id, entity_type, status, details)
 
     def publish_metrics(self, 
                        entity_id: str,
@@ -216,13 +226,20 @@ class CommandControlService:
             entity_type: The type of entity.
             metrics: The metrics to publish.
         """
-        # TODO: Implement metrics publication
-        pass
+        if not self.broker_adapter:
+            log.warning("No broker adapter available, cannot publish metrics")
+            return
+            
+        self.broker_adapter.publish_metrics(entity_id, entity_type, metrics)
 
     def publish_registry(self) -> None:
         """Publish the current entity registry.
         
         This publishes a list of all registered entities and their endpoints.
         """
-        # TODO: Implement registry publication
-        pass
+        if not self.broker_adapter:
+            log.warning("No broker adapter available, cannot publish registry")
+            return
+            
+        entities = self.entity_registry.get_all_entities()
+        self.broker_adapter.publish_registry(self.instance_id, entities)
