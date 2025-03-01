@@ -385,7 +385,7 @@ This design provides a flexible, extensible command and control system that inte
 
 ### Phase 1: Core Framework (Sprint 1-2)
 
-1. **Create Basic Command Control Service**
+1. **Create Basic Command Control Service** [done]
    - File: `src/solace_ai_connector/command_control/command_control_service.py`
      - Implement the core CommandControlService class
      - Add entity registration methods
@@ -400,7 +400,7 @@ This design provides a flexible, extensible command and control system that inte
      - Add path parsing and parameter extraction
      - Add handler invocation logic
 
-2. **Integrate with SolaceAiConnector**
+2. **Integrate with SolaceAiConnector** [done]
    - File: `src/solace_ai_connector/solace_ai_connector.py`
      - Add CommandControlService initialization
      - Add public method for components to access the service
