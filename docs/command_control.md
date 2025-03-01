@@ -406,13 +406,13 @@ This design provides a flexible, extensible command and control system that inte
      - Add public method for components to access the service
      - Add configuration options for command control
 
-3. **Create Broker Adapter**
+3. **Create Broker Adapter** [done]
    - File: `src/solace_ai_connector/command_control/broker_adapter.py`
      - Implement the BrokerAdapter class
      - Add methods for receiving commands and publishing responses
      - Add integration with existing broker components
 
-4. **Add Schema Validation**
+4. **Add Schema Validation** [done]
    - File: `src/solace_ai_connector/command_control/schema_validator.py`
      - Implement the SchemaValidator class
      - Add methods for validating requests and responses
@@ -420,13 +420,13 @@ This design provides a flexible, extensible command and control system that inte
 
 ### Phase 2: Component Integration (Sprint 3)
 
-1. **Update ComponentBase**
+1. **Update ComponentBase** [done]
    - File: `src/solace_ai_connector/components/component_base.py`
      - Add registration method for components
      - Add trace emission method
      - Add helper methods for defining endpoints
 
-2. **Create Standard Connector Entity**
+2. **Create Standard Connector Entity** [done]
    - File: `src/solace_ai_connector/command_control/connector_entity.py`
      - Implement the ConnectorEntity class
      - Add standard endpoints for connector management
@@ -434,11 +434,10 @@ This design provides a flexible, extensible command and control system that inte
      - Add standard endpoints for component management
      - Add standard endpoints for system management
 
-3. **Add Configuration Support**
-   - File: `src/solace_ai_connector/command_control/config.py`
-     - Implement configuration schema and validation
-     - Add methods for updating configuration at runtime
-     - Add integration with existing configuration system
+3. **Add Configuration Support** [done]
+   - Integration with existing configuration system
+   - Support for filtering sensitive information
+   - Support for exposing mutable configuration paths
 
 ### Phase 3: Tracing System (Sprint 4)
 
