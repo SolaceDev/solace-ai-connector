@@ -238,38 +238,29 @@ The command and control system consists of the following key components:
 
 The command and control system integrates with the existing Solace AI Connector architecture at several points:
 
-<inst>
-
-Managed Entities are expected to be registered from components. It is expected that a custom component would
-call a registration method from its __init__ method. The flow class wouldn't be involved in this process.
-
-The SolaceAiConnector class will create a couple of flows to manage inputs from the broker and to handle
-publishing to the broker.
-
-Update the document to reflect this.
-
-</inst>
-
-
 1. **SolaceAiConnector Class**:
    - Initializes the CommandControlService during startup
-   - Provides access to the service for flows and components
-   - Registers connector-level endpoints
+   - Creates dedicated flows for command handling and response publishing
+   - Provides access to the service for components via a public method
+   - Registers connector-level endpoints for system-wide operations
 
-2. **Flow Class**:
-   - Registers as an entity with the CommandControlService
-   - Exposes flow-specific endpoints (start, stop, status)
-   - Provides access to the service for components
+2. **ComponentBase Class**:
+   - Provides a registration method for components to register as managed entities
+   - Components call this registration method in their `__init__` method
+   - Each component is responsible for defining its own endpoints and handlers
+   - The Flow class is not directly involved in the registration process
 
-3. **ComponentBase Class**:
-   - Provides a registration method for components
-   - Allows components to expose component-specific endpoints
-   - Handles component-specific command execution
+3. **Custom Components**:
+   - Register themselves directly with the CommandControlService
+   - Define their own endpoints, methods, and handlers
+   - Can expose component-specific functionality through the API
+   - Registration typically happens during component initialization
 
-4. **Broker Components**:
-   - The BrokerAdapter leverages existing broker components
-   - Reuses connection management and messaging patterns
-   - Ensures consistent behavior with other messaging in the system
+4. **Broker Integration**:
+   - The SolaceAiConnector creates dedicated flows for command and control messaging
+   - These flows use broker_input and broker_output components
+   - The BrokerAdapter interfaces with these flows rather than creating its own connections
+   - This ensures consistent connection management and error handling
 
 5. **Monitoring System**:
    - Integrates with the existing monitoring system
