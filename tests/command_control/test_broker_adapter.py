@@ -13,6 +13,8 @@ class TestBrokerAdapter(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         self.connector = MagicMock()
+        # Make sure the config mock returns proper values
+        self.connector.config = {}
         self.command_control_service = MagicMock()
         self.adapter = BrokerAdapter(self.connector, self.command_control_service)
 
