@@ -13,6 +13,8 @@ from .flow.timer_manager import TimerManager
 from .common.event import Event, EventType
 from .services.cache_service import CacheService, create_storage_backend
 from .common.monitoring import Monitoring
+from .command_control.command_control_service import CommandControlService
+from .command_control.broker_adapter import BrokerAdapter
 
 
 class SolaceAiConnector:
@@ -35,6 +37,14 @@ class SolaceAiConnector:
         self.timer_manager = TimerManager(self.stop_signal)
         self.cache_service = self.setup_cache_service()
         self.monitoring = Monitoring(config)
+        
+        # Initialize command control system if enabled
+        self.command_control_service = None
+        self.broker_adapter = None
+        self.command_control_enabled = self.config.get("command_control", {}).get("enabled", False)
+        
+        if self.command_control_enabled:
+            self.setup_command_control()
 
     def run(self):
         """Run the Solace AI Event Connector"""
@@ -46,6 +56,10 @@ class SolaceAiConnector:
             on_flow_creation = self.event_handlers.get("on_flow_creation")
             if on_flow_creation:
                 on_flow_creation(self.flows)
+                
+            # If command control is enabled, create the command and response flows
+            if self.command_control_enabled:
+                self.create_command_control_flows()
 
             log.info("Solace AI Event Connector started successfully")
         except KeyboardInterrupt:
@@ -261,3 +275,128 @@ class SolaceAiConnector:
 
         if self.trace_thread:
             self.trace_thread.join()
+            
+    def setup_command_control(self):
+        """Set up the command control system."""
+        log.info("Setting up command control system")
+        
+        # Create the command control service
+        self.command_control_service = CommandControlService(self)
+        
+        # Create the broker adapter
+        self.broker_adapter = BrokerAdapter(self, self.command_control_service)
+        
+        # Set up the command handler
+        self.broker_adapter.set_command_handler(self.handle_command)
+        
+        log.info("Command control system initialized")
+        
+    def create_command_control_flows(self):
+        """Create the command and response flows for the command control system."""
+        if not self.command_control_service or not self.broker_adapter:
+            log.warning("Command control service not initialized, skipping flow creation")
+            return
+            
+        # Create command flow configuration
+        command_flow_config = {
+            "name": "command_control_command_flow",
+            "components": [
+                {
+                    "component_name": "command_input",
+                    "component_module": "broker_input",
+                    "component_config": {
+                        "broker_type": self.config.get("broker_type", "solace"),
+                        "broker_url": self.config.get("broker_url"),
+                        "broker_username": self.config.get("broker_username"),
+                        "broker_password": self.config.get("broker_password"),
+                        "broker_vpn": self.config.get("broker_vpn"),
+                        "broker_queue_name": "command_control_queue",
+                        "broker_subscriptions": [
+                            {
+                                "topic": f"{self.broker_adapter.namespace}/{self.broker_adapter.topic_prefix}/>",
+                                "qos": 1
+                            }
+                        ],
+                        "payload_encoding": "utf-8",
+                        "payload_format": "json"
+                    }
+                },
+                {
+                    "component_name": "command_handler",
+                    "component_module": "handler_callback",
+                    "component_config": {
+                        "invoke_handler": self.broker_adapter.handle_message
+                    }
+                }
+            ]
+        }
+        
+        # Create response flow configuration
+        response_flow_config = {
+            "name": "command_control_response_flow",
+            "components": [
+                {
+                    "component_name": "response_output",
+                    "component_module": "broker_output",
+                    "component_config": {
+                        "broker_type": self.config.get("broker_type", "solace"),
+                        "broker_url": self.config.get("broker_url"),
+                        "broker_username": self.config.get("broker_username"),
+                        "broker_password": self.config.get("broker_password"),
+                        "broker_vpn": self.config.get("broker_vpn"),
+                        "payload_encoding": "utf-8",
+                        "payload_format": "json"
+                    }
+                }
+            ]
+        }
+        
+        # Create the flows
+        command_flow = self.create_flow(command_flow_config, len(self.flows), 0)
+        response_flow = self.create_flow(response_flow_config, len(self.flows) + 1, 0)
+        
+        # Add the flows to the list
+        self.flows.append(command_flow)
+        self.flows.append(response_flow)
+        
+        # Store the flow input queues
+        self.flow_input_queues[command_flow_config["name"]] = command_flow.get_flow_input_queue()
+        self.flow_input_queues[response_flow_config["name"]] = response_flow.get_flow_input_queue()
+        
+        # Start the flows
+        command_flow.run()
+        response_flow.run()
+        
+        # Set up the broker adapter with the flow names
+        self.broker_adapter.setup_command_flow(command_flow_config["name"])
+        self.broker_adapter.setup_response_flow(response_flow_config["name"])
+        
+        log.info("Command control flows created and started")
+        
+    def handle_command(self, request):
+        """Handle a command request.
+        
+        Args:
+            request: The command request to handle.
+        """
+        if not self.command_control_service:
+            log.warning("Command control service not initialized, ignoring command")
+            return
+            
+        # Process the request
+        response = self.command_control_service.handle_request(request)
+        
+        # Add the reply_to_topic_prefix to the response
+        response["reply_to_topic_prefix"] = request.get("reply_to_topic_prefix")
+        
+        # Publish the response
+        if self.broker_adapter:
+            self.broker_adapter.publish_response(response)
+        
+    def get_command_control_service(self):
+        """Get the command control service.
+        
+        Returns:
+            The command control service, or None if not enabled.
+        """
+        return self.command_control_service
