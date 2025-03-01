@@ -7,6 +7,11 @@ for the type of application being built.
 
 ## Section for architecture thoughts
 
+<inst>
+combine my thoughts and the assistant's thoughts into a single coherent document
+</inst>
+
+
 My thoughts:
 
 1. Each solace-ai-connector instance will have a single instance of a command and control
@@ -35,6 +40,9 @@ When a component or flow starts up, it needs to register with the command and co
 2. The command and control object validates the registration data
 3. The component is added to the registry of managed entities
 4. The command and control system publishes a notification that a new entity has been registered
+5. Periodically, the command and control system publishes a notification with the current list of registered entities
+6. It is acceptable for multiple objects to register with the same name, but the command and control system should handle this gracefully and keep a list of all objects with the same name so that commands can be sent to all of them. If this is not desired by the components, it is up to the component to ensure that it only registers once.
+
 
 ### Registration Data Requirements
 
@@ -42,18 +50,19 @@ The registration data should include comprehensive information about the entity 
 
 1. **Identity Information**:
    - A unique identifier for the entity
-   - The type of entity (flow, component, connector)
    - A human-readable name and description
+   - A type or category for the entity
    - Version information
-   - Hierarchical relationship information (parent/child relationships)
 
 2. **Command Interface**:
    - A list of all commands the entity can handle
    - For each command:
-     - Name and description
-     - Required and optional parameters with their types and descriptions
-     - Expected response format
-     - Any constraints or validation rules
+     - List of versions and in each version:
+        - Name and description
+        - Required and optional parameters with their types and descriptions
+        - Each parameter can be marked as 'secret' to indicate that it should not be logged
+        - Any constraints or validation rules
+        - Callback function to handle the command
 
 3. **Status Reporting**:
    - What status attributes the entity will report
@@ -70,12 +79,9 @@ The registration data should include comprehensive information about the entity 
    - Current configuration
    - Which configuration elements can be modified at runtime
    - Validation rules for configuration changes
+   - Configuration schema, including data types, constraints, is secret, etc.
    - Default values
 
-6. **Callback References**:
-   - Function references that the command and control system can call
-   - These should include handlers for each supported command
-   - Callbacks for status updates and metric collection
 
 ### Benefits of Comprehensive Registration
 
