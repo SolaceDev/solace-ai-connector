@@ -15,6 +15,7 @@ from .services.cache_service import CacheService, create_storage_backend
 from .common.monitoring import Monitoring
 from .command_control.command_control_service import CommandControlService
 from .command_control.broker_adapter import BrokerAdapter
+from .command_control.connector_entity import ConnectorEntity
 
 
 class SolaceAiConnector:
@@ -41,6 +42,7 @@ class SolaceAiConnector:
         # Initialize command control system if enabled
         self.command_control_service = None
         self.broker_adapter = None
+        self.connector_entity = None
         self.command_control_enabled = self.config.get("command_control", {}).get("enabled", False)
         
         if self.command_control_enabled:
@@ -288,6 +290,9 @@ class SolaceAiConnector:
         
         # Set up the command handler
         self.broker_adapter.set_command_handler(self.handle_command)
+        
+        # Create the connector entity
+        self.connector_entity = ConnectorEntity(self, self.command_control_service)
         
         log.info("Command control system initialized")
         
