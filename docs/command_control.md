@@ -289,6 +289,58 @@ The command and control system integrates with the existing Solace AI Connector 
 4. **Metrics Flow**:
    - Entity → Monitoring System → BrokerAdapter → Event Mesh
 
+### Tracing System
+
+The command and control system includes a comprehensive tracing capability that allows for detailed monitoring and debugging of operations across the system:
+
+1. **Purpose and Benefits**:
+   - Tracing allows managed entities to emit trace information to the event mesh
+   - External analysis tools can collect this information to track progress and debug issues
+   - Provides visibility into the internal operations of the system
+   - Helps identify bottlenecks, errors, and unexpected behaviors
+   - Supports troubleshooting in distributed environments
+
+2. **Configuration and Control**:
+   - Tracing is controlled by the system configuration
+   - Can be enabled or disabled globally at startup
+   - Trace levels can be adjusted at runtime through the command API
+   - Granular control allows tracing specific entities or operations
+   - Configuration options include trace detail level, sampling rate, and destination
+
+3. **Trace Data Structure**:
+   - Each trace event includes:
+     - Timestamp with millisecond precision
+     - Entity ID that generated the trace
+     - Message/request ID for correlation
+     - Operation being performed
+     - Execution stage (start, progress, completion)
+     - Duration information for performance analysis
+     - Custom trace data specific to the operation
+     - Error information if applicable
+
+4. **Component Integration**:
+   - The ComponentBase class provides a `emit_trace()` method
+   - Components can easily emit trace information without handling messaging details
+   - Trace emission is non-blocking to minimize performance impact
+   - Conditional logic prevents trace generation when tracing is disabled
+   - Sampling mechanisms prevent overwhelming the system with trace data
+
+5. **Publication and Consumption**:
+   - Trace data is published to dedicated topics following the pattern:
+     `<configurable-namespace>/sac-control/v1/trace/{entity_id}/{trace_level}`
+   - Trace levels include DEBUG, INFO, WARN, ERROR
+   - External systems can subscribe to specific trace levels or entities
+   - Trace data can be consumed by logging systems, monitoring tools, or custom applications
+   - Standard formats ensure compatibility with common analysis tools
+
+6. **System Endpoints for Trace Control**:
+   - `/system/trace` - GET: Get current trace configuration
+   - `/system/trace` - PUT: Update trace configuration
+   - `/system/trace/{entity_id}` - GET: Get trace configuration for a specific entity
+   - `/system/trace/{entity_id}` - PUT: Update trace configuration for a specific entity
+
+This tracing system provides deep visibility into the operation of the Solace AI Connector while maintaining performance and flexibility. It integrates seamlessly with the command and control architecture and leverages the existing event mesh for efficient distribution of trace information.
+
 ### Standard Endpoints
 
 The system automatically creates a managed entity that represents the connector itself. This entity provides standard endpoints for common operations across the system. This connector entity:
@@ -324,19 +376,6 @@ The connector entity exposes the following standard endpoints:
    - `/system/health` - GET: Get overall system health status
    - `/system/metrics` - GET: Get system-wide metrics
    - `/system/config` - GET: Get system configuration
-
-<inst>
-Part of the system config is to control the level of tracing that is done.
-Include a section to describe tracing with the following info:
-1. Tracing allows the managed entities to emit trace information to the event mesh so that
-   analysis tools can track progress and debug issues.
-2. Tracing is controlled by the system configuration and can be enabled or disabled at runtime.
-3. Tracing information includes timestamps, entity IDs, message IDs, and custom trace data.
-4. The component base provides a method to make it easy for components to emit trace information.
-5. Tracing data is published to a dedicated topic for trace information.
-Update this doc
-</inst>
-
 
 These standard endpoints provide a consistent interface for managing the connector and its components, regardless of the specific components that are registered. They serve as a foundation that can be extended with custom endpoints provided by individual components.
 
