@@ -243,6 +243,36 @@ class TracingSystem:
         except Exception as e:
             log.error("Error updating trace configuration: %s", str(e))
             return False
+            
+    def create_trace_context(self,
+                            entity_id: str,
+                            entity_type: str,
+                            trace_level: str,
+                            operation: str,
+                            request_id: Optional[str] = None,
+                            data: Any = None) -> 'TraceContext':
+        """Create a trace context for an operation.
+        
+        Args:
+            entity_id: The ID of the entity emitting the trace.
+            entity_type: The type of entity emitting the trace.
+            trace_level: The trace level (DEBUG, INFO, WARN, ERROR).
+            operation: The operation being performed.
+            request_id: Optional ID of the request being traced.
+            data: Optional data specific to the operation.
+            
+        Returns:
+            TraceContext: A trace context for the operation.
+        """
+        return TraceContext(
+            tracing_system=self,
+            entity_id=entity_id,
+            entity_type=entity_type,
+            trace_level=trace_level,
+            operation=operation,
+            request_id=request_id,
+            data=data
+        )
 
 
 class TraceContext:

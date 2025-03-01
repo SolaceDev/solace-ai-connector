@@ -131,9 +131,8 @@ class CommandControlService:
         endpoint = request.get('endpoint', '')
         
         # Create a trace context for the request
-        with TraceContext(
-            tracing_system=self.tracing_system,
-            entity_id="comman_control",
+        with self.create_trace_context(
+            entity_id="command_control",
             entity_type="service",
             trace_level="INFO",
             operation=f"{method} {endpoint}",
@@ -343,7 +342,7 @@ class CommandControlService:
                             trace_level: str,
                             operation: str,
                             request_id: Optional[str] = None,
-                            data: Any = None) -> TraceContext:
+                            data: Any = None) -> Any:
         """Create a trace context for an operation.
         
         Args:
@@ -369,8 +368,8 @@ class CommandControlService:
                 data=data
             )
             
-        return TraceContext(
-            tracing_system=self.tracing_system,
+        # Use the tracing system's create_trace_context method directly
+        return self.tracing_system.create_trace_context(
             entity_id=entity_id,
             entity_type=entity_type,
             trace_level=trace_level,
