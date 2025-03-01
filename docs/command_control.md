@@ -238,6 +238,19 @@ The command and control system consists of the following key components:
 
 The command and control system integrates with the existing Solace AI Connector architecture at several points:
 
+<inst>
+
+Managed Entities are expected to be registered from components. It is expected that a custom component would
+call a registration method from its __init__ method. The flow class wouldn't be involved in this process.
+
+The SolaceAiConnector class will create a couple of flows to manage inputs from the broker and to handle
+publishing to the broker.
+
+Update the document to reflect this.
+
+</inst>
+
+
 1. **SolaceAiConnector Class**:
    - Initializes the CommandControlService during startup
    - Provides access to the service for flows and components
@@ -266,7 +279,7 @@ The command and control system integrates with the existing Solace AI Connector 
 6. **Cache Service**:
    - Uses the cache service for state persistence
    - Stores command history and results
-   - Maintains entity registry across restarts
+   - No persistence across restarts is required
 
 ### Data Flow
 
