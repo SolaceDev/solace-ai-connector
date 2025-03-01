@@ -426,6 +426,7 @@ class TestCommandControlService(unittest.TestCase):
         """Test creating a trace context."""
         # Mock the tracing system
         mock_context = MagicMock()
+        self.service.tracing_system = MagicMock()
         self.service.tracing_system.create_trace_context = MagicMock(return_value=mock_context)
         
         # Test data
@@ -467,6 +468,7 @@ class TestCommandControlService(unittest.TestCase):
             request_id=request_id,
             data=data
         )
+        # Just verify we get something back without error
         self.assertIsNotNone(context)
 
 
