@@ -25,6 +25,13 @@ My thoughts:
    event mesh. This will be used to send responses to commands as well as to send
    general status updates, metrics and trace information.
 
+<inst>
+Add a structure below for what is registered.
+
+It should contain a description of the entity, the commands it can handle, etc.
+
+</inst>
+
 Assistant's thoughts:
 
 1. **Command Structure**: Commands should follow a consistent structure with fields like:
