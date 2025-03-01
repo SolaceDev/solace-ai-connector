@@ -174,7 +174,10 @@ class ComponentBase:
 
             self.current_message_has_been_discarded = False
             try:
-                result = self.invoke(message, data)
+                # Create a trace context for the invoke operation
+                with self.create_trace_context("invoke", data) as trace_ctx:
+                    result = self.invoke(message, data)
+                    trace_ctx.progress(data={"result": result})
             except Exception as e:
                 self.current_message = None
                 self.handle_negative_acknowledgements(message, e)
@@ -861,4 +864,51 @@ class ComponentBase:
             data=data,
             error=error,
             duration_ms=duration_ms
+        )
+        
+    def create_trace_context(self, operation: str, data: Any = None, trace_level: str = "INFO") -> Any:
+        """Create a trace context for an operation.
+        
+        This method creates a trace context that will automatically emit start and
+        completion trace events with timing information.
+        
+        Args:
+            operation: The operation being performed.
+            data: Optional data specific to the operation.
+            trace_level: The trace level (DEBUG, INFO, WARN, ERROR).
+            
+        Returns:
+            A trace context object that can be used in a with statement.
+        """
+        if not self.connector or not hasattr(self.connector, 'get_command_control_service'):
+            # Return a dummy context manager if tracing is not available
+            class DummyContext:
+                def __enter__(self):
+                    return self
+                def __exit__(self, exc_type, exc_val, exc_tb):
+                    return False
+                def progress(self, data=None, stage="progress"):
+                    pass
+            return DummyContext()
+            
+        command_control = self.connector.get_command_control_service()
+        if not command_control:
+            # Return a dummy context manager if command control is not available
+            class DummyContext:
+                def __enter__(self):
+                    return self
+                def __exit__(self, exc_type, exc_val, exc_tb):
+                    return False
+                def progress(self, data=None, stage="progress"):
+                    pass
+            return DummyContext()
+            
+        entity_id = f"{self.flow_name}_{self.name}_{self.component_index}"
+        
+        return command_control.create_trace_context(
+            entity_id=entity_id,
+            entity_type="component",
+            trace_level=trace_level,
+            operation=operation,
+            data=data
         )

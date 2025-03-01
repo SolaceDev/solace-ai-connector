@@ -372,3 +372,36 @@ class BrokerAdapter:
             
         except Exception as e:
             log.error("Error publishing registry: %s", str(e), exc_info=True)
+            
+    def publish_trace(self,
+                     entity_id: str,
+                     trace_level: str,
+                     trace_event: Dict[str, Any]) -> None:
+        """Publish a trace event to the event mesh.
+        
+        Args:
+            entity_id: The ID of the entity emitting the trace.
+            trace_level: The trace level (DEBUG, INFO, WARN, ERROR).
+            trace_event: The trace event to publish.
+        """
+        if not self.response_flow_name:
+            log.warning("No response flow set, cannot publish trace")
+            return
+            
+        try:
+            # Create the trace topic
+            topic = f"{self.namespace}/{self.topic_prefix}/trace/{entity_id}/{trace_level}"
+            
+            # Create a message to send
+            message = Message(
+                payload=trace_event,
+                topic=topic,
+                user_properties={}
+            )
+            
+            # Send the message to the response flow
+            self.connector.send_message_to_flow(self.response_flow_name, message)
+            log.debug("Published trace to topic: %s", topic)
+            
+        except Exception as e:
+            log.error("Error publishing trace: %s", str(e), exc_info=True)

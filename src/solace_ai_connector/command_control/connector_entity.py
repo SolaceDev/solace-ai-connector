@@ -306,7 +306,8 @@ class ConnectorEntity:
                             "type": "object",
                             "properties": {
                                 "enabled": {"type": "boolean"},
-                                "level": {"type": "string"}
+                                "default_level": {"type": "string"},
+                                "entity_levels": {"type": "object"}
                             }
                         },
                         "handler": self.handle_get_trace_config
@@ -319,7 +320,8 @@ class ConnectorEntity:
                             "type": "object",
                             "properties": {
                                 "enabled": {"type": "boolean"},
-                                "level": {"type": "string"}
+                                "default_level": {"type": "string"},
+                                "entity_levels": {"type": "object"}
                             }
                         },
                         "response_schema": {
@@ -330,6 +332,56 @@ class ConnectorEntity:
                             }
                         },
                         "handler": self.handle_update_trace_config
+                    }
+                }
+            },
+            {
+                "path": "/system/trace/{entity_id}",
+                "methods": {
+                    "GET": {
+                        "description": "Get trace configuration for a specific entity",
+                        "path_params": {
+                            "entity_id": {
+                                "type": "string",
+                                "description": "Entity ID",
+                                "required": True
+                            }
+                        },
+                        "query_params": {},
+                        "response_schema": {
+                            "type": "object",
+                            "properties": {
+                                "entity_id": {"type": "string"},
+                                "enabled": {"type": "boolean"},
+                                "level": {"type": "string"}
+                            }
+                        },
+                        "handler": self.handle_get_entity_trace_config
+                    },
+                    "PUT": {
+                        "description": "Update trace configuration for a specific entity",
+                        "path_params": {
+                            "entity_id": {
+                                "type": "string",
+                                "description": "Entity ID",
+                                "required": True
+                            }
+                        },
+                        "query_params": {},
+                        "request_body_schema": {
+                            "type": "object",
+                            "properties": {
+                                "level": {"type": "string"}
+                            }
+                        },
+                        "response_schema": {
+                            "type": "object",
+                            "properties": {
+                                "status": {"type": "string"},
+                                "message": {"type": "string"}
+                            }
+                        },
+                        "handler": self.handle_update_entity_trace_config
                     }
                 }
             }
@@ -727,11 +779,7 @@ class ConnectorEntity:
         Returns:
             Dict[str, Any]: Trace configuration.
         """
-        # This is a placeholder - in a real implementation, you would get the actual trace config
-        return {
-            "enabled": True,
-            "level": "INFO"
-        }
+        return self.command_control_service.get_trace_configuration()
         
     def handle_update_trace_config(self, path_params=None, query_params=None, body=None, context=None):
         """Handle a request to update trace configuration.
@@ -751,12 +799,77 @@ class ConnectorEntity:
                 "message": "Invalid request body"
             }
             
-        enabled = body.get("enabled")
+        success = self.command_control_service.update_trace_configuration(body)
+        
+        if success:
+            return {
+                "status": "success",
+                "message": "Trace configuration updated"
+            }
+        else:
+            return {
+                "status": "error",
+                "message": "Failed to update trace configuration"
+            }
+            
+    def handle_get_entity_trace_config(self, path_params=None, query_params=None, body=None, context=None):
+        """Handle a request for entity trace configuration.
+        
+        Args:
+            path_params: Path parameters from the request.
+            query_params: Query parameters from the request.
+            body: Request body.
+            context: Request context.
+            
+        Returns:
+            Dict[str, Any]: Entity trace configuration.
+        """
+        entity_id = path_params.get("entity_id")
+        return self.command_control_service.get_entity_trace_configuration(entity_id)
+        
+    def handle_update_entity_trace_config(self, path_params=None, query_params=None, body=None, context=None):
+        """Handle a request to update entity trace configuration.
+        
+        Args:
+            path_params: Path parameters from the request.
+            query_params: Query parameters from the request.
+            body: Request body.
+            context: Request context.
+            
+        Returns:
+            Dict[str, Any]: Update status.
+        """
+        entity_id = path_params.get("entity_id")
+        
+        if not body or not isinstance(body, dict):
+            return {
+                "status": "error",
+                "message": "Invalid request body"
+            }
+            
         level = body.get("level")
-        
-        # This is a placeholder - in a real implementation, you would update the actual trace config
-        
-        return {
-            "status": "success",
-            "message": "Trace configuration updated"
+        if not level:
+            return {
+                "status": "error",
+                "message": "Level is required"
+            }
+            
+        # Update the entity's trace level
+        config = {
+            "entity_levels": {
+                entity_id: level
+            }
         }
+        
+        success = self.command_control_service.update_trace_configuration(config)
+        
+        if success:
+            return {
+                "status": "success",
+                "message": f"Trace configuration for entity {entity_id} updated"
+            }
+        else:
+            return {
+                "status": "error",
+                "message": f"Failed to update trace configuration for entity {entity_id}"
+            }

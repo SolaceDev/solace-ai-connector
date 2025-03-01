@@ -16,6 +16,7 @@ from .common.monitoring import Monitoring
 from .command_control.command_control_service import CommandControlService
 from .command_control.broker_adapter import BrokerAdapter
 from .command_control.connector_entity import ConnectorEntity
+from .command_control.tracing import TracingSystem
 
 
 class SolaceAiConnector:

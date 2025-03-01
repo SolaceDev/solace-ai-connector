@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Optional, Callable
 
 from .entity_registry import EntityRegistry
 from .request_router import RequestRouter
+from .tracing import TracingSystem, TraceContext
 
 # Configure logger
 log = logging.getLogger(__name__)
@@ -35,6 +36,10 @@ class CommandControlService:
         self.broker_adapter = None
         if connector and hasattr(connector, 'broker_adapter'):
             self.broker_adapter = connector.broker_adapter
+            
+        # Initialize the tracing system
+        self.tracing_system = TracingSystem(self.broker_adapter)
+        
         log.info("Command Control Service initialized with instance ID: %s", 
                  self.instance_id)
 
@@ -88,6 +93,21 @@ class CommandControlService:
                 log.info("Entity registered: %s (%s)", entity_name, entity_id)
                 # Publish notification about new entity registration
                 self.publish_registry()
+                
+                # Emit a trace event for the registration
+                self.emit_trace(
+                    entity_id="command_control",
+                    entity_type="service",
+                    trace_level="INFO",
+                    operation="register_entity",
+                    stage="completion",
+                    data={
+                        "registered_entity": entity_id,
+                        "entity_type": entity_type,
+                        "entity_name": entity_name
+                    }
+                )
+                
                 return True
             else:
                 log.warning("Failed to register entity: %s (%s)", entity_name, entity_id)
@@ -106,25 +126,44 @@ class CommandControlService:
         Returns:
             Dict[str, Any]: The response to the request.
         """
-        try:
-            # Validate the request format
-            if not self._validate_request(request):
+        request_id = request.get('request_id', 'unknown')
+        method = request.get('method', '')
+        endpoint = request.get('endpoint', '')
+        
+        # Create a trace context for the request
+        with TraceContext(
+            tracing_system=self.tracing_system,
+            entity_id="comman_control",
+            entity_type="service",
+            trace_level="INFO",
+            operation=f"{method} {endpoint}",
+            request_id=request_id,
+            data={"request": request}
+        ) as trace_ctx:
+            try:
+                # Validate the request format
+                if not self._validate_request(request):
+                    return self._create_error_response(
+                        request_id,
+                        400,
+                        "Invalid request format"
+                    )
+                
+                # Route the request to the appropriate handler
+                response = self.request_router.route_request(request)
+                
+                # Add trace data for the response
+                trace_ctx.progress(data={"response": response})
+                
+                return response
+                
+            except Exception as e:
+                log.error("Error handling request: %s", str(e))
                 return self._create_error_response(
-                    request.get('request_id', 'unknown'),
-                    400,
-                    "Invalid request format"
+                    request_id,
+                    500,
+                    f"Internal server error: {str(e)}"
                 )
-            
-            # Route the request to the appropriate handler
-            return self.request_router.route_request(request)
-            
-        except Exception as e:
-            log.error("Error handling request: %s", str(e))
-            return self._create_error_response(
-                request.get('request_id', 'unknown'),
-                500,
-                f"Internal server error: {str(e)}"
-            )
 
     def _validate_request(self, request: Dict[str, Any]) -> bool:
         """Validate that a request has the required fields.
@@ -171,9 +210,9 @@ class CommandControlService:
                   entity_id: str,
                   entity_type: str,
                   trace_level: str,
-                  request_id: Optional[str],
                   operation: str,
                   stage: str,
+                  request_id: Optional[str] = None,
                   data: Any = None,
                   error: Optional[Dict[str, Any]] = None,
                   duration_ms: Optional[int] = None) -> None:
@@ -183,18 +222,25 @@ class CommandControlService:
             entity_id: The ID of the entity emitting the trace.
             entity_type: The type of entity emitting the trace.
             trace_level: The trace level (DEBUG, INFO, WARN, ERROR).
-            request_id: Optional ID of the request being traced.
             operation: The operation being performed.
             stage: The stage of the operation (start, progress, completion).
+            request_id: Optional ID of the request being traced.
             data: Optional data specific to the operation.
             error: Optional error information.
             duration_ms: Optional duration in milliseconds.
         """
-        if not self.broker_adapter:
-            log.warning("No broker adapter available, cannot emit trace")
-            return
-            
-        # TODO: Implement trace emission using the broker adapter
+        if self.tracing_system:
+            self.tracing_system.emit_trace(
+                entity_id=entity_id,
+                entity_type=entity_type,
+                trace_level=trace_level,
+                operation=operation,
+                stage=stage,
+                request_id=request_id,
+                data=data,
+                error=error,
+                duration_ms=duration_ms
+            )
 
     def publish_status(self, 
                       entity_id: str,
@@ -243,3 +289,92 @@ class CommandControlService:
             
         entities = self.entity_registry.get_all_entities()
         self.broker_adapter.publish_registry(self.instance_id, entities)
+        
+    def get_trace_configuration(self) -> Dict[str, Any]:
+        """Get the current trace configuration.
+        
+        Returns:
+            Dict[str, Any]: The current trace configuration.
+        """
+        if not self.tracing_system:
+            return {
+                'enabled': False,
+                'default_level': 'INFO',
+                'entity_levels': {}
+            }
+            
+        return self.tracing_system.get_configuration()
+        
+    def get_entity_trace_configuration(self, entity_id: str) -> Dict[str, Any]:
+        """Get the trace configuration for a specific entity.
+        
+        Args:
+            entity_id: The ID of the entity.
+            
+        Returns:
+            Dict[str, Any]: The entity's trace configuration.
+        """
+        if not self.tracing_system:
+            return {
+                'entity_id': entity_id,
+                'enabled': False,
+                'level': 'INFO'
+            }
+            
+        return self.tracing_system.get_entity_configuration(entity_id)
+        
+    def update_trace_configuration(self, config: Dict[str, Any]) -> bool:
+        """Update the trace configuration.
+        
+        Args:
+            config: The new configuration.
+            
+        Returns:
+            bool: True if the update was successful, False otherwise.
+        """
+        if not self.tracing_system:
+            return False
+            
+        return self.tracing_system.update_configuration(config)
+        
+    def create_trace_context(self,
+                            entity_id: str,
+                            entity_type: str,
+                            trace_level: str,
+                            operation: str,
+                            request_id: Optional[str] = None,
+                            data: Any = None) -> TraceContext:
+        """Create a trace context for an operation.
+        
+        Args:
+            entity_id: The ID of the entity emitting the trace.
+            entity_type: The type of entity emitting the trace.
+            trace_level: The trace level (DEBUG, INFO, WARN, ERROR).
+            operation: The operation being performed.
+            request_id: Optional ID of the request being traced.
+            data: Optional data specific to the operation.
+            
+        Returns:
+            TraceContext: A trace context for the operation.
+        """
+        if not self.tracing_system:
+            # Return a dummy trace context if tracing is not available
+            return TraceContext(
+                tracing_system=TracingSystem(),
+                entity_id=entity_id,
+                entity_type=entity_type,
+                trace_level=trace_level,
+                operation=operation,
+                request_id=request_id,
+                data=data
+            )
+            
+        return TraceContext(
+            tracing_system=self.tracing_system,
+            entity_id=entity_id,
+            entity_type=entity_type,
+            trace_level=trace_level,
+            operation=operation,
+            request_id=request_id,
+            data=data
+        )
