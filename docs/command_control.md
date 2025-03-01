@@ -305,7 +305,8 @@ The command and control system includes a comprehensive tracing capability that 
    - Can be enabled or disabled globally at startup
    - Trace levels can be adjusted at runtime through the command API
    - Granular control allows tracing specific entities or operations
-   - Configuration options include trace detail level, sampling rate, and destination
+   - Configuration options currently only include trace detail level, which
+     can be set to DEBUG, INFO, WARN, or ERROR
 
 3. **Trace Data Structure**:
    - Each trace event includes:
@@ -314,7 +315,7 @@ The command and control system includes a comprehensive tracing capability that 
      - Message/request ID for correlation
      - Operation being performed
      - Execution stage (start, progress, completion)
-     - Duration information for performance analysis
+     - Duration information for performance analysis (for completed events)
      - Custom trace data specific to the operation
      - Error information if applicable
 
@@ -323,7 +324,6 @@ The command and control system includes a comprehensive tracing capability that 
    - Components can easily emit trace information without handling messaging details
    - Trace emission is non-blocking to minimize performance impact
    - Conditional logic prevents trace generation when tracing is disabled
-   - Sampling mechanisms prevent overwhelming the system with trace data
 
 5. **Publication and Consumption**:
    - Trace data is published to dedicated topics following the pattern:
@@ -380,3 +380,10 @@ The connector entity exposes the following standard endpoints:
 These standard endpoints provide a consistent interface for managing the connector and its components, regardless of the specific components that are registered. They serve as a foundation that can be extended with custom endpoints provided by individual components.
 
 This design provides a flexible, extensible command and control system that integrates seamlessly with the existing Solace AI Connector architecture while providing a familiar REST-like API over the event mesh.
+
+## Implementation Plan
+
+<inst>
+Fill in this section with a stepwise implementation plan that will be updated as we go.
+Fill in the details about which files will be changed along with a short summary of the changes.
+</inst>
