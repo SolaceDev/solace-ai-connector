@@ -9,54 +9,60 @@ This registration structure provides a comprehensive view of each entity, includ
 
 The command and control system would maintain a registry of all entities and their capabilities, allowing for discovery, introspection, and validation of commands before execution.
 
-Assistant's thoughts:
+## Command and Response Structure
 
-1. **Command Structure**: Commands should follow a consistent structure with fields like:
-   - `command_id`: Unique identifier for tracking/correlation
-   - `command_type`: The action to perform (e.g., "start_flow", "stop_flow", "update_config")
-   - `target_entity`: The specific component or flow to target
-   - `parameters`: Command-specific parameters
-   - `timestamp`: When the command was issued
-   - `source`: Who/what issued the command
+### Command Structure
+Commands should follow a consistent structure with fields like:
+- `command_id`: Unique identifier for tracking/correlation
+- `command_type`: The action to perform (e.g., "start_flow", "stop_flow", "update_config")
+- `target_entity`: The specific component or flow to target
+- `parameters`: Command-specific parameters
+- `timestamp`: When the command was issued
+- `source`: Who/what issued the command
 
-2. **Response Structure**: Similarly, responses should have:
-   - `command_id`: Matching the original command
-   - `status`: Success/failure
-   - `message`: Human-readable result or error message
-   - `data`: Any returned data
-   - `timestamp`: When the response was generated
+### Response Structure
+Similarly, responses should have:
+- `command_id`: Matching the original command
+- `status`: Success/failure
+- `message`: Human-readable result or error message
+- `data`: Any returned data
+- `timestamp`: When the response was generated
 
-3. **Topic Structure**: A hierarchical topic structure would be beneficial:
-   - Commands: `command/solace-ai-connector/{instance_id}/{entity_type}/{entity_id}`
-   - Responses: `response/solace-ai-connector/{instance_id}/{entity_type}/{entity_id}/{command_id}`
-   - Status: `status/solace-ai-connector/{instance_id}/{entity_type}/{entity_id}`
-   - Metrics: `metrics/solace-ai-connector/{instance_id}/{entity_type}/{entity_id}`
+### Topic Structure
+A hierarchical topic structure would be beneficial:
+- Commands: `command/solace-ai-connector/{instance_id}/{entity_type}/{entity_id}`
+- Responses: `response/solace-ai-connector/{instance_id}/{entity_type}/{entity_id}/{command_id}`
+- Status: `status/solace-ai-connector/{instance_id}/{entity_type}/{entity_id}`
+- Metrics: `metrics/solace-ai-connector/{instance_id}/{entity_type}/{entity_id}`
 
-4. **Command Handler Registry**: The command and control object should maintain a registry mapping commands to handler functions, allowing components to register their capabilities.
+## Implementation Considerations
 
-5. **Security Considerations**: 
-   - Authentication for command issuers
-   - Authorization for specific commands
-   - Validation of command parameters
-   - Audit logging of all commands
+### Command Handler Registry
+The command and control object should maintain a registry mapping commands to handler functions, allowing components to register their capabilities.
 
-6. **State Management**:
-   - Track current state of all managed entities
-   - Maintain history of commands and their outcomes
-   - Support for idempotent commands
+### Security Considerations
+- Authentication for command issuers
+- Authorization for specific commands
+- Validation of command parameters
+- Audit logging of all commands
 
-7. **Integration with Existing Components**:
-   - Leverage the existing broker components for messaging
-   - Use the existing monitoring system for metrics
-   - Integrate with the cache service for state persistence
+### State Management
+- Track current state of all managed entities
+- Maintain history of commands and their outcomes
+- Support for idempotent commands
 
-8. **Resilience Features**:
-   - Command timeout handling
-   - Retry mechanisms for failed commands
-   - Circuit breakers for problematic entities
-   - Graceful degradation when components are unavailable
+### Integration with Existing Components
+- Leverage the existing broker components for messaging
+- Use the existing monitoring system for metrics
+- Integrate with the cache service for state persistence
 
-Assistant's questions:
+### Resilience Features
+- Command timeout handling
+- Retry mechanisms for failed commands
+- Circuit breakers for problematic entities
+- Graceful degradation when components are unavailable
+
+## Open Questions
 
 1. How should we handle versioning of commands and responses as the system evolves?
 2. Should we implement a priority system for commands, or a way to cancel in-progress commands?
