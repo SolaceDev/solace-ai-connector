@@ -45,14 +45,32 @@ class EntityRegistry:
                 log.error("Cannot register entity without entity_id")
                 return False
                 
-            # Store the entity data
-            self.entities[entity_id] = entity_data
-            
             # Register the entity's endpoints
             endpoints = entity_data.get('endpoints', [])
+            
+            # First try to register all endpoints
             for endpoint in endpoints:
-                self._register_endpoint(entity_id, endpoint)
-                
+                try:
+                    self._register_endpoint(entity_id, endpoint)
+                except Exception as e:
+                    # If any endpoint registration fails, clean up any registered endpoints
+                    # and return False
+                    log.error("Error registering endpoint for entity %s: %s", entity_id, str(e))
+                    
+                    # Remove any endpoints that were registered for this entity
+                    patterns_to_remove = []
+                    for pattern_str, (eid, _, _) in self.endpoints.items():
+                        if eid == entity_id:
+                            patterns_to_remove.append(pattern_str)
+                            
+                    for pattern_str in patterns_to_remove:
+                        self.endpoints.pop(pattern_str, None)
+                        self.endpoint_patterns.pop(pattern_str, None)
+                        
+                    return False
+            
+            # Only store the entity data after all endpoints have been successfully registered
+            self.entities[entity_id] = entity_data
             return True
             
         except Exception as e:
