@@ -25,12 +25,77 @@ My thoughts:
    event mesh. This will be used to send responses to commands as well as to send
    general status updates, metrics and trace information.
 
-<inst>
-Add a section to describe how registration would work and what data would be needed for
-registration. Don't put the data structure, but describe what it should contain.
-It should contain a description of the entity, the commands it can handle, etc.
+## Entity Registration
 
-</inst>
+### Registration Process
+
+When a component or flow starts up, it needs to register with the command and control system to become a managed entity. The registration process should be straightforward:
+
+1. The component calls a registration method on the command and control object
+2. The command and control object validates the registration data
+3. The component is added to the registry of managed entities
+4. The command and control system publishes a notification that a new entity has been registered
+
+### Registration Data Requirements
+
+The registration data should include comprehensive information about the entity to enable effective management and control. This should include:
+
+1. **Identity Information**:
+   - A unique identifier for the entity
+   - The type of entity (flow, component, connector)
+   - A human-readable name and description
+   - Version information
+   - Hierarchical relationship information (parent/child relationships)
+
+2. **Command Interface**:
+   - A list of all commands the entity can handle
+   - For each command:
+     - Name and description
+     - Required and optional parameters with their types and descriptions
+     - Expected response format
+     - Any constraints or validation rules
+
+3. **Status Reporting**:
+   - What status attributes the entity will report
+   - Possible values for each status attribute
+   - Meaning of each status value
+
+4. **Metrics**:
+   - What metrics the entity will report
+   - Type of each metric (counter, gauge, etc.)
+   - Units of measurement
+   - Sampling frequency
+
+5. **Configuration Management**:
+   - Current configuration
+   - Which configuration elements can be modified at runtime
+   - Validation rules for configuration changes
+   - Default values
+
+6. **Callback References**:
+   - Function references that the command and control system can call
+   - These should include handlers for each supported command
+   - Callbacks for status updates and metric collection
+
+### Benefits of Comprehensive Registration
+
+This detailed registration approach provides several advantages:
+
+1. **Self-Documentation**: The system becomes self-documenting, with each entity describing its capabilities
+2. **Dynamic Discovery**: External systems can discover what entities exist and what they can do
+3. **Validation**: Commands can be validated against the registered schema before execution
+4. **Runtime Configuration**: The system knows which configuration elements can be modified at runtime
+5. **Consistent Monitoring**: Metrics and status reporting are standardized across all entities
+
+### Implementation Considerations
+
+When implementing the registration system, consider:
+
+1. **Versioning**: How to handle different versions of entities with different capabilities
+2. **Deregistration**: Process for when entities are removed or stopped
+3. **Updates**: How to handle updates to registration data for running entities
+4. **Persistence**: Whether registration data should be persisted across restarts
+5. **Scalability**: How the registry scales with many entities
 
 Assistant's thoughts:
 
