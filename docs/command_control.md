@@ -325,6 +325,19 @@ The connector entity exposes the following standard endpoints:
    - `/system/metrics` - GET: Get system-wide metrics
    - `/system/config` - GET: Get system configuration
 
+<inst>
+Part of the system config is to control the level of tracing that is done.
+Include a section to describe tracing with the following info:
+1. Tracing allows the managed entities to emit trace information to the event mesh so that
+   analysis tools can track progress and debug issues.
+2. Tracing is controlled by the system configuration and can be enabled or disabled at runtime.
+3. Tracing information includes timestamps, entity IDs, message IDs, and custom trace data.
+4. The component base provides a method to make it easy for components to emit trace information.
+5. Tracing data is published to a dedicated topic for trace information.
+Update this doc
+</inst>
+
+
 These standard endpoints provide a consistent interface for managing the connector and its components, regardless of the specific components that are registered. They serve as a foundation that can be extended with custom endpoints provided by individual components.
 
 This design provides a flexible, extensible command and control system that integrates seamlessly with the existing Solace AI Connector architecture while providing a familiar REST-like API over the event mesh.
