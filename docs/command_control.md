@@ -184,10 +184,25 @@ When implementing the API system, consider:
 4. **Persistence**: Whether API definitions should be persisted across restarts
 5. **Scalability**: How the routing system scales with many endpoints
 
-## Open Questions
+## Questions to Consider (and my answers)
 
 1. How should we handle versioning of the API as the system evolves?
+We will use a versioned topic structure to allow for different versions of the API to coexist and the 
+endpoints themselves will be versioned.
 2. Should we implement a priority system for requests, or a way to cancel in-progress operations?
+No
 3. How will we handle distributed request execution across multiple instances?
+If multiple instances register for the same entity, we will execute the same method on all instances.
 4. What's the approach for handling long-running operations that might exceed typical request/response timeframes?
+No long-running operations are allowed. If a request takes too long, it will be terminated.
 5. Should we implement a request queue to handle rate limiting or execution ordering?
+That will naturally be handled by the Solace Event Mesh.
+
+
+## High-Level Design
+
+<inst>
+Fill this in with a high-level design of the command and control system indicating where all the integrations
+will happen and how the system will be architected.
+</inst>
+
