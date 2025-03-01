@@ -291,6 +291,16 @@ The command and control system integrates with the existing Solace AI Connector 
 
 ### Standard Endpoints
 
+<inst>
+Clearly describe that these endpoints are attached to an automatically generated
+managed entity that represents the connector itself. Creating this can be disabled
+via configuration, but it is enabled by default.
+The name of this entity can be specified in the configuration, but defaults to 'solace-ai-connector'.
+Its description should include the list of managed entity names so that they can
+be distinguished if a name has not been specified.
+</inst>
+
+
 The system provides standard endpoints for common operations:
 
 1. **Connector Management**:
