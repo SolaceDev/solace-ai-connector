@@ -201,10 +201,116 @@ That will naturally be handled by the Solace Event Mesh.
 
 ## High-Level Design
 
-<inst>
-Fill this in with a high-level design of the command and control system indicating where all the integrations
-will happen and how the system will be architected.
+### System Components
 
-Don't include the configuration section for now. It is messing up the editing format
-</inst>
+The command and control system consists of the following key components:
 
+1. **CommandControlService**: The central service that manages the entire command and control system.
+   - Initializes during connector startup
+   - Manages entity registration
+   - Coordinates request routing and response handling
+   - Publishes status updates and metrics
+
+2. **EntityRegistry**: Maintains a registry of all managed entities and their endpoints.
+   - Stores entity metadata
+   - Maps endpoints to handler functions
+   - Validates registration data
+   - Provides lookup capabilities for request routing
+
+3. **RequestRouter**: Routes incoming requests to the appropriate entity and handler.
+   - Parses request paths
+   - Extracts and validates path parameters
+   - Matches requests to registered endpoints
+   - Invokes the appropriate handler function
+
+4. **BrokerAdapter**: Interfaces with the Solace Event Mesh.
+   - Listens for incoming command messages
+   - Publishes responses, status updates, and metrics
+   - Leverages existing broker components for messaging
+
+5. **SchemaValidator**: Validates requests and responses against schemas.
+   - Validates request parameters
+   - Validates request bodies
+   - Validates response bodies
+   - Reports validation errors
+
+### Integration with Existing Architecture
+
+The command and control system integrates with the existing Solace AI Connector architecture at several points:
+
+1. **SolaceAiConnector Class**:
+   - Initializes the CommandControlService during startup
+   - Provides access to the service for flows and components
+   - Registers connector-level endpoints
+
+2. **Flow Class**:
+   - Registers as an entity with the CommandControlService
+   - Exposes flow-specific endpoints (start, stop, status)
+   - Provides access to the service for components
+
+3. **ComponentBase Class**:
+   - Provides a registration method for components
+   - Allows components to expose component-specific endpoints
+   - Handles component-specific command execution
+
+4. **Broker Components**:
+   - The BrokerAdapter leverages existing broker components
+   - Reuses connection management and messaging patterns
+   - Ensures consistent behavior with other messaging in the system
+
+5. **Monitoring System**:
+   - Integrates with the existing monitoring system
+   - Publishes metrics through the same channels
+   - Reuses metric collection mechanisms
+
+6. **Cache Service**:
+   - Uses the cache service for state persistence
+   - Stores command history and results
+   - Maintains entity registry across restarts
+
+### Data Flow
+
+1. **Registration Flow**:
+   - Component → CommandControlService → EntityRegistry
+   - EntityRegistry → BrokerAdapter → Event Mesh (notification)
+
+2. **Command Flow**:
+   - Event Mesh → BrokerAdapter → RequestRouter
+   - RequestRouter → EntityRegistry (lookup) → Handler Function
+   - Handler Function → BrokerAdapter → Event Mesh (response)
+
+3. **Status Update Flow**:
+   - Entity → CommandControlService → BrokerAdapter → Event Mesh
+
+4. **Metrics Flow**:
+   - Entity → Monitoring System → BrokerAdapter → Event Mesh
+
+### Standard Endpoints
+
+The system provides standard endpoints for common operations:
+
+1. **Connector Management**:
+   - `/connector` - GET: Get connector information
+   - `/connector/status` - GET: Get connector status
+   - `/connector/metrics` - GET: Get connector metrics
+   - `/connector/shutdown` - POST: Shutdown the connector
+
+2. **Flow Management**:
+   - `/flows` - GET: List all flows
+   - `/flows/{flow_id}` - GET: Get flow information
+   - `/flows/{flow_id}/status` - GET: Get flow status
+   - `/flows/{flow_id}/start` - POST: Start a flow
+   - `/flows/{flow_id}/stop` - POST: Stop a flow
+
+3. **Component Management**:
+   - `/components` - GET: List all components
+   - `/components/{component_id}` - GET: Get component information
+   - `/components/{component_id}/status` - GET: Get component status
+   - `/components/{component_id}/config` - GET/PUT: Get/update component configuration
+
+4. **System Management**:
+   - `/system/health` - GET: Get system health
+   - `/system/metrics` - GET: Get system metrics
+   - `/system/config` - GET: Get system configuration
+
+This design provides a flexible, extensible command and control system that integrates seamlessly with the existing Solace AI Connector architecture while providing a familiar REST-like API over the event mesh.
