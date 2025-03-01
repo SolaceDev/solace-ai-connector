@@ -204,5 +204,7 @@ That will naturally be handled by the Solace Event Mesh.
 <inst>
 Fill this in with a high-level design of the command and control system indicating where all the integrations
 will happen and how the system will be architected.
+
+Don't include the configuration section for now. It is messing up the editing format
 </inst>
 
