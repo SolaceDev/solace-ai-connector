@@ -291,40 +291,40 @@ The command and control system integrates with the existing Solace AI Connector 
 
 ### Standard Endpoints
 
-<inst>
-Clearly describe that these endpoints are attached to an automatically generated
-managed entity that represents the connector itself. Creating this can be disabled
-via configuration, but it is enabled by default.
-The name of this entity can be specified in the configuration, but defaults to 'solace-ai-connector'.
-Its description should include the list of managed entity names so that they can
-be distinguished if a name has not been specified.
-</inst>
+The system automatically creates a managed entity that represents the connector itself. This entity provides standard endpoints for common operations across the system. This connector entity:
 
+- Is created automatically during system initialization
+- Can be disabled via configuration, but is enabled by default
+- Has a configurable name that defaults to 'solace-ai-connector'
+- Includes in its description a list of all registered managed entity names to help distinguish instances when multiple connectors are running
+- Provides centralized access to system-wide operations and information
 
-The system provides standard endpoints for common operations:
+The connector entity exposes the following standard endpoints:
 
 1. **Connector Management**:
-   - `/connector` - GET: Get connector information
-   - `/connector/status` - GET: Get connector status
-   - `/connector/metrics` - GET: Get connector metrics
-   - `/connector/shutdown` - POST: Shutdown the connector
+   - `/connector` - GET: Get connector information (version, uptime, instance name)
+   - `/connector/status` - GET: Get connector status (running, stopping, etc.)
+   - `/connector/metrics` - GET: Get connector metrics (memory usage, message counts)
+   - `/connector/shutdown` - POST: Shutdown the connector gracefully
 
 2. **Flow Management**:
-   - `/flows` - GET: List all flows
-   - `/flows/{flow_id}` - GET: Get flow information
-   - `/flows/{flow_id}/status` - GET: Get flow status
-   - `/flows/{flow_id}/start` - POST: Start a flow
-   - `/flows/{flow_id}/stop` - POST: Stop a flow
+   - `/flows` - GET: List all flows with their IDs and status
+   - `/flows/{flow_id}` - GET: Get detailed information about a specific flow
+   - `/flows/{flow_id}/status` - GET: Get current status of a specific flow
+   - `/flows/{flow_id}/start` - POST: Start a flow that is currently stopped
+   - `/flows/{flow_id}/stop` - POST: Stop a running flow
 
 3. **Component Management**:
-   - `/components` - GET: List all components
-   - `/components/{component_id}` - GET: Get component information
-   - `/components/{component_id}/status` - GET: Get component status
-   - `/components/{component_id}/config` - GET/PUT: Get/update component configuration
+   - `/components` - GET: List all components across all flows
+   - `/components/{component_id}` - GET: Get detailed information about a specific component
+   - `/components/{component_id}/status` - GET: Get current status of a specific component
+   - `/components/{component_id}/config` - GET/PUT: Get or update component configuration
 
 4. **System Management**:
-   - `/system/health` - GET: Get system health
-   - `/system/metrics` - GET: Get system metrics
+   - `/system/health` - GET: Get overall system health status
+   - `/system/metrics` - GET: Get system-wide metrics
    - `/system/config` - GET: Get system configuration
+
+These standard endpoints provide a consistent interface for managing the connector and its components, regardless of the specific components that are registered. They serve as a foundation that can be extended with custom endpoints provided by individual components.
 
 This design provides a flexible, extensible command and control system that integrates seamlessly with the existing Solace AI Connector architecture while providing a familiar REST-like API over the event mesh.
