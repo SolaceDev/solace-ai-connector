@@ -4,6 +4,22 @@ The Solace AI Connector has a general facitity to allow for command and control 
 way of events from the Solace Event Mesh. This is highly configurable and extensible
 for the type of application being built.
 
+<inst>
+I have changed my mind about how the command registration and execution should be done.
+I think that instead of registering commands with the command and control object, 
+managed entities will register endpoints with the command and control object in a format
+that is similar to a REST API. This will make it easier to interact with the system from 
+external tools and systems.
+
+There requests will still come in on the event mesh, 
+but the command payload will provide an endpoint, method, and parameters to be used
+for the command. The command and control object will then route the command to the appropriate
+entity based on the endpoint. The method and endpoint will also be used to generate the request topic.
+
+Adjust the document accordingly.
+
+</inst>
+
 ## Architecture Overview
 
 The command and control system for the Solace AI Connector is designed with the following principles:
@@ -17,10 +33,11 @@ The command and control system for the Solace AI Connector is designed with the 
 4. **Event-Based Communication**: The command and control object listens on configurable topics for commands and publishes responses, status updates, metrics, and trace information back to the event mesh.
 
 5. **Hierarchical Topic Structure**: A well-defined topic hierarchy enables targeted commands and organized monitoring:
-   - Commands: `command/solace-ai-connector/{instance_id}/{entity_type}/{entity_id}`
-   - Responses: `response/solace-ai-connector/{instance_id}/{entity_type}/{entity_id}/{command_id}`
-   - Status: `status/solace-ai-connector/{instance_id}/{entity_type}/{entity_id}`
-   - Metrics: `metrics/solace-ai-connector/{instance_id}/{entity_type}/{entity_id}`
+   - Commands: `<configurable-namespace>/sac-control/v1/command/{entity_id}/{command_id}`
+   - Responses: `<reply-to-topic-prefix>/sac-control/v1/response/{entity_id}/{command_id}`
+   - Status: `<configurable-namespace>/<configurable-status-topic>/{entity_id}`
+   - Metrics: `<configurable-namespace>/<configurable-metrics-topic>/{entity_id}`
+   - Tracing: `<configurable-namespace>/<configurable-trace-topic>/{entity_id}`
 
 ## Entity Registration
 
@@ -93,6 +110,7 @@ Commands should follow a consistent structure with fields like:
 - `parameters`: Command-specific parameters
 - `timestamp`: When the command was issued
 - `source`: Who/what issued the command
+- `reply_to_topic_prefix`: Where to send the response
 
 ### Response Structure
 Similarly, responses should have:
