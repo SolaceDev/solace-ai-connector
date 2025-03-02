@@ -239,8 +239,8 @@ class BrokerAdapter:
             return
 
         try:
-            # Create the status topic
-            topic = f"{self.namespace}/{self.topic_prefix}/status/{entity_id}"
+            # Create the status topic - using sac-status instead of sac-control
+            topic = f"{self.namespace}/sac-status/v1/{entity_id}"
 
             # Create the status message
             status_message = {
@@ -370,9 +370,9 @@ class BrokerAdapter:
             return
 
         try:
-            # Create the trace topic
+            # Create the trace topic - using sac-trace instead of sac-control
             topic = (
-                f"{self.namespace}/{self.topic_prefix}/trace/{entity_id}/{trace_level}"
+                f"{self.namespace}/sac-trace/v1/{entity_id}/{trace_level}"
             )
 
             # Create a message to send

@@ -21,9 +21,9 @@ The command and control system for the Solace AI Connector is designed with the 
 6. **Hierarchical Topic Structure**: A well-defined topic hierarchy enables targeted commands and organized monitoring:
    - Commands: `<configurable-namespace>/sac-control/v1/{method}/{endpoint}`
    - Responses: `<reply-to-topic-prefix>/sac-control/v1/response/{request_id}`
-   - Status: `<configurable-namespace>/sac-control/v1/status/{entity_id}`
+   - Status: `<configurable-namespace>/sac-status/v1/{entity_id}`
    - Metrics: `<configurable-namespace>/sac-control/v1/metrics/{entity_id}`
-   - Tracing: `<configurable-namespace>/sac-control/v1/trace/{entity_id}`
+   - Tracing: `<configurable-namespace>/sac-trace/v1/{entity_id}/{trace_level}`
 
 ## Entity Registration
 
@@ -327,7 +327,7 @@ The command and control system includes a comprehensive tracing capability that 
 
 5. **Publication and Consumption**:
    - Trace data is published to dedicated topics following the pattern:
-     `<configurable-namespace>/sac-control/v1/trace/{entity_id}/{trace_level}`
+     `<configurable-namespace>/sac-trace/v1/{entity_id}/{trace_level}`
    - Trace levels include DEBUG, INFO, WARN, ERROR
    - External systems can subscribe to specific trace levels or entities
    - Trace data can be consumed by logging systems, monitoring tools, or custom applications

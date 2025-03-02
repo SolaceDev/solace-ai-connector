@@ -39,14 +39,14 @@ Example:
 
 Status updates are published on topics with the following pattern:
 
-    <namespace>/sac-control/v1/status/<entity_id>
+    <namespace>/sac-status/v1/<entity_id>
 
 Where:
 - `<entity_id>` is the identifier of the entity publishing its status
 
 Example:
-- `solace/sac-control/v1/status/connector`
-- `solace/sac-control/v1/status/flow/flow1`
+- `solace/sac-status/v1/connector`
+- `solace/sac-status/v1/flow/flow1`
 
 ### Metrics Topics
 
@@ -65,15 +65,15 @@ Example:
 
 Trace information is published on topics with the following pattern:
 
-    <namespace>/sac-control/v1/trace/<entity_id>/<trace_level>
+    <namespace>/sac-trace/v1/<entity_id>/<trace_level>
 
 Where:
 - `<entity_id>` is the identifier of the entity publishing trace information
 - `<trace_level>` is the level of the trace (DEBUG, INFO, WARN, ERROR)
 
 Example:
-- `solace/sac-control/v1/trace/connector/INFO`
-- `solace/sac-control/v1/trace/flow/flow1/ERROR`
+- `solace/sac-trace/v1/connector/INFO`
+- `solace/sac-trace/v1/flow/flow1/ERROR`
 
 ### Registry Topics
 
