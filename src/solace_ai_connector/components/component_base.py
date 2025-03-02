@@ -68,7 +68,7 @@ class ComponentBase:
         self.setup_broker_request_response()
 
         self.monitoring = Monitoring()
-        
+
         # Command and control registration
         self.command_control_registered = False
         self.register_with_command_control()
@@ -201,7 +201,9 @@ class ComponentBase:
 
     def process_pre_invoke(self, message):
         # add nack callback to the message
-        callback = self.get_negative_acknowledgement_callback()  # pylint: disable=assignment-from-none
+        callback = (
+            self.get_negative_acknowledgement_callback()
+        )  # pylint: disable=assignment-from-none
         if callback is not None:
             message.add_negative_acknowledgements(callback)
 
@@ -607,29 +609,31 @@ class ComponentBase:
                 self.reset_metrics()
         except KeyboardInterrupt:
             log.info("Monitoring stopped.")
-            
+
     def register_with_command_control(self) -> bool:
         """Register this component with the command and control system.
-        
+
         This method registers the component as a managed entity with the command
         and control system, if it's available.
-        
+
         Returns:
             bool: True if registration was successful, False otherwise.
         """
-        if not self.connector or not hasattr(self.connector, 'get_command_control_service'):
+        if not self.connector or not hasattr(
+            self.connector, "get_command_control_service"
+        ):
             return False
-            
+
         command_control = self.connector.get_command_control_service()
         if not command_control:
             return False
-            
+
         # Create a unique entity ID for this component
         entity_id = f"{self.flow_name}_{self.name}_{self.component_index}"
-        
+
         # Get component endpoints
         endpoints = self.get_command_control_endpoints()
-        
+
         # Register with the command control service
         success = command_control.register_entity(
             entity_id=entity_id,
@@ -641,21 +645,21 @@ class ComponentBase:
             endpoints=endpoints,
             status_attributes=self.get_command_control_status_attributes(),
             metrics=self.get_command_control_metrics(),
-            configuration=self.get_command_control_configuration()
+            configuration=self.get_command_control_configuration(),
         )
-        
+
         if success:
             self.command_control_registered = True
             log.debug("%sRegistered with command control system", self.log_identifier)
-        
+
         return success
-    
+
     def get_command_control_endpoints(self) -> List[Dict[str, Any]]:
         """Get the endpoints this component exposes to the command control system.
-        
+
         This method should be overridden by components that want to expose custom
         endpoints to the command control system.
-        
+
         Returns:
             List[Dict[str, Any]]: A list of endpoint definitions.
         """
@@ -674,12 +678,12 @@ class ComponentBase:
                                 "name": {"type": "string"},
                                 "flow": {"type": "string"},
                                 "type": {"type": "string"},
-                                "status": {"type": "string"}
-                            }
+                                "status": {"type": "string"},
+                            },
                         },
-                        "handler": self.handle_get_component_info
+                        "handler": self.handle_get_component_info,
                     }
-                }
+                },
             },
             {
                 "path": f"/components/{self.flow_name}_{self.name}_{self.component_index}/status",
@@ -692,12 +696,12 @@ class ComponentBase:
                             "type": "object",
                             "properties": {
                                 "status": {"type": "string"},
-                                "details": {"type": "object"}
-                            }
+                                "details": {"type": "object"},
+                            },
                         },
-                        "handler": self.handle_get_component_status
+                        "handler": self.handle_get_component_status,
                     }
-                }
+                },
             },
             {
                 "path": f"/components/{self.flow_name}_{self.name}_{self.component_index}/config",
@@ -706,21 +710,19 @@ class ComponentBase:
                         "description": "Get component configuration",
                         "path_params": {},
                         "query_params": {},
-                        "response_schema": {
-                            "type": "object"
-                        },
-                        "handler": self.handle_get_component_config
+                        "response_schema": {"type": "object"},
+                        "handler": self.handle_get_component_config,
                     }
-                }
-            }
+                },
+            },
         ]
-    
+
     def get_command_control_status_attributes(self) -> List[Dict[str, Any]]:
         """Get the status attributes this component reports.
-        
+
         This method should be overridden by components that want to report custom
         status attributes to the command control system.
-        
+
         Returns:
             List[Dict[str, Any]]: A list of status attribute definitions.
         """
@@ -729,27 +731,27 @@ class ComponentBase:
                 "name": "state",
                 "description": "Current operational state",
                 "type": "string",
-                "possible_values": ["running", "stopped", "error"]
+                "possible_values": ["running", "stopped", "error"],
             }
         ]
-    
+
     def get_command_control_metrics(self) -> List[Dict[str, Any]]:
         """Get the metrics this component reports.
-        
+
         This method should be overridden by components that want to report custom
         metrics to the command control system.
-        
+
         Returns:
             List[Dict[str, Any]]: A list of metric definitions.
         """
         return []
-    
+
     def get_command_control_configuration(self) -> Dict[str, Any]:
         """Get the configuration this component exposes.
-        
+
         This method should be overridden by components that want to expose custom
         configuration to the command control system.
-        
+
         Returns:
             Dict[str, Any]: The configuration definition.
         """
@@ -757,24 +759,29 @@ class ComponentBase:
         filtered_config = {}
         for key, value in self.component_config.items():
             # Skip passwords, keys, tokens, etc.
-            if not any(sensitive in key.lower() for sensitive in ["password", "secret", "key", "token"]):
+            if not any(
+                sensitive in key.lower()
+                for sensitive in ["password", "secret", "key", "token"]
+            ):
                 filtered_config[key] = value
-                
+
         return {
             "current_config": filtered_config,
             "mutable_paths": [],  # By default, no config is mutable
-            "config_schema": {}   # No schema by default
+            "config_schema": {},  # No schema by default
         }
-    
-    def handle_get_component_info(self, path_params=None, query_params=None, body=None, context=None):
+
+    def handle_get_component_info(
+        self, path_params=None, query_params=None, body=None, context=None
+    ):
         """Handle a request for component information.
-        
+
         Args:
             path_params: Path parameters from the request.
             query_params: Query parameters from the request.
             body: Request body.
             context: Request context.
-            
+
         Returns:
             Dict[str, Any]: Component information.
         """
@@ -782,38 +789,44 @@ class ComponentBase:
             "name": self.name,
             "flow": self.flow_name,
             "type": self.config.get("component_module", "unknown"),
-            "status": "running"  # Default status
+            "status": "running",  # Default status
         }
-    
-    def handle_get_component_status(self, path_params=None, query_params=None, body=None, context=None):
+
+    def handle_get_component_status(
+        self, path_params=None, query_params=None, body=None, context=None
+    ):
         """Handle a request for component status.
-        
+
         Args:
             path_params: Path parameters from the request.
             query_params: Query parameters from the request.
             body: Request body.
             context: Request context.
-            
+
         Returns:
             Dict[str, Any]: Component status.
         """
         return {
             "status": "running",  # Default status
             "details": {
-                "queue_size": self.input_queue.qsize() if hasattr(self, "input_queue") else 0,
-                "uptime": "unknown"  # Could track component uptime if needed
-            }
+                "queue_size": (
+                    self.input_queue.qsize() if hasattr(self, "input_queue") else 0
+                ),
+                "uptime": "unknown",  # Could track component uptime if needed
+            },
         }
-    
-    def handle_get_component_config(self, path_params=None, query_params=None, body=None, context=None):
+
+    def handle_get_component_config(
+        self, path_params=None, query_params=None, body=None, context=None
+    ):
         """Handle a request for component configuration.
-        
+
         Args:
             path_params: Path parameters from the request.
             query_params: Query parameters from the request.
             body: Request body.
             context: Request context.
-            
+
         Returns:
             Dict[str, Any]: Component configuration.
         """
@@ -821,21 +834,26 @@ class ComponentBase:
         filtered_config = {}
         for key, value in self.component_config.items():
             # Skip passwords, keys, tokens, etc.
-            if not any(sensitive in key.lower() for sensitive in ["password", "secret", "key", "token"]):
+            if not any(
+                sensitive in key.lower()
+                for sensitive in ["password", "secret", "key", "token"]
+            ):
                 filtered_config[key] = value
-                
+
         return filtered_config
-    
-    def emit_trace(self, 
-                  trace_level: str,
-                  operation: str,
-                  stage: str,
-                  data: Any = None,
-                  error: Optional[Dict[str, Any]] = None,
-                  duration_ms: Optional[int] = None,
-                  request_id: Optional[str] = None) -> None:
+
+    def emit_trace(
+        self,
+        trace_level: str,
+        operation: str,
+        stage: str,
+        data: Any = None,
+        error: Optional[Dict[str, Any]] = None,
+        duration_ms: Optional[int] = None,
+        request_id: Optional[str] = None,
+    ) -> None:
         """Emit a trace event to the command control system.
-        
+
         Args:
             trace_level: The trace level (DEBUG, INFO, WARN, ERROR).
             operation: The operation being performed.
@@ -845,15 +863,17 @@ class ComponentBase:
             duration_ms: Optional duration in milliseconds.
             request_id: Optional ID of the request being traced.
         """
-        if not self.connector or not hasattr(self.connector, 'get_command_control_service'):
+        if not self.connector or not hasattr(
+            self.connector, "get_command_control_service"
+        ):
             return
-            
+
         command_control = self.connector.get_command_control_service()
         if not command_control:
             return
-            
+
         entity_id = f"{self.flow_name}_{self.name}_{self.component_index}"
-        
+
         command_control.emit_trace(
             entity_id=entity_id,
             entity_type="component",
@@ -863,52 +883,62 @@ class ComponentBase:
             stage=stage,
             data=data,
             error=error,
-            duration_ms=duration_ms
+            duration_ms=duration_ms,
         )
-        
-    def create_trace_context(self, operation: str, data: Any = None, trace_level: str = "INFO") -> Any:
+
+    def create_trace_context(
+        self, operation: str, data: Any = None, trace_level: str = "INFO"
+    ) -> Any:
         """Create a trace context for an operation.
-        
+
         This method creates a trace context that will automatically emit start and
         completion trace events with timing information.
-        
+
         Args:
             operation: The operation being performed.
             data: Optional data specific to the operation.
             trace_level: The trace level (DEBUG, INFO, WARN, ERROR).
-            
+
         Returns:
             A trace context object that can be used in a with statement.
         """
-        if not self.connector or not hasattr(self.connector, 'get_command_control_service'):
+        if not self.connector or not hasattr(
+            self.connector, "get_command_control_service"
+        ):
             # Return a dummy context manager if tracing is not available
             class DummyContext:
                 def __enter__(self):
                     return self
+
                 def __exit__(self, exc_type, exc_val, exc_tb):
                     return False
+
                 def progress(self, data=None, stage="progress"):
                     pass
+
             return DummyContext()
-            
+
         command_control = self.connector.get_command_control_service()
         if not command_control:
             # Return a dummy context manager if command control is not available
             class DummyContext:
                 def __enter__(self):
                     return self
+
                 def __exit__(self, exc_type, exc_val, exc_tb):
                     return False
+
                 def progress(self, data=None, stage="progress"):
                     pass
+
             return DummyContext()
-            
+
         entity_id = f"{self.flow_name}_{self.name}_{self.component_index}"
-        
+
         return command_control.create_trace_context(
             entity_id=entity_id,
             entity_type="component",
             trace_level=trace_level,
             operation=operation,
-            data=data
+            data=data,
         )
