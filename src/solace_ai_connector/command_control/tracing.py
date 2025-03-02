@@ -4,14 +4,12 @@ This module provides the tracing infrastructure for the command and control syst
 allowing components to emit trace events for monitoring and debugging.
 """
 
-import logging
 import datetime
 import uuid
 from enum import Enum
 from typing import Any, Dict, Optional
 
-# Configure logger
-log = logging.getLogger(__name__)
+from ..common.log import log
 
 
 class TraceLevel(Enum):

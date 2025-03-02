@@ -3,11 +3,9 @@
 This module provides validation for request and response schemas.
 """
 
-import logging
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Optional
 
-# Configure logger
-log = logging.getLogger(__name__)
+from ..common.log import log
 
 
 class SchemaValidator:
