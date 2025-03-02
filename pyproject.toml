@@ -27,6 +27,7 @@ dependencies = [
     "build~=1.2.2.post1",
     "pymongo~=4.10.1",
     "SQLAlchemy~=2.0.36",
+    "psutil~=7.0.0"
 ]
 
 [project.urls]

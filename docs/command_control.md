@@ -405,26 +405,26 @@ The command and control system can be configured through the Solace AI Connector
                 connector: DEBUG
                 flow1: WARN
         
-        # Security configuration
-        security:
-            enabled: false                 # Enable or disable security features
-            authentication:
-                enabled: false             # Enable or disable authentication
-                method: basic              # Authentication method (basic, oauth, etc.)
-                header_name: Authorization # Header name for authentication tokens
-            
-            authorization:
-                enabled: false             # Enable or disable authorization
-                rules:                     # Authorization rules
-                    - entity: connector
-                      operations: [GET]
-                      roles: [admin, viewer]
-                    - entity: flows
-                      operations: [GET]
-                      roles: [admin, viewer]
-                    - entity: flows
-                      operations: [POST, PUT, DELETE]
-                      roles: [admin]
+        # Security configuration - Not yet implemented
+        # security:
+        #     enabled: false                 # Enable or disable security features
+        #     authentication:
+        #         enabled: false             # Enable or disable authentication
+        #         method: basic              # Authentication method (basic, oauth, etc.)
+        #         header_name: Authorization # Header name for authentication tokens
+        #     
+        #     authorization:
+        #         enabled: false             # Enable or disable authorization
+        #         rules:                     # Authorization rules
+        #             - entity: connector
+        #               operations: [GET]
+        #               roles: [admin, viewer]
+        #             - entity: flows
+        #               operations: [GET]
+        #               roles: [admin, viewer]
+        #             - entity: flows
+        #               operations: [POST, PUT, DELETE]
+        #               roles: [admin]
         
         # Response configuration
         response:

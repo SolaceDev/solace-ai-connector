@@ -30,7 +30,7 @@ class CommandControlService:
         self.entity_registry = EntityRegistry()
         self.request_router = RequestRouter(self.entity_registry)
         self.instance_id = str(uuid.uuid4())
-        self._broker_adapter = None
+        self.broker_adapter = None
 
         # Initialize the tracing system without a broker adapter
         # We'll set it later when the broker adapter is available
@@ -39,27 +39,6 @@ class CommandControlService:
         log.info(
             "Command Control Service initialized with instance ID: %s", self.instance_id
         )
-
-    @property
-    def broker_adapter(self):
-        """Get the broker adapter.
-
-        Returns:
-            The broker adapter instance.
-        """
-        return self._broker_adapter
-
-    @broker_adapter.setter
-    def broker_adapter(self, adapter):
-        """Set the broker adapter.
-
-        Args:
-            adapter: The broker adapter instance to use.
-        """
-        self._broker_adapter = adapter
-        # Update the tracing system's broker adapter as well
-        if self.tracing_system:
-            self.tracing_system.set_broker_adapter(adapter)
 
     def set_broker_adapter(self, adapter):
         """Set the broker adapter.
@@ -253,9 +232,9 @@ class CommandControlService:
         """
         if self.tracing_system:
             # Update the broker adapter if it's been set
-            if self._broker_adapter and self.tracing_system.broker_adapter is None:
-                self.tracing_system.set_broker_adapter(self._broker_adapter)
-                
+            if self.broker_adapter and self.tracing_system.broker_adapter is None:
+                self.tracing_system.set_broker_adapter(self.broker_adapter)
+
             self.tracing_system.emit_trace(
                 entity_id=entity_id,
                 entity_type=entity_type,
@@ -279,11 +258,11 @@ class CommandControlService:
             status: The current status of the entity.
             details: Additional status details.
         """
-        if not self._broker_adapter:
+        if not self.broker_adapter:
             log.warning("No broker adapter available, cannot publish status")
             return
 
-        self._broker_adapter.publish_status(entity_id, entity_type, status, details)
+        self.broker_adapter.publish_status(entity_id, entity_type, status, details)
 
     def publish_metrics(
         self, entity_id: str, entity_type: str, metrics: Dict[str, Dict[str, Any]]
@@ -295,23 +274,23 @@ class CommandControlService:
             entity_type: The type of entity.
             metrics: The metrics to publish.
         """
-        if not self._broker_adapter:
+        if not self.broker_adapter:
             log.warning("No broker adapter available, cannot publish metrics")
             return
 
-        self._broker_adapter.publish_metrics(entity_id, entity_type, metrics)
+        self.broker_adapter.publish_metrics(entity_id, entity_type, metrics)
 
     def publish_registry(self) -> None:
         """Publish the current entity registry.
 
         This publishes a list of all registered entities and their endpoints.
         """
-        if not self._broker_adapter:
+        if not self.broker_adapter:
             log.warning("No broker adapter available, cannot publish registry")
             return
 
         entities = self.entity_registry.get_all_entities()
-        self._broker_adapter.publish_registry(self.instance_id, entities)
+        self.broker_adapter.publish_registry(self.instance_id, entities)
 
     def get_trace_configuration(self) -> Dict[str, Any]:
         """Get the current trace configuration.
@@ -387,8 +366,8 @@ class CommandControlService:
             )
 
         # Update the broker adapter if it's been set
-        if self._broker_adapter and self.tracing_system.broker_adapter is None:
-            self.tracing_system.set_broker_adapter(self._broker_adapter)
+        if self.broker_adapter and self.tracing_system.broker_adapter is None:
+            self.tracing_system.set_broker_adapter(self.broker_adapter)
 
         # Use the tracing system's create_trace_context method directly
         return self.tracing_system.create_trace_context(
