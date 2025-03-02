@@ -48,8 +48,6 @@ flows:
         component_module: broker_input
         component_config:
           <<: *broker_connection
-          # broker_queue_name: ${SOLACE_BROKER_INPUT_QUEUE_NAME}
-          # temporary_queue: ${SOLACE_BROKER_INPUT_TEMPORARY_QUEUE}
           broker_subscriptions:
             - topic: ${SOLACE_BROKER_INPUT_TOPIC}
               qos: 1
