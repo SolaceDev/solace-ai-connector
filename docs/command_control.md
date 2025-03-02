@@ -383,12 +383,82 @@ This design provides a flexible, extensible command and control system that inte
 
 ## Configuration and Customization
 
-<inst>
-Add section here that describes the configuration items for command and control and how they are formatted 
-in the yaml configuration file. Only change this section. Do not change the rest of this document.
-When specifying any configuration items, prefix that line with 4 spaces. This is true for anything with a name followed by a colon.
-</inst>
+The command and control system can be configured through the Solace AI Connector's YAML configuration file. Below are the configuration options available for the command and control system:
 
+    command_control:
+        enabled: true                      # Enable or disable the command control system
+        namespace: solace                  # Namespace prefix for command control topics
+        topic_prefix: sac-control/v1       # Topic prefix for command control messages
+        
+        # Broker configuration for command and response flows
+        broker:
+            broker_type: solace            # Type of broker to use (solace, dev_broker)
+            queue_name: command_control    # Queue name for receiving commands
+            temporary_queue: false         # Whether to use a temporary queue
+            max_redelivery_count: 3        # Maximum number of redelivery attempts
+        
+        # Tracing configuration
+        tracing:
+            enabled: true                  # Enable or disable tracing
+            default_level: INFO            # Default trace level (DEBUG, INFO, WARN, ERROR)
+            entity_levels:                 # Override trace levels for specific entities
+                connector: DEBUG
+                flow1: WARN
+        
+        # Security configuration
+        security:
+            enabled: false                 # Enable or disable security features
+            authentication:
+                enabled: false             # Enable or disable authentication
+                method: basic              # Authentication method (basic, oauth, etc.)
+                header_name: Authorization # Header name for authentication tokens
+            
+            authorization:
+                enabled: false             # Enable or disable authorization
+                rules:                     # Authorization rules
+                    - entity: connector
+                      operations: [GET]
+                      roles: [admin, viewer]
+                    - entity: flows
+                      operations: [GET]
+                      roles: [admin, viewer]
+                    - entity: flows
+                      operations: [POST, PUT, DELETE]
+                      roles: [admin]
+        
+        # Response configuration
+        response:
+            timeout_ms: 30000              # Timeout for waiting for responses
+            include_timestamps: true       # Include timestamps in responses
+            include_request_details: false # Include original request details in responses
+
+Example configuration in a complete connector configuration file:
+
+    instance_name: my-connector
+    broker_url: tcp://localhost:55555
+    broker_username: admin
+    broker_password: admin
+    broker_vpn: default
+
+    # Command and control configuration
+    command_control:
+        enabled: true
+        namespace: my-company
+        topic_prefix: sac-control/v1
+        
+        tracing:
+            enabled: true
+            default_level: INFO
+            entity_levels:
+                connector: DEBUG
+
+    # Rest of connector configuration
+    flows:
+        - name: flow1
+          components:
+            - component_name: input
+              component_module: broker_input
+              # Component configuration...
 
 ## Implementation Plan
 
