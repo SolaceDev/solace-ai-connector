@@ -276,8 +276,8 @@ class BrokerAdapter:
             return
 
         try:
-            # Create the metrics topic
-            topic = f"{self.namespace}/{self.topic_prefix}/metrics/{entity_id}"
+            # Create the metrics topic - using sac-metrics instead of sac-control
+            topic = f"{self.namespace}/sac-metrics/v1/{entity_id}"
 
             # Create the metrics message
             import datetime
@@ -313,8 +313,8 @@ class BrokerAdapter:
             return
 
         try:
-            # Create the registry topic
-            topic = f"{self.namespace}/{self.topic_prefix}/registry"
+            # Create the registry topic - using sac-registry instead of sac-control
+            topic = f"{self.namespace}/sac-registry/v1"
 
             # Create a simplified view of the entities for the registry
             simplified_entities = []
@@ -371,9 +371,7 @@ class BrokerAdapter:
 
         try:
             # Create the trace topic - using sac-trace instead of sac-control
-            topic = (
-                f"{self.namespace}/sac-trace/v1/{entity_id}/{trace_level}"
-            )
+            topic = f"{self.namespace}/sac-trace/v1/{entity_id}/{trace_level}"
 
             # Create a message to send
             message = Message(payload=trace_event, topic=topic, user_properties={})

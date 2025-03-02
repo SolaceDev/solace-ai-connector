@@ -22,8 +22,9 @@ The command and control system for the Solace AI Connector is designed with the 
    - Commands: `<configurable-namespace>/sac-control/v1/{method}/{endpoint}`
    - Responses: `<reply-to-topic-prefix>/sac-control/v1/response/{request_id}`
    - Status: `<configurable-namespace>/sac-status/v1/{entity_id}`
-   - Metrics: `<configurable-namespace>/sac-control/v1/metrics/{entity_id}`
+   - Metrics: `<configurable-namespace>/sac-metrics/v1/{entity_id}`
    - Tracing: `<configurable-namespace>/sac-trace/v1/{entity_id}/{trace_level}`
+   - Registry: `<configurable-namespace>/sac-registry/v1`
 
 ## Entity Registration
 

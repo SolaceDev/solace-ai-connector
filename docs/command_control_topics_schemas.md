@@ -52,14 +52,14 @@ Example:
 
 Metrics are published on topics with the following pattern:
 
-    <namespace>/sac-control/v1/metrics/<entity_id>
+    <namespace>/sac-metrics/v1/<entity_id>
 
 Where:
 - `<entity_id>` is the identifier of the entity publishing its metrics
 
 Example:
-- `solace/sac-control/v1/metrics/connector`
-- `solace/sac-control/v1/metrics/component/component1`
+- `solace/sac-metrics/v1/connector`
+- `solace/sac-metrics/v1/component/component1`
 
 ### Trace Topics
 
@@ -79,10 +79,10 @@ Example:
 
 Entity registry information is published on topics with the following pattern:
 
-    <namespace>/sac-control/v1/registry
+    <namespace>/sac-registry/v1
 
 Example:
-- `solace/sac-control/v1/registry`
+- `solace/sac-registry/v1`
 
 ## Message Schemas
 
