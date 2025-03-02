@@ -47,8 +47,10 @@ class SolaceAiConnector:
             "enabled", False
         )
 
+        # If command control is enabled, set it up and create the flows immediately
         if self.command_control_enabled:
             self.setup_command_control()
+            self.create_command_control_flows()
 
     def run(self):
         """Run the Solace AI Event Connector"""
@@ -60,10 +62,6 @@ class SolaceAiConnector:
             on_flow_creation = self.event_handlers.get("on_flow_creation")
             if on_flow_creation:
                 on_flow_creation(self.flows)
-
-            # If command control is enabled, create the command and response flows
-            if self.command_control_enabled:
-                self.create_command_control_flows()
 
             log.info("Solace AI Event Connector started successfully")
         except KeyboardInterrupt as e:
@@ -308,6 +306,8 @@ class SolaceAiConnector:
                 "Command control service not initialized, skipping flow creation"
             )
             return
+
+        log.info("Creating command control flows")
 
         # Create command flow configuration
         command_flow_config = {
