@@ -381,6 +381,15 @@ These standard endpoints provide a consistent interface for managing the connect
 
 This design provides a flexible, extensible command and control system that integrates seamlessly with the existing Solace AI Connector architecture while providing a familiar REST-like API over the event mesh.
 
+## Configuration and Customization
+
+<inst>
+Add section here that describes the configuration items for command and control and how they are formatted 
+in the yaml configuration file. Only change this section. Do not change the rest of this document.
+When specifying any configuration items, prefix that line with 4 spaces. This is true for anything with a name followed by a colon.
+</inst>
+
+
 ## Implementation Plan
 
 ### Phase 1: Core Framework (Sprint 1-2)
