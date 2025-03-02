@@ -284,11 +284,14 @@ class SolaceAiConnector:
         """Set up the command control system."""
         log.info("Setting up command control system")
 
-        # Create the command control service
+        # Create the command control service first without a broker adapter
         self.command_control_service = CommandControlService(self)
 
-        # Create the broker adapter
+        # Create the broker adapter and pass the command control service
         self.broker_adapter = BrokerAdapter(self, self.command_control_service)
+
+        # Now set the broker adapter on the command control service
+        self.command_control_service.broker_adapter = self.broker_adapter
 
         # Set up the command handler
         self.broker_adapter.set_command_handler(self.handle_command)

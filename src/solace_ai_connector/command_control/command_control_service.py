@@ -31,11 +31,10 @@ class CommandControlService:
         self.request_router = RequestRouter(self.entity_registry)
         self.instance_id = str(uuid.uuid4())
         self.broker_adapter = None
-        if connector and hasattr(connector, "broker_adapter"):
-            self.broker_adapter = connector.broker_adapter
 
-        # Initialize the tracing system
-        self.tracing_system = TracingSystem(self.broker_adapter)
+        # Initialize the tracing system without a broker adapter
+        # We'll set it later when the broker adapter is available
+        self.tracing_system = TracingSystem()
 
         log.info(
             "Command Control Service initialized with instance ID: %s", self.instance_id
@@ -224,6 +223,10 @@ class CommandControlService:
             duration_ms: Optional duration in milliseconds.
         """
         if self.tracing_system:
+            # Update the broker adapter if it's been set
+            if self.broker_adapter and self.tracing_system.broker_adapter is None:
+                self.tracing_system.set_broker_adapter(self.broker_adapter)
+                
             self.tracing_system.emit_trace(
                 entity_id=entity_id,
                 entity_type=entity_type,
@@ -353,6 +356,10 @@ class CommandControlService:
                 request_id=request_id,
                 data=data,
             )
+
+        # Update the broker adapter if it's been set
+        if self.broker_adapter and self.tracing_system.broker_adapter is None:
+            self.tracing_system.set_broker_adapter(self.broker_adapter)
 
         # Use the tracing system's create_trace_context method directly
         return self.tracing_system.create_trace_context(
