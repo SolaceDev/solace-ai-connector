@@ -69,10 +69,6 @@ class ComponentBase:
 
         self.monitoring = Monitoring()
 
-        # Command and control registration
-        self.command_control_registered = False
-        self.register_with_command_control()
-
     def grow_sleep_time(self):
         if self.event_message_repeat_sleep_time < 60:
             self.event_message_repeat_sleep_time *= 2

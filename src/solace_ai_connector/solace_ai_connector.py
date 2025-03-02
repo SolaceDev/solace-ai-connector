@@ -309,6 +309,9 @@ class SolaceAiConnector:
 
         log.info("Creating command control flows")
 
+        cc_config = self.config.get("command_control", {})
+        cc_broker_config = cc_config.get("broker", {})
+
         # Create command flow configuration
         command_flow_config = {
             "name": "command_control_command_flow",
@@ -317,12 +320,14 @@ class SolaceAiConnector:
                     "component_name": "command_input",
                     "component_module": "broker_input",
                     "component_config": {
-                        "broker_type": self.config.get("broker_type", "solace"),
-                        "broker_url": self.config.get("broker_url"),
-                        "broker_username": self.config.get("broker_username"),
-                        "broker_password": self.config.get("broker_password"),
-                        "broker_vpn": self.config.get("broker_vpn"),
-                        "broker_queue_name": "command_control_queue",
+                        "broker_type": cc_broker_config.get("broker_type", "solace"),
+                        "broker_url": cc_broker_config.get("broker_url"),
+                        "broker_username": cc_broker_config.get("broker_username"),
+                        "broker_password": cc_broker_config.get("broker_password"),
+                        "broker_vpn": cc_broker_config.get("broker_vpn"),
+                        "broker_queue_name": cc_broker_config.get(
+                            "command_control_queue", "command_control"
+                        ),
                         "broker_subscriptions": [
                             {
                                 "topic": f"{self.broker_adapter.namespace}/{self.broker_adapter.topic_prefix}/>",
@@ -351,11 +356,11 @@ class SolaceAiConnector:
                     "component_name": "response_output",
                     "component_module": "broker_output",
                     "component_config": {
-                        "broker_type": self.config.get("broker_type", "solace"),
-                        "broker_url": self.config.get("broker_url"),
-                        "broker_username": self.config.get("broker_username"),
-                        "broker_password": self.config.get("broker_password"),
-                        "broker_vpn": self.config.get("broker_vpn"),
+                        "broker_type": cc_broker_config.get("broker_type", "solace"),
+                        "broker_url": cc_broker_config.get("broker_url"),
+                        "broker_username": cc_broker_config.get("broker_username"),
+                        "broker_password": cc_broker_config.get("broker_password"),
+                        "broker_vpn": cc_broker_config.get("broker_vpn"),
                         "payload_encoding": "utf-8",
                         "payload_format": "json",
                     },
