@@ -290,8 +290,8 @@ class SolaceAiConnector:
         # Create the broker adapter and pass the command control service
         self.broker_adapter = BrokerAdapter(self, self.command_control_service)
 
-        # Now set the broker adapter on the command control service
-        self.command_control_service.broker_adapter = self.broker_adapter
+        # Now set the broker adapter on the command control service using the setter method
+        self.command_control_service.set_broker_adapter(self.broker_adapter)
 
         # Set up the command handler
         self.broker_adapter.set_command_handler(self.handle_command)
