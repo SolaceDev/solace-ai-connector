@@ -195,7 +195,9 @@ class ComponentBase:
 
     def process_pre_invoke(self, message):
         # add nack callback to the message
-        callback = self.get_negative_acknowledgement_callback()  # pylint: disable=assignment-from-none
+        callback = (
+            self.get_negative_acknowledgement_callback()
+        )  # pylint: disable=assignment-from-none
         if callback is not None:
             message.add_negative_acknowledgements(callback)
 
@@ -276,14 +278,14 @@ class ComponentBase:
     def get_config(self, key=None, default=None):
         # First check component config
         val = self.component_config.get(key, None)
-        
+
+        # If not found, check general config
+        if val is None:
+            val = self.config.get(key, default)
+
         # If not found in component config, check app config if available
         if val is None and self.app:
             val = self.app.get_config(key, None)
-            
-        # If still not found, check flow config
-        if val is None:
-            val = self.config.get(key, default)
 
         # We reserve a few callable function names for internal use
         # They are used for the handler_callback component which is used
@@ -608,7 +610,7 @@ class ComponentBase:
                 self.reset_metrics()
         except KeyboardInterrupt:
             log.info("Monitoring stopped.")
-            
+
     def get_app(self):
         """Get the app that this component belongs to"""
         return self.app
