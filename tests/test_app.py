@@ -1,0 +1,408 @@
+"""Tests for the App class and related functionality"""
+
+import sys
+import pytest
+import yaml
+import threading
+import queue
+
+sys.path.append("src")
+
+from solace_ai_connector.flow.app import App
+from solace_ai_connector.solace_ai_connector import SolaceAiConnector
+from solace_ai_connector.common.message import Message
+from solace_ai_connector.test_utils.utils_for_test_files import (
+    create_connector,
+    dispose_connector,
+    send_message_to_flow,
+    get_message_from_flow,
+)
+
+
+def test_app_creation():
+    """Test that an app can be created with a basic configuration"""
+    app_config = {
+        "name": "test_app",
+        "flows": [
+            {
+                "name": "test_flow",
+                "components": [
+                    {
+                        "component_name": "pass_through",
+                        "component_module": "pass_through",
+                    }
+                ],
+            }
+        ],
+    }
+    
+    stop_signal = threading.Event()
+    error_queue = queue.Queue()
+    
+    app = App(
+        app_config=app_config,
+        app_index=0,
+        stop_signal=stop_signal,
+        error_queue=error_queue,
+        instance_name="test_instance",
+    )
+    
+    assert app.name == "test_app"
+    assert len(app.flows) == 1
+    assert app.flows[0].name == "test_flow"
+    
+    # Clean up
+    stop_signal.set()
+    app.cleanup()
+
+
+def test_app_get_config():
+    """Test that app.get_config works correctly"""
+    app_config = {
+        "name": "test_app",
+        "test_key": "test_value",
+        "flows": [
+            {
+                "name": "test_flow",
+                "components": [
+                    {
+                        "component_name": "pass_through",
+                        "component_module": "pass_through",
+                    }
+                ],
+            }
+        ],
+    }
+    
+    stop_signal = threading.Event()
+    error_queue = queue.Queue()
+    
+    app = App(
+        app_config=app_config,
+        app_index=0,
+        stop_signal=stop_signal,
+        error_queue=error_queue,
+        instance_name="test_instance",
+    )
+    
+    assert app.get_config("test_key") == "test_value"
+    assert app.get_config("non_existent_key", "default") == "default"
+    
+    # Clean up
+    stop_signal.set()
+    app.cleanup()
+
+
+def test_app_create_from_flows():
+    """Test that an app can be created from a list of flows"""
+    flows = [
+        {
+            "name": "test_flow",
+            "components": [
+                {
+                    "component_name": "pass_through",
+                    "component_module": "pass_through",
+                }
+            ],
+        }
+    ]
+    
+    stop_signal = threading.Event()
+    error_queue = queue.Queue()
+    
+    app = App.create_from_flows(
+        flows=flows,
+        app_name="test_app",
+        app_index=0,
+        stop_signal=stop_signal,
+        error_queue=error_queue,
+        instance_name="test_instance",
+    )
+    
+    assert app.name == "test_app"
+    assert len(app.flows) == 1
+    assert app.flows[0].name == "test_flow"
+    
+    # Clean up
+    stop_signal.set()
+    app.cleanup()
+
+
+def test_multiple_apps_in_connector():
+    """Test that multiple apps can be created in a connector"""
+    config_yaml = """
+log:
+  stdout_log_level: INFO
+  log_file_level: INFO
+  log_file: solace_ai_connector.log
+
+apps:
+  - name: app1
+    flows:
+      - name: flow1
+        components:
+          - component_name: pass_through1
+            component_module: pass_through
+  - name: app2
+    flows:
+      - name: flow2
+        components:
+          - component_name: pass_through2
+            component_module: pass_through
+"""
+    
+    connector = None
+    try:
+        connector = create_connector(config_yaml)
+        
+        # Check that both apps were created
+        assert len(connector.apps) == 2
+        assert connector.apps[0].name == "app1"
+        assert connector.apps[1].name == "app2"
+        
+        # Check that both flows were created
+        assert len(connector.flows) == 2
+        assert connector.flows[0].name == "flow1"
+        assert connector.flows[1].name == "flow2"
+        
+    finally:
+        if connector:
+            dispose_connector(connector)
+
+
+def test_app_config_inheritance():
+    """Test that components can access app configuration"""
+    config_yaml = """
+log:
+  stdout_log_level: INFO
+  log_file_level: INFO
+  log_file: solace_ai_connector.log
+
+apps:
+  - name: test_app
+    app_level_config: app_value
+    flows:
+      - name: test_flow
+        components:
+          - component_name: user_processor
+            component_module: user_processor
+            component_processing:
+              invoke:
+                function: lambda
+                params:
+                  positional:
+                    - evaluate_expression(self:get_config('app_level_config'))
+"""
+    
+    connector = None
+    try:
+        connector = create_connector(config_yaml)
+        
+        # Send a message to the flow
+        message = Message(payload="test")
+        send_message_to_flow(connector.flows[0], message)
+        
+        # Get the output message
+        output_message = get_message_from_flow(connector.flows[0])
+        
+        # Check that the component could access the app configuration
+        assert output_message.get_data("previous") == "app_value"
+        
+    finally:
+        if connector:
+            dispose_connector(connector)
+
+
+def test_app_num_instances():
+    """Test that multiple instances of an app can be created"""
+    config_yaml = """
+log:
+  stdout_log_level: INFO
+  log_file_level: INFO
+  log_file: solace_ai_connector.log
+
+apps:
+  - name: test_app
+    num_instances: 3
+    flows:
+      - name: test_flow
+        components:
+          - component_name: pass_through
+            component_module: pass_through
+"""
+    
+    connector = None
+    try:
+        connector = create_connector(config_yaml)
+        
+        # Check that three instances of the app were created
+        assert len(connector.apps) == 3
+        assert connector.apps[0].name == "test_app"
+        assert connector.apps[1].name == "test_app"
+        assert connector.apps[2].name == "test_app"
+        
+        # Check that three flows were created
+        assert len(connector.flows) == 3
+        assert connector.flows[0].name == "test_flow"
+        assert connector.flows[1].name == "test_flow"
+        assert connector.flows[2].name == "test_flow"
+        
+    finally:
+        if connector:
+            dispose_connector(connector)
+
+
+def test_backward_compatibility():
+    """Test that the connector is backward compatible with the old configuration format"""
+    config_yaml = """
+log:
+  stdout_log_level: INFO
+  log_file_level: INFO
+  log_file: solace_ai_connector.log
+
+flows:
+  - name: test_flow
+    components:
+      - component_name: pass_through
+        component_module: pass_through
+"""
+    
+    connector = None
+    try:
+        connector = create_connector(config_yaml)
+        
+        # Check that an app was created
+        assert len(connector.apps) == 1
+        assert connector.apps[0].name == "default_app"
+        
+        # Check that a flow was created
+        assert len(connector.flows) == 1
+        assert connector.flows[0].name == "test_flow"
+        
+    finally:
+        if connector:
+            dispose_connector(connector)
+
+
+def test_get_app_by_name():
+    """Test that an app can be retrieved by name"""
+    config_yaml = """
+log:
+  stdout_log_level: INFO
+  log_file_level: INFO
+  log_file: solace_ai_connector.log
+
+apps:
+  - name: app1
+    flows:
+      - name: flow1
+        components:
+          - component_name: pass_through1
+            component_module: pass_through
+  - name: app2
+    flows:
+      - name: flow2
+        components:
+          - component_name: pass_through2
+            component_module: pass_through
+"""
+    
+    connector = None
+    try:
+        connector = create_connector(config_yaml)
+        
+        # Get apps by name
+        app1 = connector.get_app("app1")
+        app2 = connector.get_app("app2")
+        
+        # Check that the correct apps were retrieved
+        assert app1 is not None
+        assert app2 is not None
+        assert app1.name == "app1"
+        assert app2.name == "app2"
+        
+        # Check that a non-existent app returns None
+        assert connector.get_app("non_existent_app") is None
+        
+    finally:
+        if connector:
+            dispose_connector(connector)
+
+
+def test_component_app_reference():
+    """Test that components have a reference to their parent app"""
+    config_yaml = """
+log:
+  stdout_log_level: INFO
+  log_file_level: INFO
+  log_file: solace_ai_connector.log
+
+apps:
+  - name: test_app
+    flows:
+      - name: test_flow
+        components:
+          - component_name: user_processor
+            component_module: user_processor
+            component_processing:
+              invoke:
+                function: lambda
+                params:
+                  positional:
+                    - evaluate_expression(self:parent_app.name)
+"""
+    
+    connector = None
+    try:
+        connector = create_connector(config_yaml)
+        
+        # Send a message to the flow
+        message = Message(payload="test")
+        send_message_to_flow(connector.flows[0], message)
+        
+        # Get the output message
+        output_message = get_message_from_flow(connector.flows[0])
+        
+        # Check that the component could access its parent app
+        assert output_message.get_data("previous") == "test_app"
+        
+    finally:
+        if connector:
+            dispose_connector(connector)
+
+
+def test_create_internal_app():
+    """Test that an internal app can be created for request-response functionality"""
+    connector = SolaceAiConnector({"log": {}})
+    
+    # Create an internal app
+    flows = [
+        {
+            "name": "internal_flow",
+            "components": [
+                {
+                    "component_name": "pass_through",
+                    "component_module": "pass_through",
+                }
+            ],
+        }
+    ]
+    
+    app = connector.create_internal_app("internal_app", flows)
+    
+    # Check that the app was created correctly
+    assert app.name == "internal_app"
+    assert len(app.flows) == 1
+    assert app.flows[0].name == "internal_flow"
+    
+    # Check that the app was added to the connector
+    assert len(connector.apps) == 1
+    assert connector.apps[0].name == "internal_app"
+    
+    # Check that the flow was added to the connector
+    assert len(connector.flows) == 1
+    assert connector.flows[0].name == "internal_flow"
+    
+    # Clean up
+    connector.stop()
+    connector.cleanup()
