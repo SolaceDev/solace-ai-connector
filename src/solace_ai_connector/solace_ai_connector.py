@@ -131,6 +131,45 @@ class SolaceAiConnector:
             log.error("Error creating apps: %s", e)
             raise e
 
+    def create_internal_app(self, app_name: str, flows: List[Dict[str, Any]]) -> App:
+        """
+        Create an internal app for use by components like the request-response controller.
+        
+        Args:
+            app_name: Name for the app
+            flows: List of flow configurations
+            
+        Returns:
+            App: The created app
+        """
+        app_config = {
+            "name": app_name,
+            "flows": flows
+        }
+        
+        # Create the app
+        app = App(
+            app_config=app_config,
+            app_index=len(self.apps),
+            stop_signal=self.stop_signal,
+            error_queue=self.error_queue,
+            instance_name=self.instance_name,
+            trace_queue=self.trace_queue,
+            connector=self
+        )
+        
+        # Add the app to the connector's apps list
+        self.apps.append(app)
+        
+        # Add the flow to the connector's flows list for backward compatibility
+        self.flows.extend(app.flows)
+        
+        # Add flow input queues to the connector's flow_input_queues
+        for name, queue in app.flow_input_queues.items():
+            self.flow_input_queues[name] = queue
+            
+        return app
+
     def create_flows(self):
         """
         Legacy method for backward compatibility.

@@ -27,7 +27,6 @@ from typing import Dict, Any
 from ..common.message import Message
 from ..common.event import Event, EventType
 from ..common.log import log
-from .app import App
 
 
 # This is a very basic component which will be stitched onto the final component in the flow
@@ -54,14 +53,26 @@ class RequestResponseFlowController:
         self.enqueue_time = None
         self.request_outstanding = False
 
-        self.flow = self.create_broker_request_response_flow()
+        # Create the flow configuration
+        flow_config = self.create_broker_request_response_flow_config()
+        
+        # Create the app using the connector's create_internal_app method
+        app_name = "_internal_broker_request_response_app"
+        app = self.connector.create_internal_app(app_name, [flow_config])
+        
+        # Get the flow from the app
+        if not app.flows:
+            raise ValueError("Failed to create internal broker request-response flow")
+        
+        self.flow = app.flows[0]
         self.setup_queues(self.flow)
         self.flow.run()
 
-    def create_broker_request_response_flow(self):
+    def create_broker_request_response_flow_config(self):
+        """Create the flow configuration for the broker request-response flow"""
         full_config = self.broker_config.copy()
         full_config.update(self.config)
-        flow_config = {
+        return {
             "name": "_internal_broker_request_response_flow",
             "components": [
                 {
@@ -71,36 +82,6 @@ class RequestResponseFlowController:
                 }
             ],
         }
-        
-        # Create an app config for the internal flow
-        app_config = {
-            "name": "_internal_broker_request_response_app",
-            "flows": [flow_config]
-        }
-        
-        # Create the app using the App class directly
-        app = App(
-            app_config=app_config,
-            app_index=0,
-            stop_signal=self.connector.stop_signal,
-            error_queue=self.connector.error_queue,
-            instance_name=self.connector.instance_name,
-            trace_queue=self.connector.trace_queue,
-            connector=self.connector
-        )
-        
-        # Get the flow from the app
-        if not app.flows:
-            raise ValueError("Failed to create internal broker request-response flow")
-        
-        # Add the app to the connector's apps list
-        self.connector.apps.append(app)
-        
-        # Add the flow to the connector's flows list for backward compatibility
-        self.connector.flows.extend(app.flows)
-        
-        # Return the flow
-        return app.flows[0]
 
     def setup_queues(self, flow):
         # Input queue to send the message to the flow
