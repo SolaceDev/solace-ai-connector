@@ -42,7 +42,7 @@ class ComponentBase:
         self.timer_manager = kwargs.pop("timer_manager", None)
         self.cache_service = kwargs.pop("cache_service", None)
         self.put_errors_in_error_queue = kwargs.pop("put_errors_in_error_queue", True)
-        self.app = kwargs.pop("app", None)
+        self.parent_app = kwargs.pop("app", None)
 
         self.component_config = self.config.get("component_config") or {}
         self.broker_request_response_config = self.config.get(
@@ -278,11 +278,11 @@ class ComponentBase:
     def get_config(self, key=None, default=None):
         # First check component config
         val = self.component_config.get(key, None)
-        
+
         # If not found in component config, check app config if available
-        if val is None and self.app:
-            val = self.app.get_config(key, None)
-            
+        if val is None and self.parent_app:
+            val = self.parent_app.get_config(key, None)
+
         # If still not found, check flow config
         if val is None:
             val = self.config.get(key, default)
@@ -613,4 +613,4 @@ class ComponentBase:
 
     def get_app(self):
         """Get the app that this component belongs to"""
-        return self.app
+        return self.parent_app
