@@ -21,7 +21,9 @@ from .common.monitoring import Monitoring
 class SolaceAiConnector:
     """Solace AI Connector"""
 
-    def __init__(self, config, event_handlers=None, error_queue=None, config_filenames=None):
+    def __init__(
+        self, config, event_handlers=None, error_queue=None, config_filenames=None
+    ):
         self.config = config or {}
         self.apps: List[App] = []
         self.flows: List[Flow] = []  # For backward compatibility
@@ -66,7 +68,7 @@ class SolaceAiConnector:
         try:
             # Check if there are apps defined in the configuration
             apps_config = self.config.get("apps", [])
-            
+
             # If there are no apps defined but there are flows, create a default app
             # This should be rare now that we handle this in main.py, but keeping for robustness
             if not apps_config and self.config.get("flows"):
@@ -74,8 +76,10 @@ class SolaceAiConnector:
                 app_name = "default_app"
                 if self.config_filenames:
                     # Extract filename without extension
-                    app_name = os.path.splitext(os.path.basename(self.config_filenames[0]))[0]
-                
+                    app_name = os.path.splitext(
+                        os.path.basename(self.config_filenames[0])
+                    )[0]
+
                 log.info(f"Creating default app '{app_name}' from flows configuration")
                 app = App.create_from_flows(
                     flows=self.config.get("flows", []),
@@ -88,9 +92,10 @@ class SolaceAiConnector:
                     connector=self,
                 )
                 self.apps.append(app)
-                
+
                 # For backward compatibility, also add flows to the flows list
                 self.flows.extend(app.flows)
+
                 # Add flow input queues to the connector's flow_input_queues
                 for name, queue in app.flow_input_queues.items():
                     self.flow_input_queues[name] = queue
@@ -101,7 +106,7 @@ class SolaceAiConnector:
                     num_instances = app_config.get("num_instances", 1)
                     if num_instances < 1:
                         num_instances = 1
-                    
+
                     for i in range(num_instances):
                         app = App(
                             app_config=app_config,
@@ -113,17 +118,17 @@ class SolaceAiConnector:
                             connector=self,
                         )
                         self.apps.append(app)
-                        
+
                         # For backward compatibility, also add flows to the flows list
                         self.flows.extend(app.flows)
                         # Add flow input queues to the connector's flow_input_queues
                         for name, queue in app.flow_input_queues.items():
                             self.flow_input_queues[name] = queue
-            
+
             # Run all apps
             for app in self.apps:
                 app.run()
-                
+
         except KeyboardInterrupt:
             log.info("Received keyboard interrupt - stopping")
             raise KeyboardInterrupt
@@ -134,19 +139,16 @@ class SolaceAiConnector:
     def create_internal_app(self, app_name: str, flows: List[Dict[str, Any]]) -> App:
         """
         Create an internal app for use by components like the request-response controller.
-        
+
         Args:
             app_name: Name for the app
             flows: List of flow configurations
-            
+
         Returns:
             App: The created app
         """
-        app_config = {
-            "name": app_name,
-            "flows": flows
-        }
-        
+        app_config = {"name": app_name, "flows": flows}
+
         # Create the app
         app = App(
             app_config=app_config,
@@ -155,19 +157,16 @@ class SolaceAiConnector:
             error_queue=self.error_queue,
             instance_name=self.instance_name,
             trace_queue=self.trace_queue,
-            connector=self
+            connector=self,
         )
-        
+
         # Add the app to the connector's apps list
         self.apps.append(app)
-        
-        # Add the flow to the connector's flows list for backward compatibility
-        self.flows.extend(app.flows)
-        
+
         # Add flow input queues to the connector's flow_input_queues
         for name, queue in app.flow_input_queues.items():
             self.flow_input_queues[name] = queue
-            
+
         return app
 
     def create_flows(self):
@@ -307,13 +306,13 @@ class SolaceAiConnector:
             for index, app in enumerate(self.config.get("apps", [])):
                 if not app.get("name"):
                     raise ValueError(f"App name not provided in app {index}")
-                
+
                 if not app.get("flows"):
                     raise ValueError(f"No flows defined in app {app.get('name')}")
-                
+
                 # Validate flows in the app
                 self._validate_flows(app.get("flows"), f"app {app.get('name')}")
-        
+
         # If flows are defined at the top level (for backward compatibility), validate them
         if self.config.get("flows"):
             self._validate_flows(self.config.get("flows"), "top level")
@@ -325,11 +324,15 @@ class SolaceAiConnector:
                 raise ValueError(f"Flow name not provided in flow {index} of {context}")
 
             if not flow.get("components"):
-                raise ValueError(f"Flow components list not provided in flow {index} of {context}")
+                raise ValueError(
+                    f"Flow components list not provided in flow {index} of {context}"
+                )
 
             # Verify that the components list is a list
             if not isinstance(flow.get("components"), list):
-                raise ValueError(f"Flow components is not a list in flow {index} of {context}")
+                raise ValueError(
+                    f"Flow components is not a list in flow {index} of {context}"
+                )
 
             # Loop through the components and validate them
             for component_index, component in enumerate(flow.get("components", [])):
@@ -354,11 +357,11 @@ class SolaceAiConnector:
             if flow.name == flow_name:
                 return flow
         return None
-    
+
     def get_apps(self):
         """Return the apps"""
         return self.apps
-    
+
     def get_app(self, app_name):
         """Return a specific app by name"""
         for app in self.apps:
