@@ -172,6 +172,11 @@ apps:
 
 def test_app_config_inheritance():
     """Test that components can access app configuration"""
+    # Define a handler function to test app config inheritance
+    def invoke_handler(message, data):
+        # Return the app-level config value
+        return message.get_data("self:parent_app").get_config("app_level_config")
+    
     config_yaml = """
 log:
   stdout_log_level: INFO
@@ -184,19 +189,22 @@ apps:
     flows:
       - name: test_flow
         components:
-          - component_name: user_processor
-            component_module: user_processor
-            component_processing:
-              invoke:
-                function: lambda
-                params:
-                  positional:
-                    - evaluate_expression(self:get_config('app_level_config'))
+          - component_name: handler_component
+            component_module: handler_callback
+            component_config:
+              invoke_handler: null  # Will be set programmatically
 """
     
     connector = None
     try:
-        connector = create_connector(config_yaml)
+        # Parse the YAML config
+        config = yaml.safe_load(config_yaml)
+        
+        # Set the invoke_handler function
+        config["apps"][0]["flows"][0]["components"][0]["component_config"]["invoke_handler"] = invoke_handler
+        
+        # Create the connector
+        connector = create_connector(config)
         
         # Send a message to the flow
         message = Message(payload="test")
@@ -331,6 +339,11 @@ apps:
 
 def test_component_app_reference():
     """Test that components have a reference to their parent app"""
+    # Define a handler function to test app reference
+    def invoke_handler(message, data):
+        # Return the app name from the parent_app reference
+        return message.get_data("self:parent_app").name
+    
     config_yaml = """
 log:
   stdout_log_level: INFO
@@ -342,19 +355,22 @@ apps:
     flows:
       - name: test_flow
         components:
-          - component_name: user_processor
-            component_module: user_processor
-            component_processing:
-              invoke:
-                function: lambda
-                params:
-                  positional:
-                    - evaluate_expression(self:parent_app.name)
+          - component_name: handler_component
+            component_module: handler_callback
+            component_config:
+              invoke_handler: null  # Will be set programmatically
 """
     
     connector = None
     try:
-        connector = create_connector(config_yaml)
+        # Parse the YAML config
+        config = yaml.safe_load(config_yaml)
+        
+        # Set the invoke_handler function
+        config["apps"][0]["flows"][0]["components"][0]["component_config"]["invoke_handler"] = invoke_handler
+        
+        # Create the connector
+        connector = create_connector(config)
         
         # Send a message to the flow
         message = Message(payload="test")
