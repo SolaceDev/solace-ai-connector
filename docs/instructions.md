@@ -21,5 +21,5 @@ Remember that it is crucial that this change is backward compatible with the cur
 Implementation plan:
 
 <inst>
-fill this in
+fill this section in for the impementation steps for adding apps
 </inst>
