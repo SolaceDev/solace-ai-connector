@@ -170,10 +170,7 @@ class ComponentBase:
 
             self.current_message_has_been_discarded = False
             try:
-                # Create a trace context for the invoke operation
-                with self.create_trace_context("invoke", data) as trace_ctx:
-                    result = self.invoke(message, data)
-                    trace_ctx.progress(data={"result": result})
+                result = self.invoke(message, data)
             except Exception as e:
                 self.current_message = None
                 self.handle_negative_acknowledgements(message, e)
@@ -883,7 +880,12 @@ class ComponentBase:
         )
 
     def create_trace_context(
-        self, operation: str, data: Any = None, trace_level: str = "INFO"
+        self,
+        operation: str,
+        data: Any = None,
+        trace_level: str = "INFO",
+        entity_type: str = "component",
+        entity_id: Optional[str] = None,
     ) -> Any:
         """Create a trace context for an operation.
 
@@ -898,23 +900,10 @@ class ComponentBase:
         Returns:
             A trace context object that can be used in a with statement.
         """
-        if not self.connector or not hasattr(
-            self.connector, "get_command_control_service"
-        ):
-            # Return a dummy context manager if tracing is not available
-            class DummyContext:
-                def __enter__(self):
-                    return self
+        command_control = None
+        if self.connector and hasattr(self.connector, "get_command_control_service"):
+            command_control = self.connector.get_command_control_service()
 
-                def __exit__(self, exc_type, exc_val, exc_tb):
-                    return False
-
-                def progress(self, data=None, stage="progress"):
-                    pass
-
-            return DummyContext()
-
-        command_control = self.connector.get_command_control_service()
         if not command_control:
             # Return a dummy context manager if command control is not available
             class DummyContext:
@@ -929,11 +918,12 @@ class ComponentBase:
 
             return DummyContext()
 
-        entity_id = f"{self.flow_name}_{self.name}_{self.component_index}"
+        if not entity_id:
+            entity_id = f"{self.flow_name}_{self.name}_{self.component_index}"
 
         return command_control.create_trace_context(
             entity_id=entity_id,
-            entity_type="component",
+            entity_type=entity_type,
             trace_level=trace_level,
             operation=operation,
             data=data,

@@ -6,7 +6,8 @@ from ...common.log import log
 from ...common.utils import deep_merge
 from ...common.message import Message
 
-info = deep_merge(base_info,
+info = deep_merge(
+    base_info,
     {
         "class_name": "BrokerOutput",
         "description": (
@@ -57,7 +58,10 @@ info = deep_merge(base_info,
                     "type": "any",
                     "description": "Payload of the message sent to the broker",
                 },
-                "topic": {"type": "string", "description": "Topic to send the message to"},
+                "topic": {
+                    "type": "string",
+                    "description": "Topic to send the message to",
+                },
                 "user_properties": {
                     "type": "object",
                     "description": "User properties to send with the message",
@@ -65,9 +69,8 @@ info = deep_merge(base_info,
             },
             "required": ["payload", "topic"],
         },
-    }
+    },
 )
-
 
 
 class BrokerOutput(BrokerBase):
@@ -82,7 +85,9 @@ class BrokerOutput(BrokerBase):
         self.connect()
 
     def invoke(self, message, data):
-        return data
+        if data:
+            return data
+        return message.get_data("input")
 
     def send_message(self, message: Message):
         egress_data = message.get_data("previous")

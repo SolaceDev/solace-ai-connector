@@ -75,7 +75,7 @@ class BrokerAdapter:
         self.command_handler = handler
         log.info("Command handler set")
 
-    def handle_message(self, message: Message) -> None:
+    def handle_message(self, _component, message: Message, _data) -> None:
         """Handle an incoming message from the broker.
 
         Args:

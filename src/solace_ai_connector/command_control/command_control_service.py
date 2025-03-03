@@ -136,38 +136,24 @@ class CommandControlService:
             Dict[str, Any]: The response to the request.
         """
         request_id = request.get("request_id", "unknown")
-        method = request.get("method", "")
-        endpoint = request.get("endpoint", "")
 
-        # Create a trace context for the request
-        with self.create_trace_context(
-            entity_id="command_control",
-            entity_type="service",
-            trace_level="INFO",
-            operation=f"{method} {endpoint}",
-            request_id=request_id,
-            data={"request": request},
-        ) as trace_ctx:
-            try:
-                # Validate the request format
-                if not self._validate_request(request):
-                    return self._create_error_response(
-                        request_id, 400, "Invalid request format"
-                    )
-
-                # Route the request to the appropriate handler
-                response = self.request_router.route_request(request)
-
-                # Add trace data for the response
-                trace_ctx.progress(data={"response": response})
-
-                return response
-
-            except Exception as e:
-                log.error("Error handling request: %s", str(e))
+        try:
+            # Validate the request format
+            if not self._validate_request(request):
                 return self._create_error_response(
-                    request_id, 500, f"Internal server error: {str(e)}"
+                    request_id, 400, "Invalid request format"
                 )
+
+            # Route the request to the appropriate handler
+            response = self.request_router.route_request(request)
+
+            return response
+
+        except Exception as e:
+            log.error("Error handling request: %s", str(e))
+            return self._create_error_response(
+                request_id, 500, f"Internal server error: {str(e)}"
+            )
 
     def _validate_request(self, request: Dict[str, Any]) -> bool:
         """Validate that a request has the required fields.

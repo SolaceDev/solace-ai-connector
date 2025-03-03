@@ -349,12 +349,15 @@ class SolaceAiConnector:
         }
 
         # Create response flow configuration
+        # Note that during startup, trace events will be sent to this flow before it
+        # has a chance to run, so the max depth should be high enough to handle that
         response_flow_config = {
             "name": "command_control_response_flow",
             "components": [
                 {
                     "component_name": "response_output",
                     "component_module": "broker_output",
+                    "component_queue_max_depth": 1000,
                     "component_config": {
                         "broker_type": cc_broker_config.get("broker_type", "solace"),
                         "broker_url": cc_broker_config.get("broker_url"),
