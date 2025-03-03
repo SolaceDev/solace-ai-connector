@@ -13,6 +13,7 @@ from solace_ai_connector.solace_ai_connector import SolaceAiConnector
 from solace_ai_connector.common.message import Message
 from solace_ai_connector.test_utils.utils_for_test_files import (
     create_connector,
+    create_test_flows,
     dispose_connector,
     send_message_to_flow,
     get_message_from_flow,
@@ -178,55 +179,46 @@ def test_app_config_inheritance():
         # Return the app-level config value
         return message.get_data("self:parent_app").get_config("app_level_config")
 
-    config_yaml = """
-log:
-  stdout_log_level: INFO
-  log_file_level: INFO
-  log_file: solace_ai_connector.log
-
-apps:
-  - name: test_app
-    app_level_config: app_value
-    flows:
-      - name: test_flow
-        components:
-          - component_name: handler_component
-            component_module: handler_callback
-            component_config:
-              invoke_handler: null  # Will be set programmatically
-"""
+    config = {
+        "log": {"stdout_log_level": "INFO", "log_file_level": "INFO"},
+        "apps": [
+            {
+                "name": "test_app",
+                "app_level_config": "app_value",
+                "flows": [
+                    {
+                        "name": "test_flow",
+                        "components": [
+                            {
+                                "component_name": "handler_component",
+                                "component_module": "handler_callback",
+                                "component_config": {
+                                    "invoke_handler": invoke_handler
+                                }
+                            }
+                        ],
+                    }
+                ],
+            }
+        ],
+    }
 
     connector = None
     try:
-        # Parse the YAML config
-        config = yaml.safe_load(config_yaml)
-
-        # Set the invoke_handler function
-        config["apps"][0]["flows"][0]["components"][0]["component_config"][
-            "invoke_handler"
-        ] = invoke_handler
-
-        # Create the connector
-        # <inst>
-        # When passing messages through the flow for testing, use     `connector, flows = create_test_flows(config)`
-        # Then use the first flow in the list to send and receive messages
-        # See other examples and fix these tests
-        # </inst>
-
-        connector = create_connector(config)
+        # Create the connector and get the flows
+        connector, flows = create_test_flows(config)
 
         # Send a message to the flow
         message = Message(payload="test")
-        send_message_to_flow(connector.flows[0], message)
+        send_message_to_flow(flows[0], message)
 
         # Get the output message
-        output_message = get_message_from_flow(connector.flows[0])
+        output_message = get_message_from_flow(flows[0])
 
         # Check that the component could access the app configuration
         assert output_message.get_data("previous") == "app_value"
     except Exception as e:
         import traceback
-
         print(e, traceback.format_exc())
     finally:
         if connector:
@@ -357,42 +349,40 @@ def test_component_app_reference():
         # Return the app name from the parent_app reference
         return message.get_data("self:parent_app").name
 
-    config_yaml = """
-log:
-  stdout_log_level: INFO
-  log_file_level: INFO
-  log_file: solace_ai_connector.log
-
-apps:
-  - name: test_app
-    flows:
-      - name: test_flow
-        components:
-          - component_name: handler_component
-            component_module: handler_callback
-            component_config:
-              invoke_handler: null  # Will be set programmatically
-"""
+    config = {
+        "log": {"stdout_log_level": "INFO", "log_file_level": "INFO"},
+        "apps": [
+            {
+                "name": "test_app",
+                "flows": [
+                    {
+                        "name": "test_flow",
+                        "components": [
+                            {
+                                "component_name": "handler_component",
+                                "component_module": "handler_callback",
+                                "component_config": {
+                                    "invoke_handler": invoke_handler
+                                }
+                            }
+                        ],
+                    }
+                ],
+            }
+        ],
+    }
 
     connector = None
     try:
-        # Parse the YAML config
-        config = yaml.safe_load(config_yaml)
-
-        # Set the invoke_handler function
-        config["apps"][0]["flows"][0]["components"][0]["component_config"][
-            "invoke_handler"
-        ] = invoke_handler
-
-        # Create the connector
-        connector = create_connector(config)
+        # Create the connector and get the flows
+        connector, flows = create_test_flows(config)
 
         # Send a message to the flow
         message = Message(payload="test")
-        send_message_to_flow(connector.flows[0], message)
+        send_message_to_flow(flows[0], message)
 
         # Get the output message
-        output_message = get_message_from_flow(connector.flows[0])
+        output_message = get_message_from_flow(flows[0])
 
         # Check that the component could access its parent app
         assert output_message.get_data("previous") == "test_app"
