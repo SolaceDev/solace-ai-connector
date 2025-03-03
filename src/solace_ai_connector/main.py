@@ -102,7 +102,7 @@ def main():
         full_config = merge_config(full_config, config)
 
     # Create the application
-    app = SolaceAiConnector(full_config)
+    app = SolaceAiConnector(full_config, config_filenames=files)
 
     def shutdown():
         """Shutdown the application."""
