@@ -131,7 +131,7 @@ class Flow:
                 instance_name=self.instance_name,
                 trace_queue=self.trace_queue,
                 connector=self.connector,
-                timer_manager=self.connector.timer_manager,
+                timer_manager=self.connector.timer_manager if self.connector else None,
                 cache_service=self.cache_service,
                 put_errors_in_error_queue=self.put_errors_in_error_queue,
                 app=self.app,
