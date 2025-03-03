@@ -68,6 +68,7 @@ class SolaceAiConnector:
             apps_config = self.config.get("apps", [])
             
             # If there are no apps defined but there are flows, create a default app
+            # This should be rare now that we handle this in main.py, but keeping for robustness
             if not apps_config and self.config.get("flows"):
                 # Use the first config filename as the app name if available
                 app_name = "default_app"
