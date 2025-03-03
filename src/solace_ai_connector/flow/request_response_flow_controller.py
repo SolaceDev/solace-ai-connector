@@ -27,6 +27,7 @@ from typing import Dict, Any
 from ..common.message import Message
 from ..common.event import Event, EventType
 from ..common.log import log
+from .app import App
 
 
 # This is a very basic component which will be stitched onto the final component in the flow
@@ -77,8 +78,8 @@ class RequestResponseFlowController:
             "flows": [flow_config]
         }
         
-        # Create the app using the connector
-        app = self.connector.App(
+        # Create the app using the App class directly
+        app = App(
             app_config=app_config,
             app_index=0,
             stop_signal=self.connector.stop_signal,
