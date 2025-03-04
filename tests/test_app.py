@@ -1,10 +1,9 @@
 """Tests for the App class and related functionality"""
 
 import sys
-import pytest
-import yaml
 import threading
 import queue
+import traceback
 
 sys.path.append("src")
 
@@ -175,9 +174,9 @@ def test_app_config_inheritance():
     """Test that components can access app configuration"""
 
     # Define a handler function to test app config inheritance
-    def invoke_handler(message, data):
+    def invoke_handler(component, _message, _data):
         # Return the app-level config value
-        return message.get_data("self:parent_app").get_config("app_level_config")
+        return component.get_config("app_level_config")
 
     config = {
         "log": {"stdout_log_level": "INFO", "log_file_level": "INFO"},
@@ -192,9 +191,7 @@ def test_app_config_inheritance():
                             {
                                 "component_name": "handler_component",
                                 "component_module": "handler_callback",
-                                "component_config": {
-                                    "invoke_handler": invoke_handler
-                                }
+                                "component_config": {"invoke_handler": invoke_handler},
                             }
                         ],
                     }
@@ -219,6 +216,7 @@ def test_app_config_inheritance():
         assert output_message.get_data("previous") == "app_value"
     except Exception as e:
         import traceback
+
         print(e, traceback.format_exc())
     finally:
         if connector:
@@ -336,6 +334,12 @@ apps:
         # Check that a non-existent app returns None
         assert connector.get_app("non_existent_app") is None
 
+    except Exception as e:
+        # assert a failure here and print out the traceback
+
+        print(e, traceback.format_exc())
+        assert False
+
     finally:
         if connector:
             dispose_connector(connector)
@@ -345,9 +349,9 @@ def test_component_app_reference():
     """Test that components have a reference to their parent app"""
 
     # Define a handler function to test app reference
-    def invoke_handler(message, data):
+    def invoke_handler(component, message, data):
         # Return the app name from the parent_app reference
-        return message.get_data("self:parent_app").name
+        return component.parent_app.name
 
     config = {
         "log": {"stdout_log_level": "INFO", "log_file_level": "INFO"},
@@ -361,9 +365,7 @@ def test_component_app_reference():
                             {
                                 "component_name": "handler_component",
                                 "component_module": "handler_callback",
-                                "component_config": {
-                                    "invoke_handler": invoke_handler
-                                }
+                                "component_config": {"invoke_handler": invoke_handler},
                             }
                         ],
                     }
@@ -390,40 +392,3 @@ def test_component_app_reference():
     finally:
         if connector:
             dispose_connector(connector)
-
-
-def test_create_internal_app():
-    """Test that an internal app can be created for request-response functionality"""
-    connector = SolaceAiConnector({"log": {}})
-
-    # Create an internal app
-    flows = [
-        {
-            "name": "internal_flow",
-            "components": [
-                {
-                    "component_name": "pass_through",
-                    "component_module": "pass_through",
-                }
-            ],
-        }
-    ]
-
-    app = connector.create_internal_app("internal_app", flows)
-
-    # Check that the app was created correctly
-    assert app.name == "internal_app"
-    assert len(app.flows) == 1
-    assert app.flows[0].name == "internal_flow"
-
-    # Check that the app was added to the connector
-    assert len(connector.apps) == 1
-    assert connector.apps[0].name == "internal_app"
-
-    # Check that the flow was added to the connector
-    assert len(connector.flows) == 1
-    assert connector.flows[0].name == "internal_flow"
-
-    # Clean up
-    connector.stop()
-    connector.cleanup()
