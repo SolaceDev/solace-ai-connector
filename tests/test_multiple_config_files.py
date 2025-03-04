@@ -121,6 +121,9 @@ flows:
         connector = SolaceAiConnector(
             merged_config, config_filenames=[filename1, filename2]
         )
+        
+        # Run the connector to create the apps
+        connector.run()
 
         # Check that two apps were created, one for each file
         assert len(connector.apps) == 2
