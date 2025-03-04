@@ -101,10 +101,17 @@ class ServiceEventHandler(
     ):
         self.stop_signal = stop_signal
         self.error_prefix = error_prefix
-        self.strategy = strategy
         self.retry_count = retry_count
         self.retry_interval = retry_interval
         self.connection_properties = connection_properties
+
+        try:
+            self.strategy = ConnectionStrategy(strategy)
+        except ValueError:
+            log.error(
+                f"{self.error_prefix} Invalid reconnection strategy: {strategy}. Using default strategy."
+            )
+            self.strategy = ConnectionStrategy.FOREVER_RETRY
 
     def on_reconnected(self, service_event: ServiceEvent):
         change_connection_status(self.connection_properties, ConnectionStatus.CONNECTED)
@@ -127,7 +134,7 @@ class ServiceEventHandler(
                 == ConnectionStatus.RECONNECTING
             ):
                 # update retry count
-                if self.strategy == ConnectionStrategy.PARAMETRIZED_RETRY.value:
+                if self.strategy == ConnectionStrategy.PARAMETRIZED_RETRY:
                     if self.retry_count <= 0:
                         log.error(
                             f"{self.error_prefix} Reconnection attempts exhausted. Stopping..."
@@ -220,10 +227,20 @@ class SolaceMessaging(Messaging):
                 or os.path.dirname(certifi.where())
                 or "/usr/share/ca-certificates/mozilla/",
             }
-            strategy = self.broker_properties.get("reconnection_strategy")
+
+            try:
+                strategy = ConnectionStrategy(
+                    self.broker_properties.get("reconnection_strategy")
+                )
+            except ValueError:
+                log.error(
+                    f"{self.error_prefix} Invalid reconnection strategy: {self.broker_properties.get('reconnection_strategy')}. Using default strategy."
+                )
+                strategy = ConnectionStrategy.FOREVER_RETRY
+
             retry_interval = 3000  # default
             retry_count = 20  # default
-            if strategy == ConnectionStrategy.FOREVER_RETRY.value:
+            if strategy == ConnectionStrategy.FOREVER_RETRY:
                 retry_interval = self.broker_properties.get("retry_interval")
                 if not retry_interval:
                     log.warning(
@@ -241,7 +258,7 @@ class SolaceMessaging(Messaging):
                     )
                     .build()
                 )
-            elif strategy == ConnectionStrategy.PARAMETRIZED_RETRY.value:
+            elif strategy == ConnectionStrategy.PARAMETRIZED_RETRY:
                 retry_count = self.broker_properties.get("retry_count")
                 retry_interval = self.broker_properties.get("retry_interval")
                 if not retry_count:
@@ -270,7 +287,7 @@ class SolaceMessaging(Messaging):
                 log.info(
                     f"{self.error_prefix} Using default reconnection strategy. 20 retries with 3000ms interval"
                 )
-                strategy = ConnectionStrategy.PARAMETRIZED_RETRY.value
+                strategy = ConnectionStrategy.PARAMETRIZED_RETRY
                 self.messaging_service = (
                     MessagingService.builder()
                     .from_properties(broker_props)
@@ -298,7 +315,7 @@ class SolaceMessaging(Messaging):
                     or result.done()
                 ):
                     # update retry count
-                    if strategy == ConnectionStrategy.PARAMETRIZED_RETRY.value:
+                    if strategy == ConnectionStrategy.PARAMETRIZED_RETRY:
                         if temp_retry_count <= 0:
                             log.error(
                                 f"{self.error_prefix} Connection attempts exhausted. Stopping..."
