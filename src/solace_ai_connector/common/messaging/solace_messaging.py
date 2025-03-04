@@ -127,10 +127,7 @@ class ServiceEventHandler(
                 == ConnectionStatus.RECONNECTING
             ):
                 # update retry count
-                if (
-                    self.strategy
-                    and self.strategy == ConnectionStrategy.PARAMETRIZED_RETRY.value
-                ):
+                if self.strategy == ConnectionStrategy.PARAMETRIZED_RETRY.value:
                     if self.retry_count <= 0:
                         log.error(
                             f"{self.error_prefix} Reconnection attempts exhausted. Stopping..."
@@ -226,7 +223,7 @@ class SolaceMessaging(Messaging):
             strategy = self.broker_properties.get("reconnection_strategy")
             retry_interval = 3000  # default
             retry_count = 20  # default
-            if strategy and strategy == ConnectionStrategy.FOREVER_RETRY.value:
+            if strategy == ConnectionStrategy.FOREVER_RETRY.value:
                 retry_interval = self.broker_properties.get("retry_interval")
                 if not retry_interval:
                     log.warning(
@@ -244,7 +241,7 @@ class SolaceMessaging(Messaging):
                     )
                     .build()
                 )
-            elif strategy and strategy == ConnectionStrategy.PARAMETRIZED_RETRY.value:
+            elif strategy == ConnectionStrategy.PARAMETRIZED_RETRY.value:
                 retry_count = self.broker_properties.get("retry_count")
                 retry_interval = self.broker_properties.get("retry_interval")
                 if not retry_count:
@@ -301,10 +298,7 @@ class SolaceMessaging(Messaging):
                     or result.done()
                 ):
                     # update retry count
-                    if (
-                        strategy
-                        and strategy == ConnectionStrategy.PARAMETRIZED_RETRY.value
-                    ):
+                    if strategy == ConnectionStrategy.PARAMETRIZED_RETRY.value:
                         if temp_retry_count <= 0:
                             log.error(
                                 f"{self.error_prefix} Connection attempts exhausted. Stopping..."
