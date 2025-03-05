@@ -80,7 +80,7 @@ class SolaceAiConnector:
                         os.path.basename(self.config_filenames[0])
                     )[0]
 
-                log.info(f"Creating default app '{app_name}' from flows configuration")
+                log.info("Creating default app '%s' from flows configuration", app_name)
                 app = App.create_from_flows(
                     flows=self.config.get("flows", []),
                     app_name=app_name,
@@ -102,10 +102,14 @@ class SolaceAiConnector:
             else:
                 # Create apps from the apps configuration
                 for index, app_config in enumerate(apps_config):
-                    log.info(f"Creating app {app_config.get('name')}")
+                    log.info("Creating app %s", app_config.get("name"))
                     num_instances = app_config.get("num_instances", 1)
                     if num_instances < 1:
                         num_instances = 1
+                        log.warning(
+                            "Number of instances for app %s is less than 1. Setting it to 1",
+                            app_config.get("name"),
+                        )
 
                     for i in range(num_instances):
                         app = App(

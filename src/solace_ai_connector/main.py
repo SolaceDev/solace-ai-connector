@@ -78,14 +78,7 @@ def merge_config(dict1, dict2):
     merged = {}
     for key in set(dict1.keys()).union(dict2.keys()):
         if key in dict1 and key in dict2:
-            if (
-                key == "apps"
-                and isinstance(dict1[key], list)
-                and isinstance(dict2[key], list)
-            ):
-                # For apps, we want to concatenate the lists
-                merged[key] = dict1[key] + dict2[key]
-            elif isinstance(dict1[key], list) and isinstance(dict2[key], list):
+            if isinstance(dict1[key], list) and isinstance(dict2[key], list):
                 # For other lists, we want to concatenate them
                 merged[key] = dict1[key] + dict2[key]
             else:
@@ -118,14 +111,14 @@ def main():
         # Merge the configuration into the full configuration
         full_config = merge_config(full_config, config)
 
-    # Create the application
-    app = SolaceAiConnector(full_config, config_filenames=files)
+    # Create the connector instance
+    sac = SolaceAiConnector(full_config, config_filenames=files)
 
     def shutdown():
-        """Shutdown the application."""
+        """Shutdown the connector."""
         print("Stopping Solace AI Connector")
-        app.stop()
-        app.cleanup()
+        sac.stop()
+        sac.cleanup()
         print("Solace AI Connector exited successfully!")
         sys.exit(0)
 
@@ -138,10 +131,10 @@ def main():
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
 
-    # Start the application
+    # Start the connector
     try:
-        app.run()
-        app.wait_for_flows()
+        sac.run()
+        sac.wait_for_flows()
     except Exception as e:
         print(f"Error running Solace AI Connector: {e}", file=sys.stderr)
         shutdown()

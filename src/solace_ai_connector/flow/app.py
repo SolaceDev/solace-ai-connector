@@ -25,7 +25,7 @@ class App:
     ):
         """
         Initialize the App.
-        
+
         Args:
             app_config: Configuration for the app
             app_index: Index of the app in the list of apps
@@ -46,7 +46,7 @@ class App:
         self.trace_queue = trace_queue
         self.connector = connector
         self.flow_input_queues = {}
-        
+
         # Create flows for this app
         self.create_flows()
 
@@ -70,12 +70,12 @@ class App:
     def create_flow(self, flow: dict, index: int, flow_instance_index: int) -> Flow:
         """
         Create a single flow.
-        
+
         Args:
             flow: Flow configuration
             index: Index of the flow in the list of flows
             flow_instance_index: Index of the flow instance
-            
+
         Returns:
             Flow: The created flow
         """
@@ -115,31 +115,30 @@ class App:
     def get_config(self, key=None, default=None):
         """
         Get a configuration value from the app configuration.
-        
+
         Args:
             key: Configuration key
             default: Default value if key is not found
-            
+
         Returns:
             The configuration value or default
         """
         return self.app_config.get(key, default)
 
     @classmethod
-    def create_from_flows(cls, flows: List[Dict[str, Any]], app_name: str, **kwargs) -> 'App':
+    def create_from_flows(
+        cls, flows: List[Dict[str, Any]], app_name: str, **kwargs
+    ) -> "App":
         """
         Create an app from a list of flows (for backward compatibility).
-        
+
         Args:
             flows: List of flow configurations
             app_name: Name for the app
             **kwargs: Additional arguments for App constructor
-            
+
         Returns:
             App: The created app
         """
-        app_config = {
-            "name": app_name,
-            "flows": flows
-        }
+        app_config = {"name": app_name, "flows": flows}
         return cls(app_config=app_config, **kwargs)
