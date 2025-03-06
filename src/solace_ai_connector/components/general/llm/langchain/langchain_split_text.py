@@ -85,7 +85,7 @@ class LangChainTextSplitter(LangChainBase):
             return []
 
 
-class NoSplitter:
+class SingleChunkSplitter:
     """
     A class to split a long text into smaller parts using the LangChain text splitter module.
     """
