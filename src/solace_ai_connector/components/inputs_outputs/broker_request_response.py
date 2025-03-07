@@ -231,7 +231,7 @@ class BrokerRequestResponse(BrokerBase):
         super().__init__(info, **kwargs)
         self.need_acknowledgement = False
         self.request_expiry_ms = self.get_config("request_expiry_ms")
-        self.activity_timeout_s = self.get_config("activity_timeout_s", 30)
+        self.activity_timeout_s = self.get_config("activity_timeout_s")
         self.response_topic_prefix = ensure_slash_on_end(
             self.get_config("response_topic_prefix")
         )
