@@ -412,6 +412,7 @@ broker_request_response:
     payload_encoding: <string>
     payload_format: <string>
   request_expiry_ms: <int>
+  activity_timeout_s: <int>
 ```
 
 - `enabled`: Set to `true` to enable broker request-response functionality for the component.
@@ -424,6 +425,7 @@ broker_request_response:
   - `payload_encoding`: Encoding for the payload (e.g., "utf-8", "base64").
   - `payload_format`: Format of the payload (e.g., "json", "text").
 - `request_expiry_ms`: Expiry time for requests in milliseconds.
+- `activity_timeout_s`: Maximum time in seconds to wait between streaming response messages before timing out.
 
 For more details on using this functionality, see the [Advanced Component Features](advanced_component_features.md#broker-request-response) documentation.
 

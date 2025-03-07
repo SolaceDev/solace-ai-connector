@@ -118,6 +118,13 @@ info = {
             "type": "integer",
         },
         {
+            "name": "activity_timeout_s",
+            "required": False,
+            "description": "Maximum time in seconds to wait between streaming response messages before timing out",
+            "default": 30,
+            "type": "integer"
+        },
+        {
             "name": "streaming",
             "required": False,
             "description": "The response will arrive in multiple pieces. If True, "
@@ -224,6 +231,7 @@ class BrokerRequestResponse(BrokerBase):
         super().__init__(info, **kwargs)
         self.need_acknowledgement = False
         self.request_expiry_ms = self.get_config("request_expiry_ms")
+        self.activity_timeout_s = self.get_config("activity_timeout_s")
         self.response_topic_prefix = ensure_slash_on_end(
             self.get_config("response_topic_prefix")
         )

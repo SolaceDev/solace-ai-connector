@@ -353,6 +353,9 @@ class ComponentBase:
         request_expiry_ms = self.broker_request_response_config.get(
             "request_expiry_ms", 30000
         )
+        activity_timeout_s = self.broker_request_response_config.get(
+            "activity_timeout_s", 30
+        )
         if not broker_config:
             raise ValueError(
                 f"Broker request response config not found for component {self.name}"
@@ -360,6 +363,7 @@ class ComponentBase:
         rrc_config = {
             "broker_config": broker_config,
             "request_expiry_ms": request_expiry_ms,
+            "activity_timeout_s": activity_timeout_s
         }
 
         optional_keys = [
