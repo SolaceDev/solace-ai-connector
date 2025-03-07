@@ -48,6 +48,7 @@ class RequestResponseFlowController:
         self.broker_config = config.get("broker_config")
         self.request_expiry_ms = config.get("request_expiry_ms", 300000)
         self.request_expiry_s = self.request_expiry_ms / 1000
+        self.activity_timeout_s = config.get("activity_timeout_s", 30)
         self.input_queue = None
         self.response_queue = None
         self.enqueue_time = None
@@ -102,14 +103,20 @@ class RequestResponseFlowController:
         now = time.time()
         elapsed_time = now - self.enqueue_time
         remaining_timeout = self.request_expiry_s - elapsed_time
+        last_activity_time = now
         if stream:
             # If we are in streaming mode, we will return individual messages
             # until we receive the last message. Use the expression to determine
             # if this is the last message
             while True:
                 try:
+                    if time.time() - last_activity_time > self.activity_timeout_s:
+                        raise TimeoutError(
+                            f"No streaming activity in the last {self.activity_timeout_s}s"
+                        )
                     event = self.response_queue.get(timeout=remaining_timeout)
                     if event.event_type == EventType.MESSAGE:
+                        last_activity_time = time.time()
                         message = event.data
                         last_message = message.get_data(streaming_complete_expression)
                         yield message, last_message

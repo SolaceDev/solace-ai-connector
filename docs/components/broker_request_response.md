@@ -23,6 +23,7 @@ component_config:
   user_properties_reply_topic_key: <string>
   user_properties_reply_metadata_key: <string>
   request_expiry_ms: <integer>
+  activity_timeout_s: <integer>
   streaming: <string>
   streaming_complete_expression: <string>
   streaming: <string>
@@ -48,6 +49,7 @@ component_config:
 | user_properties_reply_topic_key | False | __solace_ai_connector_broker_request_response_topic__ | Key to store the reply topic in the user properties. Start with : for nested object |
 | user_properties_reply_metadata_key | False | __solace_ai_connector_broker_request_reply_metadata__ | Key to store the reply metadata in the user properties. Start with : for nested object |
 | request_expiry_ms | False | 60000 | Expiry time for cached requests in milliseconds |
+| activity_timeout_s | False | 30 | Maximum time in seconds to wait between streaming response messages before timing out |
 | streaming | False |  | The response will arrive in multiple pieces. If True, the streaming_complete_expression must be set and will be used to determine when the last piece has arrived. |
 | streaming_complete_expression | False |  | The source expression to determine when the last piece of a streaming response has arrived. |
 | streaming | False |  | The response will arrive in multiple pieces. If True, the streaming_complete_expression must be set and will be used to determine when the last piece has arrived. |
