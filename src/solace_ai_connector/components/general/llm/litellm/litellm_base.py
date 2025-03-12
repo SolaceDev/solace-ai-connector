@@ -3,6 +3,7 @@
 import litellm
 
 from threading import Lock
+from litellm import ModelResponse
 from litellm.exceptions import APIConnectionError
 from litellm.router import RetryPolicy
 from litellm.router import AllowedFailsPolicy
@@ -153,6 +154,7 @@ class LiteLLMBase(ComponentBase):
             else:
                 allowed_fails_policy = AllowedFailsPolicy()
 
+            self.validate_model_config(self.load_balancer_config)
             self.router = litellm.Router(
                 model_list=self.load_balancer_config,
                 retry_policy=retry_policy,
@@ -202,3 +204,13 @@ class LiteLLMBase(ComponentBase):
 
     def get_metrics(self):
         return self.stats
+
+    def validate_model_config(self, config):
+        """Validate the model config and throw a descriptive error if it's invalid."""
+        for model in config:
+            params = model.get("litellm_params", {})
+            if not all([params.get("model"), params.get("api_key")]):
+                raise ValueError(
+                    f"Each model configuration requires both a model name and an API key, neither of which can be None.\n"
+                    f"Received config: {model}"
+                )

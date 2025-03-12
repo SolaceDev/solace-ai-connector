@@ -3,6 +3,7 @@
 import uuid
 import time
 from litellm import cost_per_token
+from litellm import APIConnectionError
 from .litellm_base import LiteLLMBase
 from .litellm_base import litellm_info_base
 from .....common.message import Message
@@ -155,6 +156,10 @@ class LiteLLMChatModelBase(LiteLLMBase):
                 processing_time,
             )
             return {"content": response.choices[0].message.content}
+        except APIConnectionError as e:
+            error_str = str(e)
+            log.error("Error invoking LiteLLM: %s", error_str)
+            return {"content": error_str, "handle_error": True}
         except Exception as e:
             log.error("Error invoking LiteLLM: %s", e)
             raise e
@@ -215,6 +220,14 @@ class LiteLLMChatModelBase(LiteLLMBase):
                         processing_time,
                     )
 
+        except APIConnectionError as e:
+            error_str = str(e)
+            log.error("Error invoking LiteLLM: %s", error_str)
+            return {
+                "content": error_str,
+                "response_uuid": response_uuid,
+                "handle_error": True,
+            }
         except Exception as e:
             log.error("Error invoking LiteLLM: %s", e)
             raise e
