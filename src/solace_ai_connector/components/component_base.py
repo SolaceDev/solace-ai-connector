@@ -126,10 +126,7 @@ class ComponentBase:
 
     def handle_component_error(self, e, event):
         log.error(
-            "%sComponent has crashed: %s\n%s",
-            self.log_identifier,
-            e,
-            traceback.format_exc(),
+            f"[{self.name}] {self.log_identifier} Component has crashed: {e}\n{traceback.format_exc()}"
         )
         self.handle_error(e, event)
 
@@ -150,7 +147,7 @@ class ComponentBase:
                 timeout = self.queue_timeout_ms or DEFAULT_QUEUE_TIMEOUT_MS
                 event = self.input_queue.get(timeout=timeout / 1000)
                 log.debug(
-                    "%sComponent received event from input queue", self.log_identifier
+                    f"[{self.name}] {self.log_identifier} Component received event from input queue"
                 )
                 return event
             except queue.Empty:
@@ -190,7 +187,7 @@ class ComponentBase:
             self.handle_cache_expiry_event(event.data)
         else:
             log.warning(
-                "%sUnknown event type: %s", self.log_identifier, event.event_type
+                f"[{self.name}] {self.log_identifier} Unknown event type: event.event_type"
             )
 
     def process_pre_invoke(self, message):
@@ -212,7 +209,9 @@ class ComponentBase:
 
         # Finally send the message to the next component - or if this is the last component,
         # the component will override send_message and do whatever it needs to do with the message
-        log.debug("%sSending message from %s", self.log_identifier, self.name)
+        log.debug(
+            f"[{self.name}] {self.log_identifier} Sending message from {self.name}"
+        )
         self.send_message(message)
 
     @abstractmethod
@@ -470,7 +469,7 @@ class ComponentBase:
 
     def cleanup(self):
         """Clean up resources used by the component"""
-        log.debug("%sCleaning up component", self.log_identifier)
+        log.debug(f"[{self.name}] {self.log_identifier} Cleaning up component")
         try:
             self.stop_component()
         except KeyboardInterrupt:
@@ -508,10 +507,7 @@ class ComponentBase:
     def handle_negative_acknowledgements(self, message, exception):
         """Handle NACK for the message."""
         log.error(
-            "%sComponent failed to process message: %s\n%s",
-            self.log_identifier,
-            exception,
-            traceback.format_exc(),
+            f"[{self.name}] {self.log_identifier} Component failed to process message: {exception} \n {traceback.format_exc()}"
         )
         nack = self.nack_reaction_to_exception(type(exception))
         message.call_negative_acknowledgements(nack)
@@ -584,7 +580,7 @@ class ComponentBase:
                     # Wait 1 second for the next interval
                     self.stop_signal.wait(timeout=1)
         except KeyboardInterrupt:
-            log.info("Monitoring connection status stopped.")
+            log.info(f"[{self.name}] Monitoring connection status stopped.")
 
     def run_micro_monitoring(self) -> None:
         """
@@ -601,6 +597,6 @@ class ComponentBase:
                 # Reset metrics in automatic mode
                 if not self.monitoring.is_flush_manual():
                     self.flush_metrics()
-                    log.debug("Automatically flushed metrics.")
+                    log.debug(f"[{self.name}] Automatically flushed metrics.")
         except KeyboardInterrupt:
-            log.info("Monitoring stopped.")
+            log.info(f"[{self.name}] Monitoring stopped.")
