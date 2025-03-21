@@ -88,11 +88,13 @@ info = {
 
 
 class LangChainVectorStoreEmbeddingsSearch(LangChainVectorStoreEmbeddingsBase):
+
     def __init__(self, **kwargs):
         super().__init__(info, **kwargs)
 
     def invoke(self, message, data):
         text = data["text"]
+        log.debug("Searching in vector database for: [%s]", text)
         k = self.get_config("max_results", 3)
         combine_context_from_same_source = self.get_config(
             "combine_context_from_same_source"
@@ -122,6 +124,13 @@ class LangChainVectorStoreEmbeddingsSearch(LangChainVectorStoreEmbeddingsBase):
 
         # Limit the number of results to k
         clean = clean[:k]
+
+        log.debug(
+            "Returning %s results for [%s]: [%s]\n",
+            len(clean),
+            text,
+            clean,
+        )
 
         return {"result": clean}
 
