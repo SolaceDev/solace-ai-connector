@@ -139,7 +139,9 @@ class LiteLLMChatModelBase(LiteLLMBase):
         """invoke the model without streaming"""
         try:
             start_time = time.time()
+            log.debug("LiteLLMChatModelBase.invoke_non_stream: messages=%s", messages)
             response = self.load_balance(messages, stream=False)
+            log.debug("LiteLLMChatModelBase.invoke_non_stream: response=%s", response)
 
             end_time = time.time()
             processing_time = round(end_time - start_time, 3)
