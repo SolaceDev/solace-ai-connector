@@ -162,6 +162,7 @@ class OpenAIChatModelBase(ComponentBase):
     def invoke(self, message, data):
         messages = data.get("messages", [])
         stream = data.get("stream", self.llm_mode == "stream")
+        log.debug("Invoking OpenAI with messages: [%s]", messages)
 
         client = OpenAI(
             api_key=self.get_config("api_key"), base_url=self.get_config("base_url")
@@ -177,6 +178,9 @@ class OpenAIChatModelBase(ComponentBase):
                         messages=messages,
                         model=self.model,
                         temperature=self.temperature,
+                    )
+                    log.debug(
+                        "OpenAI response: [%s]", response.choices[0].message.content
                     )
                     return {"content": response.choices[0].message.content}
                 except Exception as e:
@@ -211,6 +215,7 @@ class OpenAIChatModelBase(ComponentBase):
                         content = chunk.choices[0].delta.content
                         aggregate_result += content
                         current_batch += content
+                        log.debug("OpenAI streaming response: [%s]", content)
                         if len(current_batch.split()) >= self.stream_batch_size:
                             if self.stream_to_flow:
                                 self.send_streaming_message(
