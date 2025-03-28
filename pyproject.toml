@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling", "pip>=25.0", "setuptools>=70.0"]
+requires = ["hatchling", "pip==25.0.1", "setuptools==70.0"]
 build-backend = "hatchling.build"
 
 
@@ -18,17 +18,126 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "boto3~=1.34.122",
-    "PyYAML~=6.0.1",
-    "Requests~=2.32.3",
-    "solace_pubsubplus>=1.9.0",
-    "Flask~=3.0.3",
-    "Flask-SocketIO~=5.4.1",
-    "build~=1.2.2.post1",
-    "pymongo~=4.10.1",
-    "SQLAlchemy~=2.0.36",
+    "boto3==1.34.162",
+    "PyYAML==6.0.2",
+    "Requests==2.32.3",
+    "solace_pubsubplus==1.9.0",
+    "Flask==3.0.3",
+    "Flask-SocketIO==5.4.1",
+    "build==1.2.2.post1",
+    "pymongo==4.10.1",
+    "SQLAlchemy==2.0.40",
     'pywin32>=306; sys_platform == "win32"',
 ]
+
+[project.optional-dependencies]
+# Basic LLM functionality
+llm = [
+    "litellm==1.61.20",
+    "waitress==2.1.2",
+    "Flask-WTF==1.2.2",
+]
+
+# OpenAI specific dependencies
+openai = [
+    "openai==1.64.0",
+    "langchain-openai==0.3.8",
+]
+
+# AWS integration (Bedrock, etc.)
+aws = [
+    "langchain_aws==0.2.7",
+    "requests_aws4auth>=1.3.1",
+]
+
+# Vector stores
+vector-stores = [
+    # Chroma
+    "chromadb==0.6.3",
+    "langchain-chroma==0.2.2",
+    # Qdrant
+    "langchain-qdrant==0.2.0",
+    "qdrant-client==1.10.1",
+    # Milvus
+    "langchain_milvus==0.1.8",
+    "pymilvus==2.5.6",
+]
+
+# PostgreSQL vector database
+pgvector = [
+    "pgvector==0.3.6",
+    "langchain-postgres==0.0.13",
+]
+
+# LangChain core and utilities
+langchain = [
+    "langchain==0.3.21",
+    "langchain-text-splitters==0.3.7",
+]
+
+# Web search capabilities
+websearch = [
+    "duckduckgo-search==7.5.5",
+    "google-api-python-client==2.166.0",
+]
+
+# Web scraping
+webscraping = [
+    "playwright==1.51.0",
+    "beautifulsoup4==4.13.3",
+]
+
+# RAG (Retrieval Augmented Generation)
+rag = [
+    "litellm==1.61.20",
+    "waitress==2.1.2",
+    "Flask-WTF==1.2.2",
+    "langchain-qdrant==0.2.0",
+    "langchain-text-splitters==0.3.7",
+    "openai==1.64.0",
+    "langchain-openai==0.3.8",
+]
+
+# All dependencies
+all = [
+    # From llm
+    "litellm==1.61.20",
+    "waitress==2.1.2", 
+    "Flask-WTF==1.2.2",
+    
+    # From openai
+    "openai==1.64.0",
+    "langchain-openai==0.3.8",
+    
+    # From aws
+    "langchain_aws==0.2.7",
+    "requests_aws4auth==1.3.1",
+    
+    # From vector-stores
+    "chromadb==0.6.3",
+    "langchain-chroma==0.2.2",
+    "langchain-qdrant==0.2.0",
+    "qdrant-client==1.10.1",
+    "langchain_milvus==0.1.8",
+    "pymilvus==2.5.6",
+    
+    # From pgvector
+    "pgvector==0.3.6",
+    "langchain-postgres==0.0.13",
+    
+    # From langchain
+    "langchain==0.3.21",
+    "langchain-text-splitters==0.3.7",
+    
+    # From websearch
+    "duckduckgo-search==7.5.5",
+    "google-api-python-client==2.166.0",
+    
+    # From webscraping
+    "playwright==1.51.0",
+    "beautifulsoup4==4.13.3",
+]
+
 
 [project.urls]
 homepage = "https://github.com/SolaceLabs/solace-ai-connector"
@@ -43,8 +152,8 @@ solace-ai-connector-gen-docs = "solace_ai_connector.tools.gen_component_docs:mai
 [tool.hatch.envs.hatch-test]
 installer = "pip"
 dependencies = [
-    "pip>=25.0",
-    "setuptools>=70.0"
+    "pip==25.0",
+    "setuptools==70.0"
 ]
 
 # Specify minimum and maximum Python versions to test
