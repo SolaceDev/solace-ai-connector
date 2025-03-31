@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling", "pip>=25.0", "setuptools>=70.0"]
+requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 
