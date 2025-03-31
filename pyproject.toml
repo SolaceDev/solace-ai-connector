@@ -53,7 +53,7 @@ dependencies = [
 
 # Specify minimum and maximum Python versions to test
 [[tool.hatch.envs.hatch-test.matrix]]
-python = ["3.10.16", "3.13"]
+python = ["3.10", "3.13"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/solace_ai_connector"]
