@@ -170,8 +170,8 @@ solace-ai-connector-gen-docs = "solace_ai_connector.tools.gen_component_docs:mai
 [tool.hatch.envs.hatch-test]
 installer = "pip"
 dependencies = [
-    "pip==25.0",
-    "setuptools==70.0"
+    "pip>=25.0",
+    "setuptools>=70.0"
 ]
 
 # Specify minimum and maximum Python versions to test
