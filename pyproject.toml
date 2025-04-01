@@ -101,6 +101,11 @@ rag = [
     "langchain-openai==0.3.8",
 ]
 
+# Mongo database
+mongodb = [
+    "pymongo==4.10.1",
+]
+
 # All dependencies
 all = [
     # From llm
@@ -140,6 +145,9 @@ all = [
     # From webscraping
     "playwright==1.51.0",
     "beautifulsoup4==4.13.3",
+
+    # Mongo database
+    "pymongo==4.10.1",
 ]
 
 
