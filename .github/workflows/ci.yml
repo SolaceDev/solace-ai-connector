@@ -16,7 +16,7 @@ jobs:
   ci:
     uses: SolaceDev/solace-public-workflows/.github/workflows/hatch_ci.yml@eea03626c4975b53d6f472fd3f52cb50922a24fe
     with:
-      min-python-version: "3.10"
+      min-python-version: "3.11"
       max-python-version: "3.13"
       whitesource_product_name: "solaceai"
       whitesource_config_file: "wss-unified-agent.config"
@@ -40,7 +40,7 @@ jobs:
       - name: Set up Hatch
         uses: SolaceDev/solace-public-workflows/.github/actions/hatch-setup@eea03626c4975b53d6f472fd3f52cb50922a24fe
         with:
-          min-python-version: "3.10"
+          min-python-version: "3.11"
           max-python-version: "3.13"
       - name: Set Up Docker Buildx
         id: builder
