@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   ci:
-    uses: SolaceDev/solace-public-workflows/.github/workflows/hatch_ci.yml@14f7024feb0438be946d187f91ee74951b3c24c3
+    uses: SolaceDev/solace-public-workflows/.github/workflows/hatch_ci.yml@eea03626c4975b53d6f472fd3f52cb50922a24fe
     with:
       min-python-version: "3.10"
       max-python-version: "3.13"
@@ -38,7 +38,7 @@ jobs:
           ssh-key: ${{ secrets.COMMIT_KEY }}
 
       - name: Set up Hatch
-        uses: SolaceDev/solace-public-workflows/.github/actions/hatch-setup@14f7024feb0438be946d187f91ee74951b3c24c3
+        uses: SolaceDev/solace-public-workflows/.github/actions/hatch-setup@eea03626c4975b53d6f472fd3f52cb50922a24fe
         with:
           min-python-version: "3.10"
           max-python-version: "3.13"
