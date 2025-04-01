@@ -106,6 +106,12 @@ mongodb = [
     "pymongo==4.10.1",
 ]
 
+# Web Socket
+websocket = [
+    "Flask==3.0.3",
+    "Flask-SocketIO==5.4.1",
+]
+
 # All dependencies
 all = [
     # From llm
