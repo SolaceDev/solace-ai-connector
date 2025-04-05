@@ -9,7 +9,7 @@ import pathlib
 from datetime import datetime
 from typing import List, Dict, Any
 from .common.log import log, setup_log
-from .common.utils import resolve_config_values
+from .common.utils import resolve_config_values, import_module
 from .flow.flow import Flow
 from .flow.app import App
 from .flow.timer_manager import TimerManager
@@ -114,8 +114,45 @@ class SolaceAiConnector:
                             app_config.get("name"),
                         )
 
+                    # Merge app_api configuration from global config if not present in app config
+                    if "app_api" not in app_config:
+                        app_config["app_api"] = {}
+
+                    # Only copy 'enabled' from global config if not present in app config
+                    if (
+                        "enabled" not in app_config["app_api"]
+                        and "app_api" in self.config
+                    ):
+                        app_config["app_api"]["enabled"] = self.config["app_api"].get(
+                            "enabled", False
+                        )
+
                     for i in range(num_instances):
-                        app = App(
+
+                        # Does this have a custom App module
+                        app_module = app_config.get("app_module", None)
+                        app_base_path = app_config.get("app_base_path", None)
+                        app_package = app_config.get("app_package", None)
+                        if app_module:
+                            imported_module = import_module(
+                                app_module, app_base_path, app_package
+                            )
+                            info = getattr(imported_module, "info")
+                            if not info:
+                                raise ValueError(
+                                    f"App module '{app_module}' does not have an 'info' attribute. It probably isn't a valid app."
+                                )
+                            class_name = info.get("class_name")
+                            if not class_name:
+                                raise ValueError(
+                                    f"App module '{app_module}' does not have a 'class_name' attribute. It probably isn't a valid app."
+                                )
+                            app_class = getattr(imported_module, class_name)
+                        else:
+                            # Use the default App class
+                            app_class = App
+
+                        app = app_class(
                             app_config=app_config,
                             app_index=index,
                             stop_signal=self.stop_signal,
