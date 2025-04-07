@@ -12,8 +12,8 @@ from ...common.monitoring import Metrics
 from ...common import Message_NACK_Outcome
 
 
-
-info = deep_merge(base_info,
+info = deep_merge(
+    base_info,
     {
         "class_name": "BrokerInput",
         "description": (
@@ -66,7 +66,7 @@ info = deep_merge(base_info,
             },
             "required": ["payload", "topic", "user_properties"],
         },
-    }
+    },
 )
 
 # We always need a timeout so that we can check if we should stop
@@ -96,6 +96,20 @@ class BrokerInput(BrokerBase):
         }
 
     def get_next_message(self, timeout_ms=None):
+
+        msg = Message(
+            payload=None,
+            topic=None,
+            user_properties=None,
+        )
+
+        # add nack callback to the message
+        callback = (
+            self.get_negative_acknowledgement_callback()
+        )  # pylint: disable=assignment-from-none
+        if callback is not None:
+            msg.add_negative_acknowledgements(callback)
+
         if timeout_ms is None:
             timeout_ms = DEFAULT_TIMEOUT_MS
         broker_message = self.messaging_service.receive_message(
@@ -111,7 +125,11 @@ class BrokerInput(BrokerBase):
         topic = broker_message.get("topic")
         user_properties = broker_message.get("user_properties", {})
         log.debug("Received message from broker: topic=%s", topic)
-        return Message(payload=payload, topic=topic, user_properties=user_properties)
+
+        msg.set_payload(payload)
+        msg.set_topic(topic)
+        msg.set_user_properties(user_properties)
+        return msg
 
     def acknowledge_message(self, broker_message):
         self.messaging_service.ack_message(broker_message)
