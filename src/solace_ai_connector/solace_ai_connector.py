@@ -119,30 +119,22 @@ class SolaceAiConnector:
                         app["app_api"] = {}
 
                     # Only copy 'enabled' from global config if not present in app config
-                    if (
-                        "enabled" not in app["app_api"]
-                        and "app_api" in self.config
-                    ):
+                    if "enabled" not in app["app_api"] and "app_api" in self.config:
                         app["app_api"]["enabled"] = self.config["app_api"].get(
                             "enabled", False
                         )
 
                     # Merge app_api configuration from global config if not present in app config
-                    if "app_api" not in app_config:
-                        app_config["app_api"] = {}
+                    if "app_api" not in app:
+                        app["app_api"] = {}
 
                     # Only copy 'enabled' from global config if not present in app config
-                    if (
-                        "enabled" not in app_config["app_api"]
-                        and "app_api" in self.config
-                    ):
-                        app_config["app_api"]["enabled"] = self.config["app_api"].get(
+                    if "enabled" not in app["app_api"] and "app_api" in self.config:
+                        app["app_api"]["enabled"] = self.config["app_api"].get(
                             "enabled", False
                         )
 
                     for i in range(num_instances):
-                        app = App(
-                            app_info=app,
 
                         # Does this have a custom App module
                         app_module = app.get("app_module", None)
