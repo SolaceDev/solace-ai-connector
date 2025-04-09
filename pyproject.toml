@@ -202,7 +202,6 @@ qdrant_ext_release = [
     "numpy==2.2.4",
     "orjson==3.10.16",
     "packaging==24.2",
-    "pip==23.2.1",
     "portalocker==2.10.1",
     "protobuf==5.29.4",
     "pydantic==2.11.3",
