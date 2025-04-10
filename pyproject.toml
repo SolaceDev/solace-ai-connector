@@ -141,7 +141,6 @@ llm_ext_release = [
     "tqdm==4.67.1",
     "typing_extensions==4.13.1",
     "typing-inspection==0.4.0",
-    "urllib3==2.3.0",
     "yarl==1.19.0",
     "zipp==3.21.0",
 ]
@@ -176,7 +175,6 @@ openai_ext_release = [
     "tqdm==4.67.1",
     "typing_extensions==4.13.1",
     "typing-inspection==0.4.0",
-    "urllib3==2.3.0",
     "zstandard==0.23.0",
 ]
 
@@ -215,7 +213,6 @@ qdrant_ext_release = [
     "tenacity==9.1.2",
     "typing_extensions==4.13.1",
     "typing-inspection==0.4.0",
-    "urllib3==2.3.0",
     "zstandard==0.23.0",
 ]
 
@@ -243,7 +240,6 @@ splitter_ext_release = [
     "tenacity==9.1.2",
     "typing_extensions==4.13.1",
     "typing-inspection==0.4.0",
-    "urllib3==2.3.0",
     "zstandard==0.23.0",
 ]
 
