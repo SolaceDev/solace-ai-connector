@@ -159,7 +159,7 @@ class SolaceAiConnector:
                             # Use the default App class
                             app_class = App
 
-                        app = app_class(
+                        app_obj = app_class(
                             app_info=app,
                             app_index=index,
                             stop_signal=self.stop_signal,
@@ -168,17 +168,17 @@ class SolaceAiConnector:
                             trace_queue=self.trace_queue,
                             connector=self,
                         )
-                        self.apps.append(app)
+                        self.apps.append(app_obj)
 
                         # For backward compatibility, also add flows to the flows list
-                        self.flows.extend(app.flows)
+                        self.flows.extend(app_obj.flows)
                         # Add flow input queues to the connector's flow_input_queues
-                        for name, queue in app.flow_input_queues.items():
+                        for name, queue in app_obj.flow_input_queues.items():
                             self.flow_input_queues[name] = queue
 
             # Run all apps
-            for app in self.apps:
-                app.run()
+            for app_obj in self.apps:
+                app_obj.run()
 
         except KeyboardInterrupt:
             log.info("Received keyboard interrupt - stopping")
