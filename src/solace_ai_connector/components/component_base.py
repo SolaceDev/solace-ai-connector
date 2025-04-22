@@ -169,11 +169,9 @@ class ComponentBase:
             try:
                 result = self.invoke(message, data)
             except Exception as e:
-                print("faced exception in invoke")
-                exit()
                 self.current_message = None
                 self.handle_negative_acknowledgements(message, e)
-                raise
+                raise ValueError("Error in processing message")
             finally:
                 self.current_message = None
 

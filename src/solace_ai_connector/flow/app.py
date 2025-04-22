@@ -65,7 +65,9 @@ class App:
                     self.flows.append(flow_instance)
         except Exception:
             log.error(f"Error creating flows for app {self.name}")
-            raise
+            raise ValueError(
+                f"Failed to create flows for app {self.name}. Check the configuration."
+            )
 
     def create_flow(self, flow: dict, index: int, flow_instance_index: int) -> Flow:
         """

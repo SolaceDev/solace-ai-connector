@@ -176,7 +176,7 @@ class LiteLLMBase(ComponentBase):
             )
         except Exception:
             log.error("LiteLLM API connection error")
-            raise
+            raise ValueError("Error LiteLLM API connection")
 
         log.debug("Load balancer responded")
         return response

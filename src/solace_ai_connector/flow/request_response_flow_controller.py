@@ -127,7 +127,9 @@ class RequestResponseFlowController:
                             "Timeout waiting for response"
                         )
                 except Exception:
-                    raise
+                    raise ValueError(
+                        "Error while waiting for response from broker request-response flow"
+                    )
 
         # If we are not in streaming mode, we will return a single message
         # and then stop the iterator
@@ -142,8 +144,10 @@ class RequestResponseFlowController:
                 raise TimeoutError(  # pylint: disable=raise-missing-from
                     "Timeout waiting for response"
                 )
-        except Exception as e:
-            raise e
+        except Exception:
+            raise ValueError(
+                "Error while waiting for response from broker request-response flow"
+            )
 
     def send_message(
         self, message: Message, stream=False, streaming_complete_expression=None

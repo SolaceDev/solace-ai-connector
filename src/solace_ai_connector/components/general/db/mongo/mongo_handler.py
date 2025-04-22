@@ -43,9 +43,9 @@ class MongoHandler:
                 self.local.client = MongoClient(connection_string)
                 self.local.db = self.local.client[self.database_name]
                 log.info("Successfully connected to MongoDB database")
-            except Exception as e:
+            except Exception:
                 log.error("Error connecting to MongoDB database")
-                raise
+                raise ValueError("Failed to connect to MongoDB database")
         return self.local.db
 
     def insert_documents(
@@ -121,7 +121,7 @@ class MongoHandler:
             return result
         except Exception:
             log.error("Error executing MongoDB query")
-            raise Exception("Failed to execute MongoDB query")
+            raise ValueError("Failed to execute MongoDB query")
 
     def get_collections(self) -> List[str]:
         """Get all collection names in the database.

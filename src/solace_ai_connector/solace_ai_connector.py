@@ -64,7 +64,7 @@ class SolaceAiConnector:
             raise KeyboardInterrupt
         except Exception:
             log.error("Error during Solace AI Event Connector startup")
-            raise
+            raise ValueError("An error occurred during startup")
 
     def create_apps(self):
         """Create apps from the configuration"""
@@ -141,7 +141,7 @@ class SolaceAiConnector:
             raise KeyboardInterrupt
         except Exception:
             log.error("Error creating apps")
-            raise
+            raise ValueError("An error occurred during app creation")
 
     def create_internal_app(self, app_name: str, flows: List[Dict[str, Any]]) -> App:
         """

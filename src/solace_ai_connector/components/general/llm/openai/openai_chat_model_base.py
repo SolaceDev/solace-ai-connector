@@ -183,7 +183,7 @@ class OpenAIChatModelBase(ComponentBase):
                     log.error("Error invoking OpenAI")
                     max_retries -= 1
                     if max_retries <= 0:
-                        raise
+                        raise ValueError("Max retries exceeded")
                     else:
                         self.stop_signal.wait(timeout=1)
 
@@ -236,7 +236,7 @@ class OpenAIChatModelBase(ComponentBase):
                 log.error("Error invoking OpenAI")
                 max_retries -= 1
                 if max_retries <= 0:
-                    raise
+                    raise ValueError("Max retries exceeded")
                 else:
                     # Small delay before retrying
                     self.stop_signal.wait(timeout=1)

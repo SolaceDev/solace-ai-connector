@@ -142,7 +142,7 @@ class BrokerInput(BrokerBase):
         except Exception as e:
             log.error("Error receiving message from broker")
             self.handle_negative_acknowledgements(msg, e)
-            raise
+            raise ValueError("Error receiving message from broker")
 
     def acknowledge_message(self, broker_message):
         self.messaging_service.ack_message(broker_message)

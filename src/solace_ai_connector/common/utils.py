@@ -56,7 +56,9 @@ def import_from_directories(module_name, base_path=None):
                     spec.loader.exec_module(module)
                 except Exception:
                     log.error("Exception importing %s", module_path)
-                    raise
+                    raise ValueError(
+                        f"Error importing module {module_path} - {module_name}"
+                    )
                 return module
     raise ImportError(f"Could not import module '{module_name}'")
 
@@ -149,7 +151,7 @@ def import_module(module, base_path=None, component_package=None):
                             name != "solace_ai_connector"
                             and name.split(".")[-1] != full_name.split(".")[-1]
                         ):
-                            raise
+                            raise ModuleNotFoundError(f"Module '{full_name}' not found")
                     except Exception:
                         raise ImportError(f"Module load error for {full_name}")
         raise ModuleNotFoundError(f"Module '{module}' not found")

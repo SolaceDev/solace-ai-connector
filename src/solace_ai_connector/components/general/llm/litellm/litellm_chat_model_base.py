@@ -162,7 +162,7 @@ class LiteLLMChatModelBase(LiteLLMBase):
             return {"content": error_str, "handle_error": True}
         except Exception:
             log.error("Error invoking LiteLLM")
-            raise
+            raise ValueError("Error invoking LiteLLM")
 
     def invoke_stream(self, message, messages):
         """invoke the model with streaming"""
@@ -230,7 +230,7 @@ class LiteLLMChatModelBase(LiteLLMBase):
             }
         except Exception:
             log.error("Error invoking LiteLLM")
-            raise
+            raise ValueError("Error invoking LiteLLM")
 
         if self.stream_to_next_component:
             # Just return the last chunk

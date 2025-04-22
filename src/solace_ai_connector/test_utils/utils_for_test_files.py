@@ -238,7 +238,7 @@ def create_and_run_component(
             output_message = get_message_from_flow(flow_info[0])
     except Exception:
         dispose_connector(connector)
-        raise
+        raise ValueError("Failed to create and run component.")
     dispose_connector(connector)
     return output_message
 

@@ -63,7 +63,9 @@ class WebsocketInput(WebsocketBase):
             except json.JSONDecodeError:
                 log.error("Received invalid payload.")
             except AssertionError as e:
-                raise
+                raise AssertionError(
+                    "Error Payload format. Please check the payload format."
+                )
             except Exception as e:
                 self.handle_component_error(e, event)
 
