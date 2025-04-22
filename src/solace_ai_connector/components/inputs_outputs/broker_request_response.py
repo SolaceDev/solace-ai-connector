@@ -494,7 +494,9 @@ class BrokerRequestResponse(BrokerBase):
             if self.broker_type == "test_streaming":
                 # The payload should be an array. Send one message per item in the array
                 if not isinstance(data["payload"], list):
-                    raise ValueError("Payload must be a list for test_streaming broker")
+                    raise ValueError(
+                        "Payload must be a list for test_streaming broker"
+                    ) from None
                 for item in data["payload"]:
                     encoded_payload = self.encode_payload(item)
                     self.pass_through_queue.put(

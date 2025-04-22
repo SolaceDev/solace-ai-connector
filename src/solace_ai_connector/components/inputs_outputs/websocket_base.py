@@ -48,6 +48,7 @@ base_info = {
 
 
 class WebsocketBase(ComponentBase, ABC):
+
     def __init__(self, info, **kwargs):
         super().__init__(info, **kwargs)
         self.listen_port = self.get_config("listen_port")
@@ -112,9 +113,9 @@ class WebsocketBase(ComponentBase, ABC):
 
     def stop_server(self):
         try:
-            func = request.environ.get('werkzeug.server.shutdown')
+            func = request.environ.get("werkzeug.server.shutdown")
             if func is None:
-                raise RuntimeError('Not running with the Werkzeug Server')
+                raise RuntimeError("Not running with the Werkzeug Server") from None
             func()
         except RuntimeError:
             # Ignore the error if the server is already shutdown
@@ -125,7 +126,7 @@ class WebsocketBase(ComponentBase, ABC):
             pass
         # force exiting component
         os.kill(os.getpid(), signal.SIGINT)
- 
+
     def get_sockets(self):
         if not self.sockets:
             self.sockets = self.kv_store_get("websocket_connections") or {}

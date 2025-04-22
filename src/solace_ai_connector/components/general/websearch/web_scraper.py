@@ -42,7 +42,7 @@ class WebScraper(ComponentBase):
     def invoke(self, message, data):
         url = data["url"]
         if type(url) != str or not url:
-            raise ValueError("No URL provided")
+            raise ValueError("No URL provided") from None
         content = self.scrape(url)
         return content
 
@@ -53,7 +53,7 @@ class WebScraper(ComponentBase):
         except ImportError:
             err_msg = "Please install playwright by running 'pip install playwright' and 'playwright install'."
             log.error(err_msg)
-            raise ValueError(err_msg)
+            raise ValueError(err_msg) from None
 
         with sync_playwright() as p:
             try:
@@ -65,7 +65,7 @@ class WebScraper(ComponentBase):
             except ImportError:
                 err_msg = "Failed to launch the Chromium instance. Please install the browser binaries by running 'playwright install'"
                 log.error(err_msg)
-                raise ValueError(err_msg)
+                raise ValueError(err_msg) from None
 
             resp = {}
             try:

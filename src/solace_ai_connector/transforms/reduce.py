@@ -116,12 +116,12 @@ class ReduceTransform(TransformBase):
         if not accumulator_function:
             raise ValueError(
                 f"{self.log_identifier}: Reduce transform does not have an accumulator function"
-            )
+            ) from None
 
         if not callable(accumulator_function):
             raise ValueError(
                 f"{self.log_identifier}: Reduce transform has an invalid accumulator function"
-            )
+            ) from None
 
         # Get the initial value
         initial_value = self.get_config(message, "initial_value", None)
@@ -156,7 +156,7 @@ class ReduceTransform(TransformBase):
             except Exception:
                 raise ValueError(
                     f"{self.log_identifier}: Error calling accumulator function"
-                )
+                ) from None
 
             # Set the accumulated value
             keyword_args["accumulated_value"] = accumulated_value

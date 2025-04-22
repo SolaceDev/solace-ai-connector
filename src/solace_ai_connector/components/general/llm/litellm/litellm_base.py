@@ -163,7 +163,7 @@ class LiteLLMBase(ComponentBase):
             )
             log.debug("Litellm Load balancer was initialized")
         except Exception:
-            raise ValueError("Error initializing load balancer")
+            raise ValueError("Error initializing load balancer") from None
 
     def load_balance(self, messages, stream):
         """load balance the messages"""
@@ -176,7 +176,7 @@ class LiteLLMBase(ComponentBase):
             )
         except Exception:
             log.error("LiteLLM API connection error")
-            raise ValueError("Error LiteLLM API connection")
+            raise ValueError("Error LiteLLM API connection") from None
 
         log.debug("Load balancer responded")
         return response
@@ -213,4 +213,4 @@ class LiteLLMBase(ComponentBase):
                 raise ValueError(
                     f"Each model configuration requires both a model name and an API key, neither of which can be None.\n"
                     f"Received config: {model}"
-                )
+                ) from None

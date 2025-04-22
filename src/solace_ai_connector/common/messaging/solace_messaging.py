@@ -316,7 +316,7 @@ class SolaceMessaging(Messaging):
             if self.stop_signal.is_set():
                 log.error(f"{self.error_prefix} Stopping connection attempt")
                 self.disconnect()
-                raise KeyboardInterrupt("Stopping connection attempt")
+                raise KeyboardInterrupt("Stopping connection attempt") from None
 
             self.stop_connection_log.set()
             log.info(f"{self.error_prefix} Successfully connected to broker.")
@@ -364,7 +364,7 @@ class SolaceMessaging(Messaging):
                     self.broker_properties.get("max_redelivery_count"),
                 )
         except KeyboardInterrupt:  # pylint: disable=broad-except
-            raise KeyboardInterrupt
+            raise KeyboardInterrupt from None
 
     def bind_to_queue(
         self,

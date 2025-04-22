@@ -119,7 +119,7 @@ class MapTransform(TransformBase):
         if not dest_list_expression:
             raise ValueError(
                 f"{self.log_identifier}: Map transform does not have a dest list expression"
-            )
+            ) from None
 
         # Get the processing function - pass None as the message so we get the function back
         processing_function = self.get_config(None, "processing_function")
@@ -127,7 +127,7 @@ class MapTransform(TransformBase):
         if processing_function and not callable(processing_function):
             raise ValueError(
                 f"{self.log_identifier}: Map transform has a non-callable processing function"
-            )
+            ) from None
 
         keyword_args = {
             "index": 0,
@@ -155,7 +155,7 @@ class MapTransform(TransformBase):
                 except Exception:
                     raise ValueError(
                         f"{self.log_identifier}: Error calling processing function"
-                    )
+                    ) from None
 
             # Now put the data into the destination list
             full_dest_expression = None

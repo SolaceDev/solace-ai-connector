@@ -67,7 +67,7 @@ class App:
             log.error(f"Error creating flows for app {self.name}")
             raise ValueError(
                 f"Failed to create flows for app {self.name}. Check the configuration."
-            )
+            ) from None
 
     def create_flow(self, flow: dict, index: int, flow_instance_index: int) -> Flow:
         """

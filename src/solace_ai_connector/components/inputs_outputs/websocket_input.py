@@ -40,7 +40,7 @@ class WebsocketInput(WebsocketBase):
         self.payload_format = self.get_config("payload_format")
 
         if not self.listen_port:
-            raise ValueError("listen_port is required for WebsocketInput")
+            raise ValueError("listen_port is required for WebsocketInput") from None
 
         if not os.path.isabs(self.html_path):
             self.html_path = os.path.join(os.getcwd(), self.html_path)
@@ -65,7 +65,7 @@ class WebsocketInput(WebsocketBase):
             except AssertionError as e:
                 raise AssertionError(
                     "Error Payload format. Please check the payload format."
-                )
+                ) from None
             except Exception as e:
                 self.handle_component_error(e, event)
 

@@ -171,7 +171,7 @@ class ComponentBase:
             except Exception as e:
                 self.current_message = None
                 self.handle_negative_acknowledgements(message, e)
-                raise ValueError("Error in processing message")
+                raise ValueError("Error in processing message") from None
             finally:
                 self.current_message = None
 
@@ -293,7 +293,7 @@ class ComponentBase:
                     "that contains a 'evaluate_expression()' in a context that does not "
                     "have a message available. This is likely a bug in the "
                     "component's configuration."
-                )
+                ) from None
             val = val(self.current_message)
         return val
 
@@ -348,7 +348,7 @@ class ComponentBase:
         if not broker_config:
             raise ValueError(
                 f"Broker request response config not found for component {self.name}"
-            )
+            ) from None
         rrc_config = {
             "broker_config": broker_config,
             "request_expiry_ms": request_expiry_ms,
@@ -388,12 +388,12 @@ class ComponentBase:
                 raise ValueError(
                     f"config_parameters schema for module {self.config.get('component_module')} "
                     "does not have a name: {param}"
-                )
+                ) from None
             required = param.get("required", False)
             if required and name not in self.component_config:
                 raise ValueError(
                     f"Config parameter {name} is required but not present in component {self.name}"
-                )
+                ) from None
             default = param.get("default", None)
             if default is not None and name not in self.component_config:
                 self.component_config[name] = default
@@ -504,7 +504,7 @@ class ComponentBase:
                 return next_message
         raise ValueError(
             f"Broker request response controller not found for component {self.name}"
-        )
+        ) from None
 
     def handle_negative_acknowledgements(self, message, exception):
         """Handle NACK for the message."""

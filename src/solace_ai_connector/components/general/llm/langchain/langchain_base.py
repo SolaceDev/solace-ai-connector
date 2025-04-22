@@ -33,7 +33,7 @@ class LangChainBase(ComponentBase):
             module = importlib.import_module(path)
             component_class = getattr(module, name)
         except Exception:
-            raise ImportError("Unable to load component")
+            raise ImportError("Unable to load component") from None
         return component_class
 
     def create_component(self, config, cls):
@@ -43,11 +43,11 @@ class LangChainBase(ComponentBase):
         try:
             component = cls(**config)
         except Exception:
-            raise ImportError("Unable to create component")
+            raise ImportError("Unable to create component") from None
         return component
 
     def invoke(self, message, data):
-        raise NotImplementedError("invoke() not implemented")
+        raise NotImplementedError("invoke() not implemented") from None
 
     def __str__(self):
         return self.__class__.__name__ + " " + str(self.config)

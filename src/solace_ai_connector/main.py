@@ -46,7 +46,7 @@ def process_includes(file_path, base_dir):
         include_path = match.group(2).strip("'\"")
         full_path = os.path.join(base_dir, include_path)
         if not os.path.exists(full_path):
-            raise FileNotFoundError("Included file not found.")
+            raise FileNotFoundError("Included file not found.") from None
         included_content = process_includes(full_path, os.path.dirname(full_path))
         # Indent each line of the included content
         indented_content = "\n".join(
@@ -124,9 +124,9 @@ def main():
 
     def signal_handler(signum, frame):
         if signum == signal.SIGINT:
-            raise KeyboardInterrupt("CTRL+C pressed")
+            raise KeyboardInterrupt("CTRL+C pressed") from None
         elif signum == signal.SIGTERM:
-            raise SystemExit("SIGTERM received")
+            raise SystemExit("SIGTERM received") from None
 
     if sys.platform == "win32":
         import win32api
