@@ -72,7 +72,7 @@ class Assembly(ComponentBase):
         if self.assemble_key not in data or type(data[self.assemble_key]) is not str:
             log.error("Message does not have the assemble key or it is not a string")
             raise ValueError(
-                "Message does not have the key assemble or it is not a string"
+                f"Message does not have the key {self.assemble_key} or it is not a string"
             )
 
         event_key = data[self.assemble_key]
