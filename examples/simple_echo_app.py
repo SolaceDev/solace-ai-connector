@@ -6,6 +6,7 @@ and echoes the payload back to a predefined topic.
 
 import os
 import time
+from typing import Any
 from solace_ai_connector.components.component_base import ComponentBase
 from solace_ai_connector.common.log import log, setup_log
 from solace_ai_connector.common.message import Message
@@ -205,5 +206,3 @@ if __name__ == "__main__":
             log.info("Cleaning up connector resources.")
             connector.cleanup()
         log.info("Simple Echo App finished.")
-
-```
