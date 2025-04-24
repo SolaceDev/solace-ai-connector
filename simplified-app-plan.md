@@ -90,6 +90,7 @@ This will be worked into the existing app framework and will be a new mode of ru
 7.  **Output Mechanism Details:**
     *   If `output_enabled` is true, what specific mechanism will the app's processing logic use to specify the payload, topic, and user properties of the message to be sent? (e.g., return a dict `{"payload": ..., "topic": ..., "user_properties": ...}`?)
     - yes, this is the same as what we do now. The app will have a way to send a message which will take a dict with the payload, topic, and user properties and it will create the message and send it to the broker.
+- They are independent and can both send messages. You could send many messages with the method and also return a message, which will be sent as well.
 
 8.  **Invocation Context:**
     *   When a message arrives (`input_enabled`), what context/data structure is passed to the app's processing logic? Is it the standard `Message` object?
@@ -167,7 +168,92 @@ The overall direction looks promising for simplifying common use cases. Addressi
 ## High-level Architecture
 
 <inst>
-Fill in the high-level architecture of the simplified app mode, including the components involved, their interactions, and how they fit into the existing framework. Include mermaid diagrams if appropriate.
+The simplified app mode introduces a configuration-driven approach where the framework automatically generates the underlying flow structure. Instead of defining explicit flows in the YAML, the user defines an `app` with broker settings, interaction flags (`input_enabled`, `output_enabled`, `request_reply_enabled`), and a list of processing `components`, each associated with topic `subscriptions`.
+
+**Implicit Flow Generation:**
+
+Based on the `app` configuration, the `SolaceAiConnector` framework will implicitly create a standard `Flow` instance for the simplified app. This flow will contain a sequence of components managed by the framework:
+
+1.  **BrokerInput (Implicit):** If `input_enabled` is true, a dedicated `BrokerInput` component instance is created.
+    *   It connects using the broker details provided in the `app.broker` section.
+    *   It listens exclusively on the queue specified by `app.broker.queue_name`.
+    *   It adds all topic subscriptions defined across *all* components listed in `app.components` to this single queue.
+    *   It decodes the incoming message payload based on `payload_encoding` and `payload_format`.
+
+2.  **Router (Implicit):** A new internal component, let's call it `SubscriptionRouter`, sits immediately after `BrokerInput`.
+    *   It receives the `Message` object from `BrokerInput`.
+    *   It inspects the `message.topic`.
+    *   It iterates through the `components` defined in the `app` configuration *in the order they are listed*.
+    *   For each component, it checks if the incoming `message.topic` matches any of the `subscriptions` defined for that component.
+    *   It routes the `Message` to the *first* component whose subscriptions match. If no match is found, the message might be logged and discarded, or sent to an error handler (TBD).
+
+3.  **Processing Component(s) (User-Defined):** These are the components listed in the `app.components` section of the configuration.
+    *   The `SubscriptionRouter` directs the message to the appropriate component instance based on the matched subscription.
+    *   If `num_instances` > 1 is specified for a component, the `SubscriptionRouter` will likely employ a round-robin or similar strategy to distribute messages among the instances of that specific component.
+    *   The component executes its `invoke` method using the received `Message`.
+    *   The component has access to the app's configuration via `get_config`.
+    *   The component can use `self.do_broker_request_response()` if `request_reply_enabled` is true (see below).
+    *   The component can call `self.get_app().send_message(payload, topic, user_properties)` to send additional messages via the `BrokerOutput`.
+
+4.  **BrokerOutput (Implicit):** If `output_enabled` is true, a dedicated `BrokerOutput` component instance is created.
+    *   It connects using the *same* broker details as `BrokerInput`.
+    *   It receives the `Message` object containing the *return value* of the processing component (placed in `message.previous`).
+    *   It extracts the payload, topic, and user properties (typically from `message.previous`).
+    *   It encodes the payload and sends the message to the broker.
+    *   It also handles messages sent via the `app.send_message()` method.
+
+**Request-Reply Handling:**
+
+*   If `request_reply_enabled` is true, the framework implicitly creates and manages a `RequestResponseFlowController` instance for the app.
+*   This controller uses the *same* broker configuration defined in `app.broker`.
+*   When a processing component calls `self.do_broker_request_response(message)`, it interacts with this dedicated controller to send the request and await the response(s).
+
+**Configuration Precedence:**
+
+*   Configuration can be defined in code within the component/app definition and/or in the YAML file.
+*   If configuration exists in both places for the same parameter, the **YAML value takes precedence** and overrides the code-defined value.
+
+**Mermaid Diagram:**
+
+```mermaid
+graph LR
+    subgraph "Simplified App: my_simplified_app"
+        direction LR
+        Broker["Solace Broker"] -- Message on Queue --> BI["BrokerInput (Implicit)<br>Listens on app.broker.queue_name<br>Adds all subscriptions"]
+        BI -- Message --> Router["SubscriptionRouter (Implicit)<br>Routes based on topic vs component.subscriptions"]
+        
+        subgraph "Processing Components (User Defined)"
+            direction TB
+            Router -- Topic matches CompA.sub1 --> CompA1["Component A<br>(Instance 1)"]
+            Router -- Topic matches CompA.sub1 --> CompA2["Component A<br>(Instance N)"]
+            Router -- Topic matches CompB.sub1 --> CompB["Component B"]
+            
+            CompA1 -- Return Value --> BO
+            CompA2 -- Return Value --> BO
+            CompB -- Return Value --> BO
+
+            CompA1 -- Calls app.send_message() --> BO
+            CompA2 -- Calls app.send_message() --> BO
+            CompB -- Calls app.send_message() --> BO
+
+            CompA1 -- Calls self.do_broker_request_response() --> RRC["RequestResponseFlowController (Implicit)"]
+            CompA2 -- Calls self.do_broker_request_response() --> RRC
+            CompB -- Calls self.do_broker_request_response() --> RRC
+            RRC -- Request --> Broker
+            Broker -- Response --> RRC
+            RRC -- Response --> CompA1/CompA2/CompB
+        end
+
+        BO["BrokerOutput (Implicit)"] -- Formatted Message --> Broker
+    end
+
+    style BI fill:#f9f,stroke:#333,stroke-width:2px
+    style Router fill:#ccf,stroke:#333,stroke-width:2px
+    style BO fill:#f9f,stroke:#333,stroke-width:2px
+    style RRC fill:#f9f,stroke:#333,stroke-width:2px
+```
+
+This architecture leverages the existing `Flow` and `ComponentBase` structures but hides the flow definition complexity from the user for simpler applications, generating the necessary plumbing automatically based on the simplified `app` configuration.
 </inst>
 
 
