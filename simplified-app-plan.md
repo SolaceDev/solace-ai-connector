@@ -16,7 +16,7 @@ This will be worked into the existing app framework and will be a new mode of ru
 
 1.  **Processing Logic Definition:**
     *   How will the user define the core processing logic for a simplified app? Will it be a reference to a standard component (like `invoke`, `llm_chat`), a Python function, a script path, or something else?
-    - We will need to use a component for this. The configuration would take an optional component within the subscription definition for it to send its messages to. 
+    - We will need to use a component for this. Subscriptions will be defined within the components and there will be some code that can take output from the broker_input and send it to the appropriate component based on the subscription. If there are overlaps in the subscriptions and an incoming topic matches multiple subscriptions, the first one will be used. 
     *   If it's a component, how are its specific configuration parameters provided within the simplified app structure?
     - Components, through the get_config method would be able to get the config for the app as they do today.
 
@@ -51,7 +51,6 @@ This will be worked into the existing app framework and will be a new mode of ru
           subscriptions:
             - topic: <topic1>
             qos: 1
-            queue_name: <queue1>
             - topic: <topic2>
             qos: 1
         - name: <component_name>
@@ -59,7 +58,6 @@ This will be worked into the existing app framework and will be a new mode of ru
           subscriptions:
             - topic: <topic3>
             qos: 1
-            queue_name: <queue2>
     ```
     - We should be able to define all of this within the app code itself. A simple app might have a single file that defines a simple component at the top with a basic invoke method. The app would be created with hardcoded configuration for the broker and the component. The app would then be able to run a very minimal yaml file.
 
@@ -110,7 +108,6 @@ This will be worked into the existing app framework and will be a new mode of ru
 
 ## Thoughts on Answers to Questions
 
-<inst>
 Overall, the answers clarify the intent to create a simplified configuration layer that implicitly generates standard flow structures behind the scenes. This seems like a good approach, leveraging existing mechanisms while reducing user boilerplate.
 
 **Key Takeaways & Follow-up Points:**
@@ -118,15 +115,21 @@ Overall, the answers clarify the intent to create a simplified configuration lay
 1.  **Processing Logic (Q1):**
     *   **Clarity:** Using standard components is good for reuse. The idea of associating a component with a subscription is interesting but needs careful definition.
     *   **YAML Structure (Q2):** The example YAML shows `components` defined at the app level, each with its own `subscriptions`. This differs slightly from the Q1 answer mentioning "component within the subscription definition". How does an incoming message on `<queue_name>` get routed to the correct component based on its original topic matching a subscription under that component? Does the implicit `BrokerInput` handle this routing?
-    *   **Code-based Config:** The desire to define configuration in code is understandable for tight coupling. How would this interact with the YAML? Would code override YAML, or would they be merged? A clear precedence rule is needed. How would the framework discover and load these code-based configurations?
+    - fixed it
+    *   **Code-based Config:** The desire to define configuration in code is understandable for tight coupling. How would this interact with the YAML? Would code override YAML, or would they be merged? A clear precedence rule is needed. How would the framework discover and load these code-based configurations? 
+    - YAML can override the code if both are present
 
 2.  **Configuration Structure (Q2):**
     *   **Single Queue:** The note about a single queue per app simplifies things. The YAML example, however, shows `queue_name` under `broker` *and* under `subscriptions`. Is the top-level `queue_name` the *only* queue listened on by the implicit `BrokerInput`? If so, what is the purpose of `queue_name` under `subscriptions`? Is it perhaps for *output* targeting? This needs clarification.
+    - I fixed it. there should only be one queue.
     *   **Implicit Flow:** It would be helpful to visualize the implicit flow structure. Is it roughly: `BrokerInput (listening on app queue) -> Router (based on topic/subscription) -> Target Component -> BrokerOutput (optional)`?
+    - yes
 
 3.  **Broker Interaction (Q3):**
     *   **Output:** "normally the return value of the component will be used" - This is standard and good. The additional "method that can be called to send a message" needs definition. Would this be a method on the `ComponentBase` or the `App` object passed to the component? How would it interact with the standard return value mechanism?
+    - it would be a method on the app object and it is independent of the return value. If there is a return value, it will send a message too
     *   **Request-Reply:** Using the base component's request-reply mechanism (`do_broker_request_response`) makes sense. Confirming that the *same* broker config is used for the implicit `BrokerInput`, `BrokerOutput`, *and* the internal `BrokerRequestResponse` controller is important.
+    - this is a simplification. 99% of the tiem this is what you want. We can add a feature later if we need it
 
 4.  **Dedicated Components (Q4):** Confirmed, this is good for robustness.
 
@@ -137,6 +140,7 @@ Overall, the answers clarify the intent to create a simplified configuration lay
 6.  **Error Handling (Q6):** Consistency with the current model is good.
 
 7.  **Output Mechanism (Q7):** The answer seems contradictory. It says "yes, this is the same as what we do now" (implying the component's return value is used by the framework/next component), but then mentions "The app will have a way to send a message...". This echoes the point in Q3. We need to clarify *how* a component signals output. Is it *only* via return value, or is there an alternative `send()` method? If both, how do they interact?
+- They are independent and can both send messages. You could send many messages with the method and also return a message, which will be sent as well.
 
 8.  **Invocation Context (Q8):** Using the standard `Message` object is good.
 
@@ -148,10 +152,22 @@ Overall, the answers clarify the intent to create a simplified configuration lay
 **Summary of Key Questions Remaining:**
 
 *   **Routing:** How does a message arriving on the single app queue get routed to the correct processing component based on the topic/subscription rules defined under potentially multiple components in the YAML?
+- code will do a topic to subscription mapping and send the message to the correct component, using the first match
 *   **YAML Structure vs. Q1:** Reconcile the YAML structure (components list at app level) with the Q1 answer (component within subscription). Clarify the role of `queue_name` under `subscriptions` in the YAML example.
+- fixed
 *   **Code vs. YAML Config:** Define the precedence and loading mechanism for code-based configuration.
+- yaml can override the code if both are present
 *   **Output Mechanism:** Clarify if output is *only* via component return value or if an explicit `send()` method exists, and how they interact.
+- clarified above
 
 The overall direction looks promising for simplifying common use cases. Addressing these remaining points will be crucial for a clear and robust implementation.
+
+
+
+## High-level Architecture
+
+<inst>
+Fill in the high-level architecture of the simplified app mode, including the components involved, their interactions, and how they fit into the existing framework. Include mermaid diagrams if appropriate.
 </inst>
+
 
