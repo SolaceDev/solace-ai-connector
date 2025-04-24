@@ -31,10 +31,12 @@ class MongoHandler:
 
     def get_connection(self):
         """Get or create a thread-local database connection."""
-        if not hasattr(self.local, 'client'):
+        if not hasattr(self.local, "client"):
             try:
                 if self.user and self.password:
-                    connection_string = f"mongodb://{self.user}:{self.password}@{self.host}:{self.port}"
+                    connection_string = (
+                        f"mongodb://{self.user}:{self.password}@{self.host}:{self.port}"
+                    )
                 else:
                     connection_string = f"mongodb://{self.host}:{self.port}"
 
@@ -45,12 +47,16 @@ class MongoHandler:
                 log.error("Error connecting to MongoDB database: %s", str(e))
                 raise
         return self.local.db
-    
-    def insert_documents(self, documents: List[Dict[str, Any]], collection: str = None) -> List[str]:
+
+    def insert_documents(
+        self, documents: List[Dict[str, Any]], collection: str = None
+    ) -> List[str]:
         if not documents:
             return []
         if not collection:
-            log.debug("No collection specified, using default collection: %s", self.collection)
+            log.debug(
+                "No collection specified, using default collection: %s", self.collection
+            )
             collection = self.collection
         if not isinstance(documents, dict) and not isinstance(documents, list):
             log.error("Documents must be a dictionary or list of dictionaries")
@@ -62,10 +68,16 @@ class MongoHandler:
             raise ValueError("Documents must be a dictionary or list of dictionaries")
         db = self.get_connection()
         result = db[collection].insert_many(documents)
-        log.debug("Successfully inserted %d documents into %s", len(result.inserted_ids), collection)
+        log.debug(
+            "Successfully inserted %d documents into %s",
+            len(result.inserted_ids),
+            collection,
+        )
         return result.inserted_ids
 
-    def execute_query(self, collection: str, pipeline: List[Dict]) -> List[Dict[str, Any]]:
+    def execute_query(
+        self, collection: str, pipeline: List[Dict]
+    ) -> List[Dict[str, Any]]:
         """Execute an aggregation pipeline on MongoDB.
 
         Args:
@@ -81,20 +93,27 @@ class MongoHandler:
         """
         if not isinstance(pipeline, list):
             raise ValueError("Pipeline must be a list of aggregation stages")
-            
+
         # Validate each pipeline stage
         for stage in pipeline:
             if not isinstance(stage, dict) or not stage:
                 log.error("Each pipeline stage must be a non-empty dictionary")
                 raise ValueError("Each pipeline stage must be a non-empty dictionary")
-            if not any(key.startswith('$') for key in stage.keys()):
-                log.error("Invalid pipeline stage: %s. Each stage must start with '$'", stage)
-                raise ValueError(f"Invalid pipeline stage: {stage}. Each stage must start with '$'")
-                
+            if not any(key.startswith("$") for key in stage.keys()):
+                log.error(
+                    "Invalid pipeline stage: %s. Each stage must start with '$'", stage
+                )
+                raise ValueError(
+                    f"Invalid pipeline stage: {stage}. Each stage must start with '$'"
+                )
+
         try:
             db = self.get_connection()
             if not collection:
-                log.debug("No collection specified, using default collection: %s", self.collection)
+                log.debug(
+                    "No collection specified, using default collection: %s",
+                    self.collection,
+                )
                 collection = self.collection
             cursor = db[collection].aggregate(pipeline)
             result = list(cursor)
@@ -128,7 +147,7 @@ class MongoHandler:
             {"$sample": {"size": 100}},
             {"$project": {"arrayofkeyvalue": {"$objectToArray": "$$ROOT"}}},
             {"$unwind": "$arrayofkeyvalue"},
-            {"$group": {"_id": None, "allkeys": {"$addToSet": "$arrayofkeyvalue.k"}}}
+            {"$group": {"_id": None, "allkeys": {"$addToSet": "$arrayofkeyvalue.k"}}},
         ]
         result = list(db[collection].aggregate(pipeline))
         if result:
@@ -137,33 +156,51 @@ class MongoHandler:
             return sorted(fields)
         return []
 
-    def get_sample_values(self, collection: str, field: str, min: int = 3, max: int = 10) -> Tuple[List[str], bool]:
+    def get_sample_values(
+        self,
+        collection: str,
+        field: str,
+        min: int = 3,
+        max: int = 10,
+        max_documents_examined: int = -1,
+    ) -> Tuple[List[str], bool]:
         """Get unique sample values for a given field in a collection. If the number of unique values is less than
         the maximum, return all unique values. Otherwise, return a random sample of unique values up to the manimum.
 
         Args:
             collection: Name of the collection.
             field: Name of the field.
-            limit: Maximum number of unique values to return.
+            min: Minimum number of unique values to return.
+            max: Maximum number of unique values to return.
+            max_documents_examined: Maximum number of documents to examine (for performance). -1 means no limit.
 
         Returns:
             List of unique sample values as strings,
             and a boolean indicating whether all unique values were returned.
         """
         db = self.get_connection()
-        pipeline = [
-            {"$match": {field: {"$exists": True}}},
-            {"$group": {"_id": f"${field}"}},
-            {"$sample": {"size": max+1}},
-            {"$project": {"value": "$_id", "_id": 0}}
-        ]
+        if max_documents_examined > 0:
+            pipeline = [
+                {"$match": {field: {"$exists": True}}},
+                {"$limit": max_documents_examined},
+                {"$group": {"_id": f"${field}"}},
+                {"$limit": max_documents_examined},
+                {"$project": {"value": "$_id", "_id": 0}},
+            ]
+        else:
+            pipeline = [
+                {"$match": {field: {"$exists": True}}},
+                {"$group": {"_id": f"${field}"}},
+                {"$sample": {"size": max + 1}},
+                {"$project": {"value": "$_id", "_id": 0}},
+            ]
 
         results = list(db[collection].aggregate(pipeline))
         if len(results) > max:
             return [str(result["value"]) for result in results[:min]], False
-        
+
         return [str(result["value"]) for result in results], True
-    
+
     def _remove_object_ids(self, results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Remove the _id field from a list of MongoDB documents.
 
