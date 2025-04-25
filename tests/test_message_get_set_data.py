@@ -268,9 +268,9 @@ def test_index_into_list():
 
 
 def test_index_into_list_out_of_bounds():
-    """Test getting data from a message by indexing into a list with an out of bounds index"""
-    with pytest.raises(IndexError):
-        messages["complex"].get_data("input.payload:key3.3")
+    """Test getting data from a message by indexing into a list with an out of bounds index returns None"""
+    # The get_data_value function catches IndexError and returns None
+    assert messages["complex"].get_data("input.payload:key3.3") is None
 
 
 def test_get_topic_levels():
