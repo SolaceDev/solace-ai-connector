@@ -137,10 +137,11 @@ class SimpleEchoApp(App):
         "components": [
             {
                 "name": "echo_processor",
-                # Use the special __name__ variable. This tells the framework
-                # to look for the component class ('SimpleEchoComponent' based on component_info)
-                # within *this* file/module.
-                "component_module": __name__,
+                # Directly pass the component class defined in this file.
+                # This avoids using __name__ and is clearer when components
+                # are defined locally within the App's module.
+                "component_class": SimpleEchoComponent,
+                # component_module is ignored if component_class is provided.
                 "component_config": {
                     # Configuration specific to SimpleEchoComponent
                     "echo_topic": "echo/output/from_code",

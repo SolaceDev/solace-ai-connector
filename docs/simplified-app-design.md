@@ -14,7 +14,7 @@ Simplified apps are defined under the top-level `apps` list in the main configur
 apps:
   - name: my_simplified_app # Unique name for the app instance
     # Optional: Number of instances of this app definition (defaults to 1)
-    # num_instances: 1 
+    # num_instances: 1
     broker:
       # Standard Solace Connection Details
       broker_type: solace # Or dev_broker
@@ -23,7 +23,7 @@ apps:
       broker_username: <username>
       broker_password: <password>
       # Optional: trust_store_path, reconnection_strategy, retry_interval, retry_count
-      
+
       # Interaction Flags
       input_enabled: true # If true, listens for messages
       output_enabled: true # If true, allows sending messages
@@ -49,22 +49,28 @@ apps:
       # Optional: response_topic_insertion_expression (default: "")
 
     # Optional: App-level configuration accessible by components via get_config()
-    config: 
+    config:
       param1: value1
       param2: value2
 
     # List of processing components for this app
     components:
       - name: process_order_component # Unique name within the app
+        # Option 1: Specify module for external components
         component_module: process_order # Module name
         # Optional: component_package, component_base_path
+
+        # Option 2: Specify class directly for components defined in the same
+        # file as a custom App subclass (requires framework changes)
+        # component_class: MyProcessOrderComponent # Actual class object
+
         num_instances: 2 # Optional: Default 1. Scales this specific component.
         # Optional: disabled (default: false)
         component_config:
           # Standard configuration for the 'process_order' component
           order_db_url: "mongodb://..."
         # Subscriptions this component handles (required if input_enabled: true)
-        subscriptions: 
+        subscriptions:
           - topic: "orders/new/>"
             # qos: 1 # Optional: Default 1 (assumed for queue subscriptions)
           - topic: "orders/updates/>"
@@ -73,7 +79,7 @@ apps:
         component_config:
           log_level: "INFO"
         subscriptions:
-          - topic: "events/>" 
+          - topic: "events/>"
 ```
 
 ## 3. Implicit Flow Generation
@@ -125,7 +131,7 @@ The `SolaceAiConnector` will detect app definitions that lack an explicit `flows
 
 ### 4.3. User-Defined Components
 
-*   **Definition:** Listed under `app.components`.
+*   **Definition:** Listed under `app.components`. Can be specified using `component_module` (for external components) or `component_class` (for components defined in the same file as a custom `App` subclass). `component_class` takes precedence if both are provided.
 *   **Configuration:** Standard component configuration under `component_config`. `subscriptions` list is added here.
 *   **Instantiation:** Instantiated by the implicit `Flow`. If `num_instances > 1`, multiple instances are created, sharing the same input queue (leveraging Python's `queue.Queue` multi-consumer capability).
 *   **Input:** Receives `Message` objects from the `SubscriptionRouter` (or `BrokerInput` if it's the only component).
@@ -170,7 +176,7 @@ class SubscriptionRouter(ComponentBase):
         component_group_idx = 1 # Skip BrokerInput (idx 0)
         if len(app_components_config) > 1:
              component_group_idx = 2 # Skip BrokerInput and Router (idx 0, 1)
-        
+
         for comp_config in app_components_config:
              comp_name = comp_config.get("name")
              # Find the corresponding component group in the flow
@@ -216,7 +222,7 @@ class SubscriptionRouter(ComponentBase):
                     target_component.enqueue(Event(EventType.MESSAGE, message))
                     # Do NOT call self.send_message() here, routing is the final step
                     # Prevent default post_invoke processing by discarding
-                    self.discard_current_message() 
+                    self.discard_current_message()
                     return None # Signal that processing is done here
 
         log.warning(f"{self.log_identifier} No matching subscription found for topic '{msg_topic}'. Discarding message.")
@@ -275,11 +281,12 @@ These mechanisms are independent and can be used concurrently.
     *   Instantiate `App` objects differently for simplified vs. standard apps, passing necessary info for implicit flow generation.
 *   **`App` (`flow/app.py`):**
     *   Modify `__init__` to accept and store the simplified configuration structure.
-    *   Modify `create_flows` to implement the implicit flow generation logic when a simplified config is detected. It should create a single `Flow` and populate it with `BrokerInput`, `SubscriptionRouter` (if needed), user components, and `BrokerOutput`.
+    *   Modify `create_flows` to implement the implicit flow generation logic when a simplified config is detected. It should create a single `Flow` and populate it with `BrokerInput`, `SubscriptionRouter` (if needed), user components, and `BrokerOutput`. It needs to handle instantiation using `component_class` if provided, otherwise use `component_module`.
     *   Add a `send_message(payload, topic, user_properties)` method that interacts with the implicit `BrokerOutput`'s input queue (needs a reference stored).
     *   Store a reference to the `RequestResponseFlowController` if `request_reply_enabled` is true.
 *   **`Flow` (`flow/flow.py`):**
     *   May need minor adjustments to accommodate being created implicitly, potentially passing component definitions differently.
+    *   The `create_component_group` method needs to accept either a `component_module` or a `component_class` from the `App` layer.
     *   Needs to correctly link the `SubscriptionRouter` if present.
 *   **`ComponentBase` (`components/component_base.py`):**
     *   Add `get_app()` method to return `self.parent_app`.
@@ -307,30 +314,30 @@ log:
 apps:
   - name: simple_processor
     broker:
-      broker_type: solace 
+      broker_type: solace
       broker_url: "ws://localhost:8080"
       broker_vpn: "default"
       broker_username: "user"
       broker_password: "password"
-      
+
       input_enabled: true
       output_enabled: true
-      request_reply_enabled: false 
+      request_reply_enabled: false
 
-      queue_name: "simple_processor/input" 
-      create_queue_on_start: true 
+      queue_name: "simple_processor/input"
+      create_queue_on_start: true
       payload_format: "json"
-      
-    config: 
+
+    config:
       processing_threshold: 100
 
     components:
       - name: main_processor
-        component_module: my_custom_processor 
-        num_instances: 1 
+        component_module: my_custom_processor # Or component_class: MyCustomProcessor
+        num_instances: 1
         component_config:
           db_connection: "..."
-        subscriptions: 
+        subscriptions:
           - topic: "data/input/>"
 ```
 
