@@ -2,6 +2,11 @@
 
 This checklist corresponds to the steps outlined in the `docs/simplified-app-implementation-plan.md`.
 
+Coding rules:
+
+- Follow Google Python Style Guide.
+- Do not put in useless comments or comments that relate only to a change just made (e.g. `# added this line` or `# removed function bob()`).
+
 ## 1. Phase 1: Core App and Flow Modifications
 
 - [ ] **1.1 Add `deep_merge` Utility:**
