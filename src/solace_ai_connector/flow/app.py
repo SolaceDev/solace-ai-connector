@@ -2,16 +2,12 @@
 
 from typing import List, Dict, Any, Optional
 import os
-from copy import deepcopy # Import deepcopy
+from copy import deepcopy  # Import deepcopy
 
 from ..common.log import log
 from .flow import Flow
-from ..common.utils import deep_merge # Import deep_merge
-# Import RequestResponseFlowController
+from ..common.utils import deep_merge  # Import deep_merge
 from .request_response_flow_controller import RequestResponseFlowController
-# Imports for send_message - kept local to method to avoid potential circular imports
-# from ..common.message import Message
-# from ..common.event import Event, EventType
 
 
 class App:
@@ -45,7 +41,9 @@ class App:
         # Check if this is a custom App subclass with code-defined config
         code_config = None
         # Use 'app_config' as the standard name for code-defined config as well
-        if hasattr(self.__class__, "app_config") and isinstance(self.__class__.app_config, dict):
+        if hasattr(self.__class__, "app_config") and isinstance(
+            self.__class__.app_config, dict
+        ):
             log.debug(f"Found code-defined app_config in {self.__class__.__name__}")
             code_config = self.__class__.app_config
 
@@ -53,14 +51,18 @@ class App:
         if code_config:
             # Perform a deep merge, giving precedence to app_info (YAML)
             merged_app_info = deep_merge(code_config, app_info)
-            log.debug(f"Merged app config for {merged_app_info.get('name', 'unnamed app')}")
+            log.debug(
+                f"Merged app config for {merged_app_info.get('name', 'unnamed app')}"
+            )
         else:
             merged_app_info = app_info
 
         # Store the final merged config
         self.app_info = merged_app_info
         # Extract app_config for get_config() - this is the 'app_config' block within the app definition
-        self.app_config = self.app_info.get("app_config", {}) # <-- Changed "config" to "app_config"
+        self.app_config = self.app_info.get(
+            "app_config", {}
+        )  # <-- Changed "config" to "app_config"
         self.app_index = app_index
         # Derive name from merged config
         self.name = self.app_info.get("name", f"app_{app_index}")
@@ -72,22 +74,29 @@ class App:
         self.trace_queue = trace_queue
         self.connector = connector
         self.flow_input_queues = {}
-        self._broker_output_component = None # Cache for send_message
-        self.request_response_controller = None # Initialize RRC attribute
+        self._broker_output_component = None  # Cache for send_message
+        self.request_response_controller = None  # Initialize RRC attribute
 
         broker_config = self.app_info.get("broker", {})
         if broker_config.get("request_reply_enabled", False):
-            log.info(f"Request-reply enabled for app '{self.name}'. Initializing controller.")
+            log.info(
+                f"Request-reply enabled for app '{self.name}'. Initializing controller."
+            )
             try:
                 # Instantiate RequestResponseFlowController
                 # Pass the broker config section and the connector reference
                 self.request_response_controller = RequestResponseFlowController(
-                    config={"broker_config": broker_config}, # Pass broker config under 'broker_config' key
-                    connector=self.connector
+                    config={
+                        "broker_config": broker_config
+                    },  # Pass broker config under 'broker_config' key
+                    connector=self.connector,
                 )
                 # Store controller instance (already done by assignment above)
             except Exception as e:
-                log.error(f"Failed to initialize RequestResponseFlowController for app '{self.name}': {e}", exc_info=True)
+                log.error(
+                    f"Failed to initialize RequestResponseFlowController for app '{self.name}': {e}",
+                    exc_info=True,
+                )
                 # Decide if this should be a fatal error for the app
                 raise e
 
@@ -98,7 +107,11 @@ class App:
         """Create flows for this app"""
         try:
             # Detect simplified app configuration
-            is_simplified = "broker" in self.app_info and "components" in self.app_info and "flows" not in self.app_info
+            is_simplified = (
+                "broker" in self.app_info
+                and "components" in self.app_info
+                and "flows" not in self.app_info
+            )
 
             if is_simplified:
                 # Call helper to generate implicit flow config
@@ -138,7 +151,9 @@ class App:
                 sub for comp in user_components for sub in comp.get("subscriptions", [])
             ]
             if not all_subscriptions:
-                 log.warning(f"Simplified app '{self.name}' has input_enabled=true but no subscriptions defined in components.")
+                log.warning(
+                    f"Simplified app '{self.name}' has input_enabled=true but no subscriptions defined in components."
+                )
 
             input_comp_config = {
                 "component_name": f"{self.name}_broker_input",
@@ -155,13 +170,17 @@ class App:
                     "retry_interval": broker_config.get("retry_interval"),
                     "retry_count": broker_config.get("retry_count"),
                     "trust_store_path": broker_config.get("trust_store_path"),
-                    "broker_queue_name": broker_config.get("queue_name"), # Use the main queue name
-                    "create_queue_on_start": broker_config.get("create_queue_on_start", True),
+                    "broker_queue_name": broker_config.get(
+                        "queue_name"
+                    ),  # Use the main queue name
+                    "create_queue_on_start": broker_config.get(
+                        "create_queue_on_start", True
+                    ),
                     "payload_encoding": broker_config.get("payload_encoding", "utf-8"),
                     "payload_format": broker_config.get("payload_format", "json"),
                     "max_redelivery_count": broker_config.get("max_redelivery_count"),
-                    "broker_subscriptions": all_subscriptions # Pass collected subscriptions
-                }
+                    "broker_subscriptions": all_subscriptions,  # Pass collected subscriptions
+                },
             }
             flow_components.append(input_comp_config)
 
@@ -169,12 +188,12 @@ class App:
         if broker_config.get("input_enabled", False) and len(user_components) > 1:
             router_comp_config = {
                 "component_name": f"{self.name}_router",
-                "component_module": "subscription_router", # Assuming this module exists
+                "component_module": "subscription_router",  # Assuming this module exists
                 # Router needs access to the app's component list for routing rules
                 "component_config": {
                     # Pass the original user components list as defined in the app config
                     "app_components_config_ref": self.app_info.get("components", [])
-                }
+                },
             }
             flow_components.append(router_comp_config)
 
@@ -200,18 +219,16 @@ class App:
                     "trust_store_path": broker_config.get("trust_store_path"),
                     "payload_encoding": broker_config.get("payload_encoding", "utf-8"),
                     "payload_format": broker_config.get("payload_format", "json"),
-                    "propagate_acknowledgements": broker_config.get("propagate_acknowledgements", True),
+                    "propagate_acknowledgements": broker_config.get(
+                        "propagate_acknowledgements", True
+                    ),
                     # Add other relevant output-specific configs if needed
-                }
+                },
             }
             flow_components.append(output_comp_config)
 
         # Construct the final flow dictionary
-        return {
-            "name": f"{self.name}_implicit_flow",
-            "components": flow_components
-        }
-
+        return {"name": f"{self.name}_implicit_flow", "components": flow_components}
 
     def create_flow(self, flow: dict, index: int, flow_instance_index: int) -> Flow:
         """
@@ -256,9 +273,11 @@ class App:
                 # Assuming RRC has a cleanup method or similar
                 # If not, cleanup might involve stopping its internal flow/app
                 # For now, we rely on the connector cleaning up all apps/flows
-                pass # RRC's internal app/flow will be cleaned by connector.cleanup()
+                pass  # RRC's internal app/flow will be cleaned by connector.cleanup()
             except Exception as e:
-                log.error(f"Error cleaning up RequestResponseFlowController in app {self.name}: {e}")
+                log.error(
+                    f"Error cleaning up RequestResponseFlowController in app {self.name}: {e}"
+                )
             self.request_response_controller = None
 
         for flow in self.flows:
@@ -268,8 +287,7 @@ class App:
                 log.error(f"Error cleaning up flow in app {self.name}: {e}")
         self.flows.clear()
         self.flow_input_queues.clear()
-        self._broker_output_component = None # Clear cache
-
+        self._broker_output_component = None  # Clear cache
 
     def get_config(self, key=None, default=None):
         """
@@ -285,7 +303,9 @@ class App:
         # self.app_config holds the 'app_config:' block from the merged app_info
         return self.app_config.get(key, default)
 
-    def send_message(self, payload: Any, topic: str, user_properties: Optional[Dict] = None):
+    def send_message(
+        self, payload: Any, topic: str, user_properties: Optional[Dict] = None
+    ):
         """
         Sends a message via the implicit BrokerOutput component of a simplified app.
 
@@ -300,7 +320,9 @@ class App:
 
         # Check if output is enabled for this app
         if not self.app_info.get("broker", {}).get("output_enabled", False):
-            log.warning(f"App '{self.name}' attempted to send a message, but 'output_enabled' is false. Message discarded.")
+            log.warning(
+                f"App '{self.name}' attempted to send a message, but 'output_enabled' is false. Message discarded."
+            )
             return
 
         # Find the BrokerOutput component instance (cache it after first find)
@@ -314,7 +336,7 @@ class App:
                     last_group = flow.component_groups[-1]
                     if last_group:
                         # Check if the last component is indeed BrokerOutput
-                        comp = last_group[0] # Get the first instance in the group
+                        comp = last_group[0]  # Get the first instance in the group
                         if comp.module_info.get("class_name") == "BrokerOutput":
                             broker_output_instance = comp
                         else:
@@ -325,14 +347,16 @@ class App:
             if broker_output_instance:
                 self._broker_output_component = broker_output_instance
             else:
-                log.error(f"App '{self.name}' could not find the implicit BrokerOutput component to send a message.")
+                log.error(
+                    f"App '{self.name}' could not find the implicit BrokerOutput component to send a message."
+                )
                 return
 
         # Create the output data structure expected by BrokerOutput
         output_data = {
             "payload": payload,
             "topic": topic,
-            "user_properties": user_properties or {}
+            "user_properties": user_properties or {},
         }
 
         # Create a Message object and place the output data in 'previous'
@@ -345,11 +369,15 @@ class App:
 
         # Enqueue the event to the BrokerOutput component
         try:
-            log.debug(f"App '{self.name}' sending message via implicit BrokerOutput to topic '{topic}'")
+            log.debug(
+                f"App '{self.name}' sending message via implicit BrokerOutput to topic '{topic}'"
+            )
             self._broker_output_component.enqueue(event)
         except Exception as e:
-            log.error(f"App '{self.name}' failed to enqueue message to BrokerOutput: {e}", exc_info=True)
-
+            log.error(
+                f"App '{self.name}' failed to enqueue message to BrokerOutput: {e}",
+                exc_info=True,
+            )
 
     @classmethod
     def create_from_flows(
