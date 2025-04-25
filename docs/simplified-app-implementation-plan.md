@@ -69,6 +69,7 @@ This document outlines the step-by-step plan to implement the "Simplified App Mo
 1.  **Modify `BrokerInput` (`components/inputs_outputs/broker_input.py`):**
     *   Ensure `__init__` correctly reads the `broker_subscriptions` list passed via its `component_config` (originating from `App._create_simplified_flow_config`).
     *   Ensure the underlying `SolaceMessaging.bind_to_queue` (or equivalent) applies all these subscriptions to the single queue it manages.
+    *  Make sure that all changes are backward compatible with the existing `BrokerInput` functionality.
 
 2.  **Implement `App.send_message` (`flow/app.py`):**
     *   Add the method `send_message(self, payload: Any, topic: str, user_properties: Optional[Dict] = None)`.
@@ -83,6 +84,7 @@ This document outlines the step-by-step plan to implement the "Simplified App Mo
     *   If `BrokerOutput` not found, log an error.
 
 3.  **Modify `BrokerOutput` (`components/inputs_outputs/broker_output.py`):**
+    *   Make sure that all changes are backward compatible with the existing `BrokerOutput` functionality.
     *   Review the `send_message` method (which handles messages coming from the *previous* component via `message.previous`).
     *   Ensure the logic correctly handles the `Message` object created by `App.send_message`, extracting data from `message.previous`. No explicit changes might be needed if `send_message` already relies solely on `message.previous`. Double-check the data extraction path. *Self-correction:* The base `run` loop calls `invoke`, then `process_post_invoke` which calls `send_message`. Messages from `App.send_message` arrive via `enqueue` directly. We need `BrokerOutput.process_event` to handle these.
     *   Modify `BrokerOutput.process_event`:
@@ -137,4 +139,3 @@ This document outlines the step-by-step plan to implement the "Simplified App Mo
 4.  **Refactor and Review:**
     *   Clean up code, add comments, and ensure consistency.
     *   Perform code reviews.
-```
