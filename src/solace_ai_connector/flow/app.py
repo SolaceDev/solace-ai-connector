@@ -36,13 +36,13 @@ class App:
             trace_queue: Queue for trace messages
             connector: Reference to the parent connector
         """
-        # 1.2.2 Check if this is a custom App subclass with code-defined config
+        # Check if this is a custom App subclass with code-defined config
         code_config = None
         if hasattr(self.__class__, "app_config") and isinstance(self.__class__.app_config, dict):
             log.debug(f"Found code-defined app_config in {self.__class__.__name__}")
             code_config = self.__class__.app_config
 
-        # 1.2.3 Merge configurations: YAML (app_info) overrides code_config
+        # Merge configurations: YAML (app_info) overrides code_config
         if code_config:
             # Perform a deep merge, giving precedence to app_info (YAML)
             merged_app_info = deep_merge(code_config, app_info)
@@ -50,12 +50,12 @@ class App:
         else:
             merged_app_info = app_info
 
-        # 1.2.4 Store the final merged config
+        # Store the final merged config
         self.app_info = merged_app_info
-        # 1.2.5 Extract app_config for get_config() - this is the 'config' block within the app definition
+        # Extract app_config for get_config() - this is the 'config' block within the app definition
         self.app_config = self.app_info.get("config", {})
         self.app_index = app_index
-        # 1.2.6 Derive name from merged config
+        # Derive name from merged config
         self.name = self.app_info.get("name", f"app_{app_index}")
         self.num_instances = self.app_info.get("num_instances", 1)
         self.flows: List[Flow] = []
@@ -72,19 +72,40 @@ class App:
     def create_flows(self):
         """Create flows for this app"""
         try:
-            for index, flow in enumerate(self.app_info.get("flows", [])):
-                log.info(f"Creating flow {flow.get('name')} in app {self.name}")
-                num_instances = flow.get("num_instances", 1)
-                if num_instances < 1:
-                    num_instances = 1
-                for i in range(num_instances):
-                    flow_instance = self.create_flow(flow, index, i)
-                    flow_input_queue = flow_instance.get_flow_input_queue()
-                    self.flow_input_queues[flow.get("name")] = flow_input_queue
-                    self.flows.append(flow_instance)
+            # 1.3.1 Detect simplified app configuration
+            is_simplified = "broker" in self.app_info and "components" in self.app_info and "flows" not in self.app_info
+
+            if is_simplified:
+                # 1.3.2 Call helper to generate implicit flow config
+                log.info(f"Creating simplified app flow for {self.name}")
+                flow_config = self._create_simplified_flow_config()
+                # 1.3.3 Create the single implicit flow
+                flow_instance = self.create_flow(flow_config, 0, 0)
+                flow_input_queue = flow_instance.get_flow_input_queue()
+                self.flow_input_queues[flow_config.get("name")] = flow_input_queue
+                self.flows.append(flow_instance)
+            else:
+                # 1.3.4 Keep existing logic for standard flows defined in 'flows' list
+                for index, flow in enumerate(self.app_info.get("flows", [])):
+                    log.info(f"Creating flow {flow.get('name')} in app {self.name}")
+                    num_instances = flow.get("num_instances", 1)
+                    if num_instances < 1:
+                        num_instances = 1
+                    for i in range(num_instances):
+                        flow_instance = self.create_flow(flow, index, i)
+                        flow_input_queue = flow_instance.get_flow_input_queue()
+                        self.flow_input_queues[flow.get("name")] = flow_input_queue
+                        self.flows.append(flow_instance)
         except Exception as e:
             log.error(f"Error creating flows for app {self.name}: {e}")
             raise e
+
+    def _create_simplified_flow_config(self) -> Dict[str, Any]:
+        """Creates the implicit flow configuration for a simplified app."""
+        # This method will be implemented in step 1.4
+        # For now, return a placeholder or raise NotImplementedError
+        raise NotImplementedError("_create_simplified_flow_config is not yet implemented")
+
 
     def create_flow(self, flow: dict, index: int, flow_instance_index: int) -> Flow:
         """

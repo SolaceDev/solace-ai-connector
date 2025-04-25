@@ -19,11 +19,11 @@ Coding rules:
     - [X] 1.2.4 Store merged result in `self.app_info`.
     - [X] 1.2.5 Extract `config` block from merged `self.app_info` into `self.app_config`.
     - [X] 1.2.6 Derive `self.name` from merged `self.app_info`.
-- [ ] **1.3 Modify `App.create_flows` (`flow/app.py`):**
-    - [ ] 1.3.1 Add logic to detect simplified app configuration.
-    - [ ] 1.3.2 Call `_create_simplified_flow_config()` if simplified.
-    - [ ] 1.3.3 Call `self.create_flow()` with the generated config.
-    - [ ] 1.3.4 Keep existing logic for standard flows.
+- [X] **1.3 Modify `App.create_flows` (`flow/app.py`):**
+    - [X] 1.3.1 Add logic to detect simplified app configuration.
+    - [X] 1.3.2 Call `_create_simplified_flow_config()` if simplified.
+    - [X] 1.3.3 Call `self.create_flow()` with the generated config.
+    - [X] 1.3.4 Keep existing logic for standard flows.
 - [ ] **1.4 Implement `App._create_simplified_flow_config` (`flow/app.py`):**
     - [ ] 1.4.1 Create the private helper method.
     *   [ ] 1.4.2 Construct flow dictionary.
