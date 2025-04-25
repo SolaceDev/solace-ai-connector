@@ -12,6 +12,7 @@ from solace_ai_connector.components.component_base import ComponentBase
 from solace_ai_connector.flow.subscription_router import SubscriptionRouter
 from solace_ai_connector.common.message import Message
 from solace_ai_connector.common.event import Event, EventType
+from solace_ai_connector.common.utils import deep_merge # Import deep_merge
 
 # --- Test Data and Mocks ---
 
@@ -168,8 +169,8 @@ def test_create_simplified_flow_config(app_config_override, expected_components)
         },
         "components": [] # Overridden by parametrize
     }
-    # Deep merge the override into the base
-    merged_app_info = App._App__dict__["__init__"].__globals__["deep_merge"](base_app_info, app_config_override)
+    # Deep merge the override into the base using the imported function
+    merged_app_info = deep_merge(base_app_info, app_config_override)
 
     # Mock App instance
     mock_app = MagicMock(spec=App)
