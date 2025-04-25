@@ -12,7 +12,7 @@ import gzip
 import json
 import yaml
 from copy import deepcopy
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence # Import Sequence
 
 from .log import log
 
@@ -729,26 +729,28 @@ def deep_merge(source, destination):
     """
     Deep merge two dictionaries. Destination values overwrite source values.
     If a key exists in both and both values are dictionaries, they are merged recursively.
-    Lists and other types from the destination completely replace those in the source.
+    If a key exists in both and both values are lists, the destination list is appended to the source list.
+    Otherwise, the destination value replaces the source value.
 
     Args:
         source (dict): The source dictionary (provides default values).
-        destination (dict): The destination dictionary (overrides source values).
+        destination (dict): The destination dictionary (overrides/extends source values).
 
     Returns:
         dict: The merged dictionary.
     """
     result = deepcopy(source)
     for key, value in destination.items():
-        if isinstance(value, Mapping):
-            # Get node from result; if it's also a dict, merge recursively
-            node = result.get(key)
-            if isinstance(node, Mapping):
-                result[key] = deep_merge(node, value)  # Assign the result back
-            else:
-                # If the source node isn't a dict, destination dict simply replaces it
-                result[key] = deepcopy(value)
+        source_value = result.get(key)
+        # Check if both source and destination values are lists
+        if isinstance(source_value, list) and isinstance(value, list):
+            # Extend the source list with the destination list
+            result[key].extend(deepcopy(value))
+        # Check if both source and destination values are dictionaries
+        elif isinstance(source_value, Mapping) and isinstance(value, Mapping):
+            # Merge dictionaries recursively
+            result[key] = deep_merge(source_value, value)
         else:
-            # For lists, scalars, etc., the destination value replaces the source value
+            # Otherwise, destination value replaces source value (including replacing list with non-list, etc.)
             result[key] = deepcopy(value)
     return result
