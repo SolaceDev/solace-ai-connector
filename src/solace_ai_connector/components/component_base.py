@@ -14,8 +14,8 @@ from ..common.message import Message
 from ..common.messaging.solace_messaging import ConnectionStatus
 from ..common.trace_message import TraceMessage
 from ..common.event import Event, EventType
-# Remove direct import of RRC
-# from ..flow.request_response_flow_controller import RequestResponseFlowController
+# Re-import RequestResponseFlowController
+from ..flow.request_response_flow_controller import RequestResponseFlowController
 from ..common.monitoring import Monitoring
 from ..common.monitoring import Metrics
 from ..common import Message_NACK_Outcome
@@ -44,12 +44,14 @@ class ComponentBase:
         self.cache_service = kwargs.pop("cache_service", None)
         self.put_errors_in_error_queue = kwargs.pop("put_errors_in_error_queue", True)
         self.parent_app = kwargs.pop("app", None)
+        self._component_rrc = None # Initialize component-level RRC attribute
 
         self.component_config = self.config.get("component_config") or {}
-        # Remove direct RRC config handling here, it's now managed by App
-        # self.broker_request_response_config = self.config.get(
-        #     "broker_request_response", None
-        # )
+        # --- Start Re-introduced Logic ---
+        self.broker_request_response_config = self.config.get(
+            "broker_request_response", None
+        )
+        # --- End Re-introduced Logic ---
         self.name = self.config.get("component_name", "<unnamed>")
 
         resolve_config_values(self.component_config)
@@ -68,8 +70,8 @@ class ComponentBase:
         self.validate_config()
         self.setup_transforms()
         self.setup_communications()
-        # Remove direct RRC setup here
-        # self.setup_broker_request_response()
+        # --- Re-introduce call to setup component-level RRC ---
+        self.setup_component_broker_request_response()
 
         self.monitoring = Monitoring()
 
@@ -340,47 +342,68 @@ class ComponentBase:
         else:
             self.input_queue = queue.Queue(maxsize=self.queue_max_depth)
 
-    # Remove direct RRC setup
-    # def setup_broker_request_response(self):
-    #     if (
-    #         not self.broker_request_response_config
-    #         or not self.broker_request_response_config.get("enabled", False)
-    #     ):
-    #         self.broker_request_response_controller = None
-    #         return
-    #     broker_config = self.broker_request_response_config.get("broker_config", {})
-    #     request_expiry_ms = self.broker_request_response_config.get(
-    #         "request_expiry_ms", 30000
-    #     )
-    #     if not broker_config:
-    #         raise ValueError(
-    #             f"Broker request response config not found for component {self.name}"
-    #         )
-    #     rrc_config = {
-    #         "broker_config": broker_config,
-    #         "request_expiry_ms": request_expiry_ms,
-    #     }
+    # --- Re-introduce method to setup component-level RRC ---
+    def setup_component_broker_request_response(self):
+        """Initializes RRC if configured at the component level (backward compatibility)."""
+        if (
+            self.broker_request_response_config
+            and self.broker_request_response_config.get("enabled", False)
+        ):
+            log.warning(
+                f"[{self.name}] {self.log_identifier} Using deprecated component-level 'broker_request_response' config. "
+                "Consider migrating to app-level 'request_reply_enabled' in the 'broker' config."
+            )
+            broker_config = self.broker_request_response_config.get("broker_config", {})
+            request_expiry_ms = self.broker_request_response_config.get(
+                "request_expiry_ms", 30000 # Default from old logic
+            )
+            if not broker_config:
+                raise ValueError(
+                    f"Component-level broker_request_response config missing 'broker_config' for component {self.name}"
+                )
 
-    #     optional_keys = [
-    #         "response_topic_prefix",
-    #         "response_queue_prefix",
-    #         "user_properties_reply_topic_key",
-    #         "user_properties_reply_metadata_key",
-    #         "response_topic_insertion_expression",
-    #     ]
+            # Construct config for the controller, extracting relevant keys
+            rrc_config = {
+                "broker_config": broker_config,
+                "request_expiry_ms": request_expiry_ms,
+            }
+            optional_keys = [
+                "response_topic_prefix",
+                "response_queue_prefix",
+                "user_properties_reply_topic_key",
+                "user_properties_reply_metadata_key",
+                "response_topic_insertion_expression",
+                # Add any other keys the controller might expect from this block
+            ]
+            for key in optional_keys:
+                if key in self.broker_request_response_config:
+                    rrc_config[key] = self.broker_request_response_config[key]
 
-    #     for key in optional_keys:
-    #         if key in self.broker_request_response_config:
-    #             rrc_config[key] = self.broker_request_response_config[key]
+            try:
+                # Store the controller instance on the component
+                self._component_rrc = RequestResponseFlowController(
+                    config=rrc_config, connector=self.connector
+                )
+                log.info(f"[{self.name}] {self.log_identifier} Initialized component-level RequestResponseFlowController.")
+            except Exception as e:
+                log.error(f"[{self.name}] {self.log_identifier} Failed to initialize component-level RRC: {e}", exc_info=True)
+                # Decide if this should be fatal
+                raise e
+        else:
+             self._component_rrc = None
+    # --- End Re-introduced method ---
 
-    #     self.broker_request_response_controller = RequestResponseFlowController(
-    #         config=rrc_config, connector=self.connector
-    #     )
 
     def is_broker_request_response_enabled(self):
-        # Check if the app has the controller enabled
+        """Checks if RRC is enabled either at App level or Component level."""
         app = self.get_app()
-        return app is not None and app.request_response_controller is not None
+        # Check app level first (new way)
+        if app is not None and app.request_response_controller is not None:
+            return True
+        # Check component level (old way)
+        if hasattr(self, "_component_rrc") and self._component_rrc is not None:
+             return True
+        return False
 
     def setup_transforms(self):
         self.transforms = Transforms(
@@ -485,6 +508,17 @@ class ComponentBase:
             self.stop_component()
         except KeyboardInterrupt:
             pass
+        # --- Add cleanup for component-level RRC ---
+        if hasattr(self, "_component_rrc") and self._component_rrc:
+             try:
+                  # RRC cleanup might involve stopping its internal app/flow,
+                  # which should be handled by the main connector cleanup.
+                  # We just need to release the reference here.
+                  pass # Rely on connector.cleanup() for the internal flow
+             except Exception as e:
+                  log.error(f"[{self.name}] Error during component-level RRC cleanup reference release: {e}")
+             self._component_rrc = None
+        # --- End RRC cleanup ---
         if hasattr(self, "input_queue"):
             while not self.input_queue.empty():
                 try:
@@ -492,32 +526,51 @@ class ComponentBase:
                 except queue.Empty:
                     break
 
-    # This should be used to do an on-the-fly broker request response
     def do_broker_request_response(
         self, message, stream=False, streaming_complete_expression=None
     ):
-        # 4.1.4 Modify ComponentBase.do_broker_request_response
+        """Performs broker request-response using App-level or Component-level controller."""
         app = self.get_app()
+        controller = None
+
+        # Prioritize App-level controller (new way)
         if app and app.request_response_controller:
             controller = app.request_response_controller
+            log.debug(f"[{self.name}] {self.log_identifier} Using App-level RRC.")
+        # Fallback to Component-level controller (old way)
+        elif hasattr(self, "_component_rrc") and self._component_rrc:
+             controller = self._component_rrc
+             log.debug(f"[{self.name}] {self.log_identifier} Using Component-level RRC.")
+
+        # If a controller was found (either way)
+        if controller:
+            # Use the found controller
+            generator = controller.do_broker_request_response(
+                message, stream, streaming_complete_expression
+            )
             if stream:
-                return controller.do_broker_request_response(
-                    message, stream, streaming_complete_expression
-                )
+                return generator # Return the generator directly for streaming
             else:
-                generator = controller.do_broker_request_response(message)
-                # Get the first (and only) item from the generator
+                # Get the first (and only) item for non-streaming
                 try:
-                    next_message, _ = next(generator) # Ignore the 'last' flag for non-streaming
+                    next_message, _ = next(generator) # Ignore the 'last' flag
                     return next_message
                 except StopIteration:
-                    # This might happen if the RRC yields nothing (e.g., timeout before first response)
+                    log.warning(f"[{self.name}] {self.log_identifier} RRC generator yielded no response.")
                     return None
+                except TimeoutError as e: # Catch timeout specifically
+                     log.error(f"[{self.name}] {self.log_identifier} RRC timed out: {e}")
+                     raise e # Re-raise timeout
+                except Exception as e:
+                     log.error(f"[{self.name}] {self.log_identifier} Error during RRC call: {e}", exc_info=True)
+                     raise e # Re-raise other exceptions
         else:
+            # No controller found
             raise ValueError(
                 f"Broker request-response is not enabled for app '{app.name if app else 'unknown'}' "
-                f"or controller not found for component '{self.name}'. "
-                "Ensure 'request_reply_enabled: true' is set in the app's broker config."
+                f"or component '{self.name}'. Ensure 'request_reply_enabled: true' is set in the app's "
+                f"'broker' config (recommended) or 'enabled: true' in the component's "
+                f"'broker_request_response' config (deprecated)."
             )
 
 
