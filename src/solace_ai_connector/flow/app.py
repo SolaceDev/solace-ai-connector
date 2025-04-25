@@ -7,6 +7,9 @@ from copy import deepcopy # Import deepcopy
 from ..common.log import log
 from .flow import Flow
 from ..common.utils import deep_merge # Import deep_merge
+# Imports for send_message - kept local to method to avoid potential circular imports
+# from ..common.message import Message
+# from ..common.event import Event, EventType
 
 
 class App:
@@ -66,6 +69,7 @@ class App:
         self.trace_queue = trace_queue
         self.connector = connector
         self.flow_input_queues = {}
+        self._broker_output_component = None # Cache for send_message
 
         # Create flows for this app using the merged configuration
         self.create_flows()
@@ -233,6 +237,7 @@ class App:
                 log.error(f"Error cleaning up flow in app {self.name}: {e}")
         self.flows.clear()
         self.flow_input_queues.clear()
+        self._broker_output_component = None # Clear cache
 
     def get_config(self, key=None, default=None):
         """
@@ -247,6 +252,72 @@ class App:
         """
         # self.app_config holds the 'config:' block from the merged app_info
         return self.app_config.get(key, default)
+
+    def send_message(self, payload: Any, topic: str, user_properties: Optional[Dict] = None):
+        """
+        Sends a message via the implicit BrokerOutput component of a simplified app.
+
+        Args:
+            payload: The message payload.
+            topic: The destination topic.
+            user_properties: Optional dictionary of user properties.
+        """
+        # Import locally to avoid circular dependency issues at module level
+        from ..common.message import Message
+        from ..common.event import Event, EventType
+
+        # Check if output is enabled for this app
+        if not self.app_info.get("broker", {}).get("output_enabled", False):
+            log.warning(f"App '{self.name}' attempted to send a message, but 'output_enabled' is false. Message discarded.")
+            return
+
+        # Find the BrokerOutput component instance (cache it after first find)
+        if self._broker_output_component is None:
+            broker_output_instance = None
+            # Simplified apps have only one flow
+            if self.flows:
+                flow = self.flows[0]
+                # BrokerOutput is typically the last component in the implicit flow
+                if flow.component_groups:
+                    last_group = flow.component_groups[-1]
+                    if last_group:
+                        # Check if the last component is indeed BrokerOutput
+                        comp = last_group[0] # Get the first instance in the group
+                        if comp.module_info.get("class_name") == "BrokerOutput":
+                            broker_output_instance = comp
+                        else:
+                            # Check component_module as fallback (less reliable)
+                            if comp.config.get("component_module") == "broker_output":
+                                broker_output_instance = comp
+
+            if broker_output_instance:
+                self._broker_output_component = broker_output_instance
+            else:
+                log.error(f"App '{self.name}' could not find the implicit BrokerOutput component to send a message.")
+                return
+
+        # Create the output data structure expected by BrokerOutput
+        output_data = {
+            "payload": payload,
+            "topic": topic,
+            "user_properties": user_properties or {}
+        }
+
+        # Create a Message object and place the output data in 'previous'
+        # This mimics how data flows from a preceding component to BrokerOutput
+        msg = Message()
+        msg.set_previous(output_data)
+
+        # Create an Event to enqueue
+        event = Event(EventType.MESSAGE, msg)
+
+        # Enqueue the event to the BrokerOutput component
+        try:
+            log.debug(f"App '{self.name}' sending message via implicit BrokerOutput to topic '{topic}'")
+            self._broker_output_component.enqueue(event)
+        except Exception as e:
+            log.error(f"App '{self.name}' failed to enqueue message to BrokerOutput: {e}", exc_info=True)
+
 
     @classmethod
     def create_from_flows(

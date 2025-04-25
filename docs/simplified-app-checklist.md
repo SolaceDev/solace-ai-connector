@@ -64,27 +64,27 @@ Coding rules:
 
 ## 3. Phase 3: Adapt Broker Components and Add App Methods
 
-- [ ] **3.1 Modify `BrokerInput` (`components/inputs_outputs/broker_input.py`):**
-    *   [ ] 3.1.1 Ensure `__init__` reads `broker_subscriptions` from `component_config`.
-    *   [ ] 3.1.2 Ensure `bind_to_queue` applies all subscriptions.
-    *   [ ] 3.1.3 Verify backward compatibility.
-- [ ] **3.2 Implement `App.send_message` (`flow/app.py`):**
-    *   [ ] 3.2.1 Add `send_message` method.
-    *   [ ] 3.2.2 Check `output_enabled` flag.
-    *   [ ] 3.2.3 Find implicit `BrokerOutput` component instance.
-    *   [ ] 3.2.4 Create output data dictionary.
-    *   [ ] 3.2.5 Import `Message`, `Event`, `EventType` locally.
-    *   [ ] 3.2.6 Create `Message` object with data in `message.previous`.
-    *   [ ] 3.2.7 Create `Event`.
-    *   [ ] 3.2.8 Call `broker_output_component.enqueue(event)`.
-    *   [ ] 3.2.9 Handle `BrokerOutput` not found error.
-- [ ] **3.3 Modify `BrokerOutput` (`components/inputs_outputs/broker_output.py`):**
-    *   [ ] 3.3.1 Verify backward compatibility.
-    *   [ ] 3.3.2 Modify `process_event`:
-        *   [ ] 3.3.2.1 If `event.event_type == EventType.MESSAGE`:
-            *   [ ] 3.3.2.1.1 Extract `message`.
-            *   [ ] 3.3.2.1.2 Call `self.send_message(message)`.
-            *   [ ] 3.3.2.1.3 Call `message.call_acknowledgements()`.
+- [X] **3.1 Modify `BrokerInput` (`components/inputs_outputs/broker_input.py`):**
+    *   [X] 3.1.1 Ensure `__init__` reads `broker_subscriptions` from `component_config`.
+    *   [X] 3.1.2 Ensure `bind_to_queue` applies all subscriptions.
+    *   [X] 3.1.3 Verify backward compatibility.
+- [X] **3.2 Implement `App.send_message` (`flow/app.py`):**
+    *   [X] 3.2.1 Add `send_message` method.
+    *   [X] 3.2.2 Check `output_enabled` flag.
+    *   [X] 3.2.3 Find implicit `BrokerOutput` component instance.
+    *   [X] 3.2.4 Create output data dictionary.
+    *   [X] 3.2.5 Import `Message`, `Event`, `EventType` locally.
+    *   [X] 3.2.6 Create `Message` object with data in `message.previous`.
+    *   [X] 3.2.7 Create `Event`.
+    *   [X] 3.2.8 Call `broker_output_component.enqueue(event)`.
+    *   [X] 3.2.9 Handle `BrokerOutput` not found error.
+- [X] **3.3 Modify `BrokerOutput` (`components/inputs_outputs/broker_output.py`):**
+    *   [X] 3.3.1 Verify backward compatibility.
+    *   [X] 3.3.2 Modify `process_event`: (Self-correction: No change needed due to `ComponentBase` handling)
+        *   [X] 3.3.2.1 If `event.event_type == EventType.MESSAGE`:
+            *   [X] 3.3.2.1.1 Extract `message`.
+            *   [X] 3.3.2.1.2 Call `self.send_message(message)`.
+            *   [X] 3.3.2.1.3 Call `message.call_acknowledgements()`.
 
 ## 4. Phase 4: Request-Reply and Validation
 
