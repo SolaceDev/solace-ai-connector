@@ -9,8 +9,8 @@ Coding rules:
 
 ## 1. Phase 1: Core App and Flow Modifications
 
-- [ ] **1.1 Add `deep_merge` Utility:**
-    - [ ] 1.1.1 Add `deep_merge` function to `src/solace_ai_connector/common/utils.py`.
+- [X] **1.1 Add `deep_merge` Utility:**
+    - [X] 1.1.1 Add `deep_merge` function to `src/solace_ai_connector/common/utils.py`.
 - [ ] **1.2 Modify `App.__init__` (`flow/app.py`):**
     - [ ] 1.2.1 Import `deep_merge`.
     - [ ] 1.2.2 Check for `app_config` class attribute.

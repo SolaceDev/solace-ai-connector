@@ -600,24 +600,23 @@ def remove_data_value(data_object, expression):
                 )
                 return
 
-def deep_merge(d, u):
-    # Create a deep copy of first dict to avoid modifying original
-    result = deepcopy(d)
-    
-    # Iterate through keys and values in second dict
-    for k, v in u.items():
-        if k in result:
-            # If key exists in both dicts
-            if isinstance(result[k], list) and isinstance(v, list):
-                # For lists: extend the existing list
-                result[k].extend(v)
-            elif isinstance(result[k], Mapping) and isinstance(v, Mapping):
-                # For nested dicts: recursive merge
-                result[k] = deep_merge(result[k], v)
-            else:
-                # For other types: replace value
-                result[k] = v
+def deep_merge(source, destination):
+    """
+    Deep merge two dictionaries.
+
+    Args:
+        source (dict): The source dictionary (provides default values).
+        destination (dict): The destination dictionary (overrides source values).
+
+    Returns:
+        dict: The merged dictionary.
+    """
+    result = deepcopy(source)
+    for key, value in destination.items():
+        if isinstance(value, Mapping):
+            # get node or create one
+            node = result.setdefault(key, {})
+            deep_merge(node, value)
         else:
-            # If key doesn't exist: add it
-            result[k] = v
+            result[key] = value
     return result
