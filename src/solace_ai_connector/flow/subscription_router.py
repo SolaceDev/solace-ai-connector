@@ -61,7 +61,7 @@ class SubscriptionRouter(ComponentBase):
         # Get the original component configurations from the app definition
         app_components_config = self.get_config("app_components_config_ref")
         if not app_components_config or not isinstance(app_components_config, list):
-            log.error(f"{self.log_identifier} Invalid or missing 'app_components_config_ref'. Cannot build routing targets.")
+            log.error("%s Invalid or missing 'app_components_config_ref'. Cannot build routing targets.", self.log_identifier)
             return
 
         # Get the actual instantiated component groups from the flow
@@ -71,7 +71,7 @@ class SubscriptionRouter(ComponentBase):
             flow = self.get_app().flows[0]
             flow_component_groups = flow.component_groups
         except (AttributeError, IndexError):
-            log.error(f"{self.log_identifier} Could not access flow component groups. Cannot build routing targets.")
+            log.error("%s Could not access flow component groups. Cannot build routing targets.", self.log_identifier)
             return
 
         # Map component names from config to their instantiated objects in the flow
@@ -98,7 +98,7 @@ class SubscriptionRouter(ComponentBase):
             flow_idx += 1
 
         if config_idx != len(app_components_config):
-             log.warning(f"{self.log_identifier} Mismatch between configured components and flow components during routing target build.")
+             log.warning("%s Mismatch between configured components and flow components during routing target build.", self.log_identifier)
 
 
         # Build the targets list with compiled regex
@@ -106,7 +106,7 @@ class SubscriptionRouter(ComponentBase):
             comp_name = comp_config.get("name")
             component_instance = component_map.get(comp_name)
             if not component_instance:
-                log.warning(f"{self.log_identifier} Could not find instance for component '{comp_name}' during routing target build. Skipping.")
+                log.warning("%s Could not find instance for component '%s' during routing target build. Skipping.", self.log_identifier, comp_name)
                 continue
 
             subscriptions = comp_config.get("subscriptions", [])
@@ -124,13 +124,13 @@ class SubscriptionRouter(ComponentBase):
                     try:
                         regex_list.append(re.compile(regex_str))
                     except re.error as e:
-                        log.error(f"{self.log_identifier} Invalid regex generated from subscription '{topic}' for component '{comp_name}': {e}")
+                        log.error("%s Invalid regex generated from subscription '%s' for component '%s': %s", self.log_identifier, topic, comp_name, e)
 
             if regex_list:
                 self.component_targets.append((component_instance, regex_list))
-                log.debug(f"{self.log_identifier} Added target: Component '{comp_name}', Subscriptions: {[r.pattern for r in regex_list]}")
+                log.debug("%s Added target: Component '%s', Subscriptions: %s", self.log_identifier, comp_name, [r.pattern for r in regex_list])
             else:
-                 log.debug(f"{self.log_identifier} Component '{comp_name}' has no subscriptions defined for routing.")
+                 log.debug("%s Component '%s' has no subscriptions defined for routing.", self.log_identifier, comp_name)
 
 
     def invoke(self, message: Message, data: Any):
@@ -140,17 +140,17 @@ class SubscriptionRouter(ComponentBase):
         """
         msg_topic = message.get_topic()
         if not msg_topic:
-            log.warning(f"{self.log_identifier} Message has no topic, cannot route. Discarding.")
+            log.warning("%s Message has no topic, cannot route. Discarding.", self.log_identifier)
             self.discard_current_message() # Discard if unroutable
             return None
 
-        log.debug(f"{self.log_identifier} Attempting to route message with topic: '{msg_topic}'")
+        log.debug("%s Attempting to route message with topic: '%s'", self.log_identifier, msg_topic)
 
         for target_component, regex_list in self.component_targets:
             for regex_pattern in regex_list:
                 if regex_pattern.match(msg_topic):
                     # Found target, enqueue the original Event to the component's input queue
-                    log.info(f"{self.log_identifier} Routing message with topic '{msg_topic}' to component '{target_component.name}'")
+                    log.info("%s Routing message with topic '%s' to component '%s'", self.log_identifier, msg_topic, target_component.name)
                     try:
                         # Re-wrap the message in an Event object to pass to the target
                         original_event = Event(EventType.MESSAGE, message)
@@ -159,12 +159,12 @@ class SubscriptionRouter(ComponentBase):
                         self.discard_current_message()
                         return None # Stop processing here
                     except Exception as e:
-                         log.error(f"{self.log_identifier} Error enqueuing message to component '{target_component.name}': {e}", exc_info=True)
+                         log.error("%s Error enqueuing message to component '%s': %s", self.log_identifier, target_component.name, e, exc_info=True)
                          # Let error handling proceed, potentially NACKing original message
                          raise e
 
 
-        log.warning(f"{self.log_identifier} No matching subscription found for topic '{msg_topic}'. Discarding message.")
+        log.warning("%s No matching subscription found for topic '%s'. Discarding message.", self.log_identifier, msg_topic)
         self.discard_current_message() # Discard if unroutable
         return None
 
