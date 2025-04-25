@@ -7,6 +7,8 @@ from copy import deepcopy # Import deepcopy
 from ..common.log import log
 from .flow import Flow
 from ..common.utils import deep_merge # Import deep_merge
+# Import RequestResponseFlowController
+from .request_response_flow_controller import RequestResponseFlowController
 # Imports for send_message - kept local to method to avoid potential circular imports
 # from ..common.message import Message
 # from ..common.event import Event, EventType
@@ -70,6 +72,24 @@ class App:
         self.connector = connector
         self.flow_input_queues = {}
         self._broker_output_component = None # Cache for send_message
+        self.request_response_controller = None # Initialize RRC attribute
+
+        # 4.1.1 Check request_reply_enabled flag
+        broker_config = self.app_info.get("broker", {})
+        if broker_config.get("request_reply_enabled", False):
+            log.info(f"Request-reply enabled for app '{self.name}'. Initializing controller.")
+            try:
+                # 4.1.2 Instantiate RequestResponseFlowController
+                # Pass the broker config section and the connector reference
+                self.request_response_controller = RequestResponseFlowController(
+                    config={"broker_config": broker_config}, # Pass broker config under 'broker_config' key
+                    connector=self.connector
+                )
+                # 4.1.3 Store controller instance (already done by assignment above)
+            except Exception as e:
+                log.error(f"Failed to initialize RequestResponseFlowController for app '{self.name}': {e}", exc_info=True)
+                # Decide if this should be a fatal error for the app
+                raise e
 
         # Create flows for this app using the merged configuration
         self.create_flows()
@@ -230,6 +250,17 @@ class App:
     def cleanup(self):
         """Clean up resources and ensure all threads are properly joined"""
         log.info(f"Cleaning up app: {self.name}")
+        # Clean up the request response controller if it exists
+        if self.request_response_controller:
+            try:
+                # Assuming RRC has a cleanup method or similar
+                # If not, cleanup might involve stopping its internal flow/app
+                # For now, we rely on the connector cleaning up all apps/flows
+                pass # RRC's internal app/flow will be cleaned by connector.cleanup()
+            except Exception as e:
+                log.error(f"Error cleaning up RequestResponseFlowController in app {self.name}: {e}")
+            self.request_response_controller = None
+
         for flow in self.flows:
             try:
                 flow.cleanup()
@@ -238,6 +269,7 @@ class App:
         self.flows.clear()
         self.flow_input_queues.clear()
         self._broker_output_component = None # Clear cache
+
 
     def get_config(self, key=None, default=None):
         """

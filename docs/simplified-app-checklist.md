@@ -88,11 +88,11 @@ Coding rules:
 
 ## 4. Phase 4: Request-Reply and Validation
 
-- [ ] **4.1 Integrate `RequestResponseFlowController` (`flow/app.py`):**
-    *   [ ] 4.1.1 In `App.__init__`, check `request_reply_enabled` flag.
-    *   [ ] 4.1.2 If true, instantiate `RequestResponseFlowController` with relevant `broker` config.
-    *   [ ] 4.1.3 Store controller instance (e.g., `self.request_response_controller`).
-    *   [ ] 4.1.4 Modify `ComponentBase.do_broker_request_response` to use `self.get_app().request_response_controller`.
+- [X] **4.1 Integrate `RequestResponseFlowController` (`flow/app.py`):**
+    *   [X] 4.1.1 In `App.__init__`, check `request_reply_enabled` flag.
+    *   [X] 4.1.2 If true, instantiate `RequestResponseFlowController` with relevant `broker` config.
+    *   [X] 4.1.3 Store controller instance (e.g., `self.request_response_controller`).
+    *   [X] 4.1.4 Modify `ComponentBase.do_broker_request_response` to use `self.get_app().request_response_controller`.
 - [ ] **4.2 Update `SolaceAiConnector.validate_config` (`solace_ai_connector.py`):**
     *   [ ] 4.2.1 Modify validation logic for `app` entries.
     *   [ ] 4.2.2 Check for `name`.

@@ -14,7 +14,8 @@ from ..common.message import Message
 from ..common.messaging.solace_messaging import ConnectionStatus
 from ..common.trace_message import TraceMessage
 from ..common.event import Event, EventType
-from ..flow.request_response_flow_controller import RequestResponseFlowController
+# Remove direct import of RRC
+# from ..flow.request_response_flow_controller import RequestResponseFlowController
 from ..common.monitoring import Monitoring
 from ..common.monitoring import Metrics
 from ..common import Message_NACK_Outcome
@@ -45,9 +46,10 @@ class ComponentBase:
         self.parent_app = kwargs.pop("app", None)
 
         self.component_config = self.config.get("component_config") or {}
-        self.broker_request_response_config = self.config.get(
-            "broker_request_response", None
-        )
+        # Remove direct RRC config handling here, it's now managed by App
+        # self.broker_request_response_config = self.config.get(
+        #     "broker_request_response", None
+        # )
         self.name = self.config.get("component_name", "<unnamed>")
 
         resolve_config_values(self.component_config)
@@ -66,7 +68,8 @@ class ComponentBase:
         self.validate_config()
         self.setup_transforms()
         self.setup_communications()
-        self.setup_broker_request_response()
+        # Remove direct RRC setup here
+        # self.setup_broker_request_response()
 
         self.monitoring = Monitoring()
 
@@ -337,44 +340,47 @@ class ComponentBase:
         else:
             self.input_queue = queue.Queue(maxsize=self.queue_max_depth)
 
-    def setup_broker_request_response(self):
-        if (
-            not self.broker_request_response_config
-            or not self.broker_request_response_config.get("enabled", False)
-        ):
-            self.broker_request_response_controller = None
-            return
-        broker_config = self.broker_request_response_config.get("broker_config", {})
-        request_expiry_ms = self.broker_request_response_config.get(
-            "request_expiry_ms", 30000
-        )
-        if not broker_config:
-            raise ValueError(
-                f"Broker request response config not found for component {self.name}"
-            )
-        rrc_config = {
-            "broker_config": broker_config,
-            "request_expiry_ms": request_expiry_ms,
-        }
+    # Remove direct RRC setup
+    # def setup_broker_request_response(self):
+    #     if (
+    #         not self.broker_request_response_config
+    #         or not self.broker_request_response_config.get("enabled", False)
+    #     ):
+    #         self.broker_request_response_controller = None
+    #         return
+    #     broker_config = self.broker_request_response_config.get("broker_config", {})
+    #     request_expiry_ms = self.broker_request_response_config.get(
+    #         "request_expiry_ms", 30000
+    #     )
+    #     if not broker_config:
+    #         raise ValueError(
+    #             f"Broker request response config not found for component {self.name}"
+    #         )
+    #     rrc_config = {
+    #         "broker_config": broker_config,
+    #         "request_expiry_ms": request_expiry_ms,
+    #     }
 
-        optional_keys = [
-            "response_topic_prefix",
-            "response_queue_prefix",
-            "user_properties_reply_topic_key",
-            "user_properties_reply_metadata_key",
-            "response_topic_insertion_expression",
-        ]
+    #     optional_keys = [
+    #         "response_topic_prefix",
+    #         "response_queue_prefix",
+    #         "user_properties_reply_topic_key",
+    #         "user_properties_reply_metadata_key",
+    #         "response_topic_insertion_expression",
+    #     ]
 
-        for key in optional_keys:
-            if key in self.broker_request_response_config:
-                rrc_config[key] = self.broker_request_response_config[key]
+    #     for key in optional_keys:
+    #         if key in self.broker_request_response_config:
+    #             rrc_config[key] = self.broker_request_response_config[key]
 
-        self.broker_request_response_controller = RequestResponseFlowController(
-            config=rrc_config, connector=self.connector
-        )
+    #     self.broker_request_response_controller = RequestResponseFlowController(
+    #         config=rrc_config, connector=self.connector
+    #     )
 
     def is_broker_request_response_enabled(self):
-        return self.broker_request_response_controller is not None
+        # Check if the app has the controller enabled
+        app = self.get_app()
+        return app is not None and app.request_response_controller is not None
 
     def setup_transforms(self):
         self.transforms = Transforms(
@@ -490,24 +496,30 @@ class ComponentBase:
     def do_broker_request_response(
         self, message, stream=False, streaming_complete_expression=None
     ):
-        if self.broker_request_response_controller:
+        # 4.1.4 Modify ComponentBase.do_broker_request_response
+        app = self.get_app()
+        if app and app.request_response_controller:
+            controller = app.request_response_controller
             if stream:
-                return (
-                    self.broker_request_response_controller.do_broker_request_response(
-                        message, stream, streaming_complete_expression
-                    )
+                return controller.do_broker_request_response(
+                    message, stream, streaming_complete_expression
                 )
             else:
-                generator = (
-                    self.broker_request_response_controller.do_broker_request_response(
-                        message
-                    )
-                )
-                next_message, last = next(generator, None)
-                return next_message
-        raise ValueError(
-            f"Broker request response controller not found for component {self.name}"
-        )
+                generator = controller.do_broker_request_response(message)
+                # Get the first (and only) item from the generator
+                try:
+                    next_message, _ = next(generator) # Ignore the 'last' flag for non-streaming
+                    return next_message
+                except StopIteration:
+                    # This might happen if the RRC yields nothing (e.g., timeout before first response)
+                    return None
+        else:
+            raise ValueError(
+                f"Broker request-response is not enabled for app '{app.name if app else 'unknown'}' "
+                f"or controller not found for component '{self.name}'. "
+                "Ensure 'request_reply_enabled: true' is set in the app's broker config."
+            )
+
 
     def handle_negative_acknowledgements(self, message, exception):
         """Handle NACK for the message."""
