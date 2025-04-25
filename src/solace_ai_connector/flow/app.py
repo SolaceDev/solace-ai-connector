@@ -2,6 +2,7 @@
 
 from typing import List, Dict, Any, Optional
 import os
+from copy import deepcopy # Import deepcopy
 
 from ..common.log import log
 from .flow import Flow
