@@ -44,7 +44,7 @@ class App:
         if hasattr(self.__class__, "app_config") and isinstance(
             self.__class__.app_config, dict
         ):
-            log.debug(f"Found code-defined app_config in {self.__class__.__name__}")
+            log.debug("Found code-defined app_config in %s", self.__class__.__name__)
             code_config = self.__class__.app_config
 
         # Merge configurations: YAML (app_info) overrides code_config
@@ -52,7 +52,7 @@ class App:
             # Perform a deep merge, giving precedence to app_info (YAML)
             merged_app_info = deep_merge(code_config, app_info)
             log.debug(
-                f"Merged app config for {merged_app_info.get('name', 'unnamed app')}"
+                "Merged app config for %s", merged_app_info.get("name", "unnamed app")
             )
         else:
             merged_app_info = app_info
@@ -80,7 +80,8 @@ class App:
         broker_config = self.app_info.get("broker", {})
         if broker_config.get("request_reply_enabled", False):
             log.info(
-                f"Request-reply enabled for app '{self.name}'. Initializing controller."
+                "Request-reply enabled for app '%s'. Initializing controller.",
+                self.name,
             )
             try:
                 # Instantiate RequestResponseFlowController
@@ -94,7 +95,9 @@ class App:
                 # Store controller instance (already done by assignment above)
             except Exception as e:
                 log.error(
-                    f"Failed to initialize RequestResponseFlowController for app '{self.name}': {e}",
+                    "Failed to initialize RequestResponseFlowController for app '%s': %s",
+                    self.name,
+                    e,
                     exc_info=True,
                 )
                 # Decide if this should be a fatal error for the app
@@ -115,7 +118,7 @@ class App:
 
             if is_simplified:
                 # Call helper to generate implicit flow config
-                log.info(f"Creating simplified app flow for {self.name}")
+                log.info("Creating simplified app flow for %s", self.name)
                 flow_config = self._create_simplified_flow_config()
                 # Create the single implicit flow
                 flow_instance = self.create_flow(flow_config, 0, 0)
@@ -125,7 +128,9 @@ class App:
             else:
                 # Keep existing logic for standard flows defined in 'flows' list
                 for index, flow in enumerate(self.app_info.get("flows", [])):
-                    log.info(f"Creating flow {flow.get('name')} in app {self.name}")
+                    log.info(
+                        "Creating flow %s in app %s", flow.get("name"), self.name
+                    )
                     num_instances = flow.get("num_instances", 1)
                     if num_instances < 1:
                         num_instances = 1
@@ -135,7 +140,7 @@ class App:
                         self.flow_input_queues[flow.get("name")] = flow_input_queue
                         self.flows.append(flow_instance)
         except Exception as e:
-            log.error(f"Error creating flows for app {self.name}: {e}")
+            log.error("Error creating flows for app %s: %s", self.name, e)
             raise e
 
     def _create_simplified_flow_config(self) -> Dict[str, Any]:
@@ -152,7 +157,8 @@ class App:
             ]
             if not all_subscriptions:
                 log.warning(
-                    f"Simplified app '{self.name}' has input_enabled=true but no subscriptions defined in components."
+                    "Simplified app '%s' has input_enabled=true but no subscriptions defined in components.",
+                    self.name,
                 )
 
             input_comp_config = {
@@ -266,7 +272,7 @@ class App:
 
     def cleanup(self):
         """Clean up resources and ensure all threads are properly joined"""
-        log.info(f"Cleaning up app: {self.name}")
+        log.info("Cleaning up app: %s", self.name)
         # Clean up the request response controller if it exists
         if self.request_response_controller:
             try:
@@ -276,7 +282,9 @@ class App:
                 pass  # RRC's internal app/flow will be cleaned by connector.cleanup()
             except Exception as e:
                 log.error(
-                    f"Error cleaning up RequestResponseFlowController in app {self.name}: {e}"
+                    "Error cleaning up RequestResponseFlowController in app %s: %s",
+                    self.name,
+                    e,
                 )
             self.request_response_controller = None
 
@@ -284,7 +292,7 @@ class App:
             try:
                 flow.cleanup()
             except Exception as e:
-                log.error(f"Error cleaning up flow in app {self.name}: {e}")
+                log.error("Error cleaning up flow in app %s: %s", self.name, e)
         self.flows.clear()
         self.flow_input_queues.clear()
         self._broker_output_component = None  # Clear cache
@@ -321,7 +329,8 @@ class App:
         # Check if output is enabled for this app
         if not self.app_info.get("broker", {}).get("output_enabled", False):
             log.warning(
-                f"App '{self.name}' attempted to send a message, but 'output_enabled' is false. Message discarded."
+                "App '%s' attempted to send a message, but 'output_enabled' is false. Message discarded.",
+                self.name,
             )
             return
 
@@ -348,7 +357,8 @@ class App:
                 self._broker_output_component = broker_output_instance
             else:
                 log.error(
-                    f"App '{self.name}' could not find the implicit BrokerOutput component to send a message."
+                    "App '%s' could not find the implicit BrokerOutput component to send a message.",
+                    self.name,
                 )
                 return
 
@@ -370,12 +380,16 @@ class App:
         # Enqueue the event to the BrokerOutput component
         try:
             log.debug(
-                f"App '{self.name}' sending message via implicit BrokerOutput to topic '{topic}'"
+                "App '%s' sending message via implicit BrokerOutput to topic '%s'",
+                self.name,
+                topic,
             )
             self._broker_output_component.enqueue(event)
         except Exception as e:
             log.error(
-                f"App '{self.name}' failed to enqueue message to BrokerOutput: {e}",
+                "App '%s' failed to enqueue message to BrokerOutput: %s",
+                self.name,
+                e,
                 exc_info=True,
             )
 
