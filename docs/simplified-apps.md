@@ -100,7 +100,7 @@ apps:
 #  - name: my_code_based_app
 #    app_module: my_app_definition_module # Points to a .py file
 #    # YAML config here merges with/overrides config defined in the Python file
-#    config:
+#    app_config:
 #      my_global_param: "yaml_override_value"
 ```
 
@@ -114,7 +114,7 @@ apps:
     *   **`request_reply_enabled`**: Set to `true` if any component needs to perform synchronous request-reply operations using `self.do_broker_request_response()`.
     *   **`queue_name`**: The **single, dedicated queue** this application instance will listen on. All subscriptions from all components are added to this queue.
     *   **`payload_encoding`/`payload_format`**: Specify how message payloads are decoded on input and encoded on output by the implicit broker components.
-*   **`config`**: An optional dictionary for application-level configuration. Any component within this app can access these values using `self.get_config('param_name')`. This is useful for shared settings like API keys, thresholds, etc.
+*   **`app_config`**: An optional dictionary for application-level configuration. Any component within this app can access these values using `self.get_config('param_name')`. This is useful for shared settings like API keys, thresholds, etc.
 *   **`components`**: A list defining the processing logic.
     *   **`name`**: Unique name for the component within the app.
     *   **`component_module`**: The Python module name where the component class is defined (e.g., `my_processor`, `llm_chat`).
