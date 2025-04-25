@@ -44,6 +44,7 @@ class App:
         """
         # Check if this is a custom App subclass with code-defined config
         code_config = None
+        # Use 'app_config' as the standard name for code-defined config as well
         if hasattr(self.__class__, "app_config") and isinstance(self.__class__.app_config, dict):
             log.debug(f"Found code-defined app_config in {self.__class__.__name__}")
             code_config = self.__class__.app_config
@@ -58,8 +59,8 @@ class App:
 
         # Store the final merged config
         self.app_info = merged_app_info
-        # Extract app_config for get_config() - this is the 'config' block within the app definition
-        self.app_config = self.app_info.get("config", {})
+        # Extract app_config for get_config() - this is the 'app_config' block within the app definition
+        self.app_config = self.app_info.get("app_config", {}) # <-- Changed "config" to "app_config"
         self.app_index = app_index
         # Derive name from merged config
         self.name = self.app_info.get("name", f"app_{app_index}")
@@ -273,7 +274,7 @@ class App:
 
     def get_config(self, key=None, default=None):
         """
-        Get a configuration value from the app's 'config' block.
+        Get a configuration value from the app's 'app_config' block.
 
         Args:
             key: Configuration key
@@ -282,7 +283,7 @@ class App:
         Returns:
             The configuration value or default
         """
-        # self.app_config holds the 'config:' block from the merged app_info
+        # self.app_config holds the 'app_config:' block from the merged app_info
         return self.app_config.get(key, default)
 
     def send_message(self, payload: Any, topic: str, user_properties: Optional[Dict] = None):
