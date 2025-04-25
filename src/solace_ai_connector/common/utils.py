@@ -12,7 +12,7 @@ import gzip
 import json
 import yaml
 from copy import deepcopy
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence # Import Sequence
 
 from .log import log
 
@@ -602,7 +602,9 @@ def remove_data_value(data_object, expression):
 
 def deep_merge(source, destination):
     """
-    Deep merge two dictionaries.
+    Deep merge two dictionaries. If a key exists in both and the values
+    are lists, the destination list is appended to the source list.
+    Otherwise, destination values overwrite source values.
 
     Args:
         source (dict): The source dictionary (provides default values).
@@ -617,6 +619,12 @@ def deep_merge(source, destination):
             # get node or create one
             node = result.setdefault(key, {})
             deep_merge(node, value)
+        # Check if both source and destination values are lists (and not strings)
+        elif isinstance(value, Sequence) and not isinstance(value, (str, bytes)) and \
+             isinstance(result.get(key), Sequence) and not isinstance(result.get(key), (str, bytes)):
+            # Extend the list in the result
+            result[key].extend(value)
         else:
+            # Overwrite other types or if source value wasn't a list
             result[key] = value
     return result
