@@ -341,61 +341,147 @@ class SolaceAiConnector:
                     continue
 
     def validate_config(self):
-        """Just some quick validation of the config for now"""
+        """Validate the configuration structure."""
         if not self.config:
             raise ValueError("No config provided")
 
-        # Check if either apps or flows are defined
+        # Check if either apps or flows are defined at the top level
         if not self.config.get("apps") and not self.config.get("flows"):
-            raise ValueError("No apps or flows defined in configuration file")
+            raise ValueError("No 'apps' or 'flows' defined in configuration file")
 
         if not self.config.get("log"):
             log.warning("No log config provided - using defaults")
 
-        # If apps are defined, validate them
+        # Validate apps if defined
         if self.config.get("apps"):
+            if not isinstance(self.config.get("apps"), list):
+                raise ValueError("'apps' must be a list")
+
             for index, app in enumerate(self.config.get("apps", [])):
+                if not isinstance(app, dict):
+                    raise ValueError(f"App definition at index {index} must be a dictionary")
+
+                # 4.2.2 Check for name
                 if not app.get("name"):
-                    raise ValueError(f"App name not provided in app {index}")
+                    raise ValueError(f"App name not provided in app definition at index {index}")
+                app_name = app.get("name")
 
-                if not app.get("flows"):
-                    raise ValueError(f"No flows defined in app {app.get('name')}")
+                # 4.2.3 Check for either flows OR (broker AND components)
+                has_flows = "flows" in app
+                has_broker = "broker" in app
+                has_components = "components" in app
 
-                # Validate flows in the app
-                self._validate_flows(app.get("flows"), f"app {app.get('name')}")
+                if not has_flows and not (has_broker and has_components):
+                    raise ValueError(
+                        f"App '{app_name}' must define either 'flows' or both 'broker' and 'components'"
+                    )
+                if has_flows and (has_broker or has_components):
+                    log.warning(
+                        f"App '{app_name}' defines both 'flows' and 'broker'/'components'. "
+                        "The 'broker' and 'components' keys will be ignored (standard mode)."
+                    )
 
-        # If flows are defined at the top level (for backward compatibility), validate them
+                # 4.2.4 Simplified Mode Validation
+                if has_broker and has_components and not has_flows:
+                    log.debug(f"Validating simplified app '{app_name}'")
+                    broker_config = app.get("broker")
+                    components_config = app.get("components")
+
+                    # 4.2.4.1 Validate broker structure
+                    if not isinstance(broker_config, dict):
+                        raise ValueError(f"App '{app_name}' has invalid 'broker' section (must be a dictionary)")
+                    required_broker_keys = ["broker_url", "broker_username", "broker_password", "broker_vpn"]
+                    for key in required_broker_keys:
+                        if not broker_config.get(key):
+                            raise ValueError(f"App '{app_name}' broker config missing required key: '{key}'")
+                    if broker_config.get("input_enabled") and not broker_config.get("queue_name"):
+                        raise ValueError(f"App '{app_name}' broker config missing 'queue_name' when 'input_enabled' is true")
+
+                    # 4.2.4.2 Validate components is a list
+                    if not isinstance(components_config, list):
+                        raise ValueError(f"App '{app_name}' has invalid 'components' section (must be a list)")
+                    if not components_config:
+                         raise ValueError(f"App '{app_name}' must have at least one component defined in 'components'")
+
+                    # 4.2.4.3 Validate each component entry
+                    for comp_index, component in enumerate(components_config):
+                        if not isinstance(component, dict):
+                            raise ValueError(f"App '{app_name}' component definition at index {comp_index} must be a dictionary")
+                        if not component.get("name"):
+                            raise ValueError(f"App '{app_name}' component at index {comp_index} missing 'name'")
+                        comp_name = component.get("name")
+                        if not component.get("component_module") and not component.get("component_class"):
+                            raise ValueError(f"App '{app_name}' component '{comp_name}' missing 'component_module' or 'component_class'")
+
+                        # Validate subscriptions if input is enabled
+                        if broker_config.get("input_enabled"):
+                            subscriptions = component.get("subscriptions")
+                            if not subscriptions:
+                                log.warning(f"App '{app_name}' component '{comp_name}' has no 'subscriptions' defined, but input is enabled.")
+                            elif not isinstance(subscriptions, list):
+                                raise ValueError(f"App '{app_name}' component '{comp_name}' has invalid 'subscriptions' (must be a list)")
+                            else:
+                                for sub_index, sub in enumerate(subscriptions):
+                                    if not isinstance(sub, dict):
+                                         raise ValueError(f"App '{app_name}' component '{comp_name}' subscription at index {sub_index} must be a dictionary")
+                                    if not sub.get("topic"):
+                                        raise ValueError(f"App '{app_name}' component '{comp_name}' subscription at index {sub_index} missing 'topic'")
+
+                # 4.2.5 Standard Mode Validation
+                elif has_flows:
+                    log.debug(f"Validating standard app '{app_name}'")
+                    self._validate_flows(app.get("flows"), f"app '{app_name}'")
+
+        # Validate top-level flows (for backward compatibility)
         if self.config.get("flows"):
-            self._validate_flows(self.config.get("flows"), "top level")
+            if not isinstance(self.config.get("flows"), list):
+                 raise ValueError("'flows' at the top level must be a list")
+            if not self.config.get("apps"): # Only validate top-level if no apps are defined
+                log.warning("Using deprecated top-level 'flows' definition. Consider defining flows within an 'apps' structure.")
+                self._validate_flows(self.config.get("flows"), "top level")
+            else:
+                 log.warning("Ignoring top-level 'flows' definition because 'apps' is also defined.")
+
 
     def _validate_flows(self, flows, context):
-        """Validate flows configuration"""
+        """Validate flows configuration (helper method)."""
+        if not isinstance(flows, list):
+            raise ValueError(f"Flows definition in {context} must be a list")
+
         for index, flow in enumerate(flows):
+            if not isinstance(flow, dict):
+                 raise ValueError(f"Flow definition at index {index} in {context} must be a dictionary")
             if not flow.get("name"):
                 raise ValueError(f"Flow name not provided in flow {index} of {context}")
+            flow_name = flow.get("name")
 
             if not flow.get("components"):
                 raise ValueError(
-                    f"Flow components list not provided in flow {index} of {context}"
+                    f"Flow components list not provided in flow '{flow_name}' of {context}"
                 )
 
             # Verify that the components list is a list
             if not isinstance(flow.get("components"), list):
                 raise ValueError(
-                    f"Flow components is not a list in flow {index} of {context}"
+                    f"Flow components is not a list in flow '{flow_name}' of {context}"
                 )
+            if not flow.get("components"):
+                 raise ValueError(f"Flow '{flow_name}' in {context} must have at least one component")
 
             # Loop through the components and validate them
             for component_index, component in enumerate(flow.get("components", [])):
+                if not isinstance(component, dict):
+                     raise ValueError(f"Component definition at index {component_index} in flow '{flow_name}' of {context} must be a dictionary")
                 if not component.get("component_name"):
                     raise ValueError(
-                        f"component_name not provided in flow {index}, component {component_index} of {context}"
+                        f"component_name not provided in flow '{flow_name}', component {component_index} of {context}"
                     )
+                comp_name = component.get("component_name")
 
+                # In standard flows, component_module is strictly required (component_class is not supported here yet)
                 if not component.get("component_module"):
                     raise ValueError(
-                        f"component_module not provided in flow {index}, "
-                        f"component {component_index} of {context}"
+                        f"component_module not provided for component '{comp_name}' in flow '{flow_name}' of {context}"
                     )
 
     def get_flows(self):

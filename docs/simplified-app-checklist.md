@@ -93,16 +93,16 @@ Coding rules:
     *   [X] 4.1.2 If true, instantiate `RequestResponseFlowController` with relevant `broker` config.
     *   [X] 4.1.3 Store controller instance (e.g., `self.request_response_controller`).
     *   [X] 4.1.4 Modify `ComponentBase.do_broker_request_response` to use `self.get_app().request_response_controller`.
-- [ ] **4.2 Update `SolaceAiConnector.validate_config` (`solace_ai_connector.py`):**
-    *   [ ] 4.2.1 Modify validation logic for `app` entries.
-    *   [ ] 4.2.2 Check for `name`.
-    *   [ ] 4.2.3 Check for either `flows` OR (`broker` AND `components`).
-    *   [ ] 4.2.4 If simplified mode:
-        *   [ ] 4.2.4.1 Validate `broker` structure.
-        *   [ ] 4.2.4.2 Validate `components` is a list.
-        *   [ ] 4.2.4.3 Validate each component entry (`name`, `component_module`/`component_class`, `subscriptions`).
-    *   [ ] 4.2.5 If standard mode:
-        *   [ ] 4.2.5.1 Use existing `_validate_flows`.
+- [X] **4.2 Update `SolaceAiConnector.validate_config` (`solace_ai_connector.py`):**
+    *   [X] 4.2.1 Modify validation logic for `app` entries.
+    *   [X] 4.2.2 Check for `name`.
+    *   [X] 4.2.3 Check for either `flows` OR (`broker` AND `components`).
+    *   [X] 4.2.4 If simplified mode:
+        *   [X] 4.2.4.1 Validate `broker` structure.
+        *   [X] 4.2.4.2 Validate `components` is a list.
+        *   [X] 4.2.4.3 Validate each component entry (`name`, `component_module`/`component_class`, `subscriptions`).
+    *   [X] 4.2.5 If standard mode:
+        *   [X] 4.2.5.1 Use existing `_validate_flows`.
 
 ## 5. Phase 5: Documentation and Testing
 
