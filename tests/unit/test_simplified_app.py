@@ -18,10 +18,12 @@ from solace_ai_connector.common.utils import deep_merge # Import deep_merge
 
 # Dummy Component Class for testing component_class instantiation
 class DummyComponent(ComponentBase):
+    # Define info as a class attribute
+    info = {"class_name": "DummyComponent", "config_parameters": []}
+
     def __init__(self, **kwargs):
-        # Provide minimal info for ComponentBase init
-        info = {"class_name": "DummyComponent", "config_parameters": []}
-        super().__init__(info, **kwargs)
+        # Pass the class attribute info to the base class
+        super().__init__(self.info, **kwargs) # Use self.info or DummyComponent.info
 
     def invoke(self, message, data):
         return data # Simple pass-through
@@ -246,7 +248,8 @@ def test_flow_create_component_group_with_class():
 
     # Mock import_module to avoid actual imports for dependencies of DummyComponent if any were needed
     # Also mock the 'info' lookup if it relies on module import
-    with patch('solace_ai_connector.flow.flow.import_module', return_value=MagicMock(info=DummyComponent.component_info)):
+    # Use DummyComponent.info now that it's a class attribute
+    with patch('solace_ai_connector.flow.flow.import_module', return_value=MagicMock(info=DummyComponent.info)):
          mock_flow.create_component_group(component_config, 0)
 
     # Assertions
