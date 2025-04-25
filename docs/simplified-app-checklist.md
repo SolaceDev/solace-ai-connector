@@ -45,22 +45,22 @@ Coding rules:
 
 ## 2. Phase 2: Implement Subscription Router
 
-- [ ] **2.1 Create `SubscriptionRouter` Component (`flow/subscription_router.py`):**
-    *   [ ] 2.1.1 Create the new file `src/solace_ai_connector/flow/subscription_router.py`.
-    *   [ ] 2.1.2 Define `SubscriptionRouter` class inheriting `ComponentBase`.
-    *   [ ] 2.1.3 Define `info` dictionary.
-    *   [ ] 2.1.4 Implement `__init__`:
-        *   [ ] 2.1.4.1 Get user components config.
-        *   [ ] 2.1.4.2 Get references to instantiated user components.
-        *   [ ] 2.1.4.3 Build `self.component_targets` list with compiled regex.
-    *   [ ] 2.1.5 Implement `invoke`:
-        *   [ ] 2.1.5.1 Get message topic.
-        *   [ ] 2.1.5.2 Iterate `self.component_targets`.
-        *   [ ] 2.1.5.3 Use `re.match` to find the first matching component.
-        *   [ ] 2.1.5.4 Enqueue event to the target component's queue.
-        *   [ ] 2.1.5.5 Call `self.discard_current_message()`.
-        *   [ ] 2.1.5.6 Return `None`.
-        *   [ ] 2.1.5.7 Handle no match case (log, discard).
+- [X] **2.1 Create `SubscriptionRouter` Component (`flow/subscription_router.py`):**
+    *   [X] 2.1.1 Create the new file `src/solace_ai_connector/flow/subscription_router.py`.
+    *   [X] 2.1.2 Define `SubscriptionRouter` class inheriting `ComponentBase`.
+    *   [X] 2.1.3 Define `info` dictionary.
+    *   [X] 2.1.4 Implement `__init__`:
+        *   [X] 2.1.4.1 Get user components config.
+        *   [X] 2.1.4.2 Get references to instantiated user components.
+        *   [X] 2.1.4.3 Build `self.component_targets` list with compiled regex.
+    *   [X] 2.1.5 Implement `invoke`:
+        *   [X] 2.1.5.1 Get message topic.
+        *   [X] 2.1.5.2 Iterate `self.component_targets`.
+        *   [X] 2.1.5.3 Use `re.match` to find the first matching component.
+        *   [X] 2.1.5.4 Enqueue event to the target component's queue.
+        *   [X] 2.1.5.5 Call `self.discard_current_message()`.
+        *   [X] 2.1.5.6 Return `None`.
+        *   [X] 2.1.5.7 Handle no match case (log, discard).
 
 ## 3. Phase 3: Adapt Broker Components and Add App Methods
 
