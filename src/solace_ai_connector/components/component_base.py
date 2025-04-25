@@ -2,7 +2,6 @@ import threading
 import queue
 import traceback
 import pprint
-import time
 from abc import abstractmethod
 from typing import Any
 
@@ -271,7 +270,6 @@ class ComponentBase:
                 pass
 
     def get_config(self, key=None, default=None):
-        # Modify lookup order
         # First check component_config (specific config for this component instance)
         val = self.component_config.get(key, None)
 
@@ -368,7 +366,6 @@ class ComponentBase:
                 "user_properties_reply_topic_key",
                 "user_properties_reply_metadata_key",
                 "response_topic_insertion_expression",
-                # Add any other keys the controller might expect from this block
             ]
             for key in optional_keys:
                 if key in self.broker_request_response_config:
