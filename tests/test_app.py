@@ -178,7 +178,8 @@ def test_app_config_inheritance():
     # Define a handler function to test app config inheritance
     def invoke_handler(component, _message, _data):
         # Return the app-level config value
-        return component.get_config("app_level_config")
+        cfg = component.get_config("app_level_config")
+        return cfg
 
     config = {
         "log": {"stdout_log_level": "INFO", "log_file_level": "INFO"},
@@ -215,8 +216,9 @@ def test_app_config_inheritance():
         output_message = get_message_from_flow(flows[0])
 
         # Check that the component could access the app configuration
-        assert output_message.get_data("previous") == "app_value"
-    except Exception as e:
+        result_data = output_message.get_data("previous")
+        assert result_data == "app_value"
+    except ValueError as e:
         import traceback
 
         print(e, traceback.format_exc())
