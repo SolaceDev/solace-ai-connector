@@ -110,12 +110,12 @@ Coding rules:
     *   [X] 5.1.1 Review and update `simplified-app-plan.md`.
     *   [X] 5.1.2 Review and update `simplified-app-design.md`.
     *   [X] 5.1.3 Create user documentation (`docs/simplified-apps.md`).
-- [ ] **5.2 Write Unit Tests:**
-    *   [ ] 5.2.1 Test `App.__init__` merging.
-    *   [ ] 5.2.2 Test `App._create_simplified_flow_config`.
-    *   [ ] 5.2.3 Test `Flow.create_component_group` with `component_class`.
-    *   [ ] 5.2.4 Test `SubscriptionRouter` routing.
-    *   [ ] 5.2.5 Test `ComponentBase.get_config` hierarchy.
+- [X] **5.2 Write Unit Tests:**
+    *   [X] 5.2.1 Test `App.__init__` merging.
+    *   [X] 5.2.2 Test `App._create_simplified_flow_config`.
+    *   [X] 5.2.3 Test `Flow.create_component_group` with `component_class`.
+    *   [X] 5.2.4 Test `SubscriptionRouter` routing.
+    *   [X] 5.2.5 Test `ComponentBase.get_config` hierarchy.
 - [ ] **5.3 Write Integration Tests:**
     *   [ ] 5.3.1 Test loading `simple_echo_app.py` via `app_module`.
     *   [ ] 5.3.2 Test YAML override of code config.
