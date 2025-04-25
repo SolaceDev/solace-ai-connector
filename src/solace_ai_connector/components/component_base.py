@@ -524,17 +524,6 @@ class ComponentBase:
         except KeyboardInterrupt:
             pass
         if hasattr(self, "_component_rrc") and self._component_rrc:
-            try:
-                # RRC cleanup might involve stopping its internal app/flow,
-                # which should be handled by the main connector cleanup.
-                # We just need to release the reference here.
-                pass  # Rely on connector.cleanup() for the internal flow
-            except Exception as e:
-                log.error(
-                    "[%s] Error during component-level RRC cleanup reference release: %s",
-                    self.name,
-                    e,
-                )
             self._component_rrc = None
         if hasattr(self, "input_queue"):
             while not self.input_queue.empty():
