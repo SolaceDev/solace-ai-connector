@@ -10,6 +10,7 @@ from ..components.component_base import ComponentBase
 from ..common.log import log
 from ..common.message import Message
 from ..common.event import Event, EventType
+from ..common import Message_NACK_Outcome # Import the missing name
 
 # Define the component information
 info = {
