@@ -280,6 +280,3 @@ Component configuration (`component_config`) precedence within `self.get_config(
 ## Example: Simple Echo App (Code-Based)
 
 Refer to the `examples/simple_echo_app.py` file for a complete example of defining a simplified app entirely within Python code, including the component and the custom `App` subclass. This demonstrates using `component_class` and defining the `app_config` structure in code.
-```
-
-docs/simplified-app-checklist.md
