@@ -384,13 +384,13 @@ class SolaceAiConnector:
                         app_name,
                     )
 
-                # 4.2.4 Simplified Mode Validation
+                # Simplified Mode Validation
                 if has_broker and has_components and not has_flows:
                     log.debug("Validating simplified app '%s'", app_name)
                     broker_config = app.get("broker")
                     components_config = app.get("components")
 
-                    # 4.2.4.1 Validate broker structure
+                    # Validate broker structure
                     if not isinstance(broker_config, dict):
                         raise ValueError(
                             f"App '{app_name}' has invalid 'broker' section (must be a dictionary)"
@@ -413,7 +413,7 @@ class SolaceAiConnector:
                             f"App '{app_name}' broker config missing 'queue_name' when 'input_enabled' is true"
                         )
 
-                    # 4.2.4.2 Validate components is a list
+                    # Validate components is a list
                     if not isinstance(components_config, list):
                         raise ValueError(
                             f"App '{app_name}' has invalid 'components' section (must be a list)"
@@ -423,7 +423,7 @@ class SolaceAiConnector:
                             f"App '{app_name}' must have at least one component defined in 'components'"
                         )
 
-                    # 4.2.4.3 Validate each component entry
+                    # Validate each component entry
                     for comp_index, component in enumerate(components_config):
                         if not isinstance(component, dict):
                             raise ValueError(
@@ -465,7 +465,7 @@ class SolaceAiConnector:
                                             f"App '{app_name}' component '{comp_name}' subscription at index {sub_index} missing 'topic'"
                                         )
 
-                # 4.2.5 Standard Mode Validation
+                # Standard Mode Validation
                 elif has_flows:
                     log.debug("Validating standard app '%s'", app_name)
                     self._validate_flows(app.get("flows"), f"app '{app_name}'")
