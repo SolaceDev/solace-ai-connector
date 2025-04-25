@@ -6,6 +6,7 @@ Coding rules:
 
 - Follow Google Python Style Guide.
 - Do not put in useless comments or comments that relate only to a change just made (e.g. `# added this line` or `# removed function bob()`).
+- Do not include comments referencing the implementation plan (e.g. `# step 1.2.3`).
 
 ## 1. Phase 1: Core App and Flow Modifications
 
