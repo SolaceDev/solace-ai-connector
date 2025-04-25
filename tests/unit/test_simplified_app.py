@@ -230,6 +230,7 @@ def test_flow_create_component_group_with_class():
     mock_flow.connector = MagicMock()
     mock_flow.connector.timer_manager = MagicMock()
     mock_flow.connector.cache_service = MagicMock()
+    mock_flow.cache_service = MagicMock() # Add missing cache_service attribute
     mock_flow.app = MagicMock()
     mock_flow.name = "test_flow"
     mock_flow.instance_name = "test_instance"
