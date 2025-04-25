@@ -65,7 +65,7 @@ apps:
       # Optional: response_topic_insertion_expression (default: "")
 
     # --- App-Level Configuration ---
-    config: # Optional
+    app_config: # Optional
       # Global configuration accessible by all components in this app
       # via self.get_config('my_global_param')
       my_global_param: "some_value"
