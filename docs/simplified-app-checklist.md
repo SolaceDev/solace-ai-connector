@@ -11,13 +11,13 @@ Coding rules:
 
 - [X] **1.1 Add `deep_merge` Utility:**
     - [X] 1.1.1 Add `deep_merge` function to `src/solace_ai_connector/common/utils.py`.
-- [ ] **1.2 Modify `App.__init__` (`flow/app.py`):**
-    - [ ] 1.2.1 Import `deep_merge`.
-    - [ ] 1.2.2 Check for `app_config` class attribute.
-    - [ ] 1.2.3 Perform `deep_merge` if `app_config` exists (YAML overrides code).
-    - [ ] 1.2.4 Store merged result in `self.app_info`.
-    - [ ] 1.2.5 Extract `config` block from merged `self.app_info` into `self.app_config`.
-    - [ ] 1.2.6 Derive `self.name` from merged `self.app_info`.
+- [X] **1.2 Modify `App.__init__` (`flow/app.py`):**
+    - [X] 1.2.1 Import `deep_merge`.
+    - [X] 1.2.2 Check for `app_config` class attribute.
+    - [X] 1.2.3 Perform `deep_merge` if `app_config` exists (YAML overrides code).
+    - [X] 1.2.4 Store merged result in `self.app_info`.
+    - [X] 1.2.5 Extract `config` block from merged `self.app_info` into `self.app_config`.
+    - [X] 1.2.6 Derive `self.name` from merged `self.app_info`.
 - [ ] **1.3 Modify `App.create_flows` (`flow/app.py`):**
     - [ ] 1.3.1 Add logic to detect simplified app configuration.
     - [ ] 1.3.2 Call `_create_simplified_flow_config()` if simplified.

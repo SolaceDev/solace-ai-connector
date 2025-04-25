@@ -5,6 +5,7 @@ import os
 
 from ..common.log import log
 from .flow import Flow
+from ..common.utils import deep_merge # Import deep_merge
 
 
 class App:
@@ -27,7 +28,7 @@ class App:
         Initialize the App.
 
         Args:
-            app_info: Info and configuration for the app
+            app_info: Info and configuration for the app (typically from YAML).
             app_index: Index of the app in the list of apps
             stop_signal: Signal to stop the app
             error_queue: Queue for error messages
@@ -35,11 +36,28 @@ class App:
             trace_queue: Queue for trace messages
             connector: Reference to the parent connector
         """
-        self.app_info = app_info
-        self.app_config = app_info.get("app_config", {})
+        # 1.2.2 Check if this is a custom App subclass with code-defined config
+        code_config = None
+        if hasattr(self.__class__, "app_config") and isinstance(self.__class__.app_config, dict):
+            log.debug(f"Found code-defined app_config in {self.__class__.__name__}")
+            code_config = self.__class__.app_config
+
+        # 1.2.3 Merge configurations: YAML (app_info) overrides code_config
+        if code_config:
+            # Perform a deep merge, giving precedence to app_info (YAML)
+            merged_app_info = deep_merge(code_config, app_info)
+            log.debug(f"Merged app config for {merged_app_info.get('name', 'unnamed app')}")
+        else:
+            merged_app_info = app_info
+
+        # 1.2.4 Store the final merged config
+        self.app_info = merged_app_info
+        # 1.2.5 Extract app_config for get_config() - this is the 'config' block within the app definition
+        self.app_config = self.app_info.get("config", {})
         self.app_index = app_index
-        self.name = app_info.get("name", f"app_{app_index}")
-        self.num_instances = app_info.get("num_instances", 1)
+        # 1.2.6 Derive name from merged config
+        self.name = self.app_info.get("name", f"app_{app_index}")
+        self.num_instances = self.app_info.get("num_instances", 1)
         self.flows: List[Flow] = []
         self.stop_signal = stop_signal
         self.error_queue = error_queue
@@ -48,7 +66,7 @@ class App:
         self.connector = connector
         self.flow_input_queues = {}
 
-        # Create flows for this app
+        # Create flows for this app using the merged configuration
         self.create_flows()
 
     def create_flows(self):
@@ -115,7 +133,7 @@ class App:
 
     def get_config(self, key=None, default=None):
         """
-        Get a configuration value from the app configuration.
+        Get a configuration value from the app's 'config' block.
 
         Args:
             key: Configuration key
@@ -124,6 +142,7 @@ class App:
         Returns:
             The configuration value or default
         """
+        # self.app_config holds the 'config:' block from the merged app_info
         return self.app_config.get(key, default)
 
     @classmethod
@@ -142,4 +161,6 @@ class App:
             App: The created app
         """
         app_info = {"name": app_name, "flows": flows}
+        # Note: This path won't automatically merge with code_config unless
+        # a specific subclass is used that defines it.
         return cls(app_info=app_info, **kwargs)
