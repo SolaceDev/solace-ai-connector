@@ -12,7 +12,7 @@ import gzip
 import json
 import yaml
 from copy import deepcopy
-from collections.abc import Mapping, Sequence # Import Sequence
+from collections.abc import Mapping
 
 from .log import log
 

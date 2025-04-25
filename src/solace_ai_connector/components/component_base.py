@@ -14,7 +14,6 @@ from ..common.message import Message
 from ..common.messaging.solace_messaging import ConnectionStatus
 from ..common.trace_message import TraceMessage
 from ..common.event import Event, EventType
-# Re-import RequestResponseFlowController
 from ..flow.request_response_flow_controller import RequestResponseFlowController
 from ..common.monitoring import Monitoring
 from ..common.monitoring import Metrics
@@ -44,7 +43,7 @@ class ComponentBase:
         self.cache_service = kwargs.pop("cache_service", None)
         self.put_errors_in_error_queue = kwargs.pop("put_errors_in_error_queue", True)
         self.parent_app = kwargs.pop("app", None)
-        self._component_rrc = None # Initialize component-level RRC attribute
+        self._component_rrc = None  # Initialize component-level RRC attribute
 
         self.component_config = self.config.get("component_config") or {}
         self.broker_request_response_config = self.config.get(
@@ -351,7 +350,7 @@ class ComponentBase:
             )
             broker_config = self.broker_request_response_config.get("broker_config", {})
             request_expiry_ms = self.broker_request_response_config.get(
-                "request_expiry_ms", 30000 # Default from old logic
+                "request_expiry_ms", 30000  # Default from old logic
             )
             if not broker_config:
                 raise ValueError(
@@ -380,14 +379,18 @@ class ComponentBase:
                 self._component_rrc = RequestResponseFlowController(
                     config=rrc_config, connector=self.connector
                 )
-                log.info(f"[{self.name}] {self.log_identifier} Initialized component-level RequestResponseFlowController.")
+                log.info(
+                    f"[{self.name}] {self.log_identifier} Initialized component-level RequestResponseFlowController."
+                )
             except Exception as e:
-                log.error(f"[{self.name}] {self.log_identifier} Failed to initialize component-level RRC: {e}", exc_info=True)
+                log.error(
+                    f"[{self.name}] {self.log_identifier} Failed to initialize component-level RRC: {e}",
+                    exc_info=True,
+                )
                 # Decide if this should be fatal
                 raise e
         else:
-             self._component_rrc = None
-
+            self._component_rrc = None
 
     def is_broker_request_response_enabled(self):
         """Checks if RRC is enabled either at App level or Component level."""
@@ -397,7 +400,7 @@ class ComponentBase:
             return True
         # Check component level (old way)
         if hasattr(self, "_component_rrc") and self._component_rrc is not None:
-             return True
+            return True
         return False
 
     def setup_transforms(self):
@@ -504,14 +507,16 @@ class ComponentBase:
         except KeyboardInterrupt:
             pass
         if hasattr(self, "_component_rrc") and self._component_rrc:
-             try:
-                  # RRC cleanup might involve stopping its internal app/flow,
-                  # which should be handled by the main connector cleanup.
-                  # We just need to release the reference here.
-                  pass # Rely on connector.cleanup() for the internal flow
-             except Exception as e:
-                  log.error(f"[{self.name}] Error during component-level RRC cleanup reference release: {e}")
-             self._component_rrc = None
+            try:
+                # RRC cleanup might involve stopping its internal app/flow,
+                # which should be handled by the main connector cleanup.
+                # We just need to release the reference here.
+                pass  # Rely on connector.cleanup() for the internal flow
+            except Exception as e:
+                log.error(
+                    f"[{self.name}] Error during component-level RRC cleanup reference release: {e}"
+                )
+            self._component_rrc = None
         if hasattr(self, "input_queue"):
             while not self.input_queue.empty():
                 try:
@@ -532,8 +537,8 @@ class ComponentBase:
             log.debug(f"[{self.name}] {self.log_identifier} Using App-level RRC.")
         # Fallback to Component-level controller (old way)
         elif hasattr(self, "_component_rrc") and self._component_rrc:
-             controller = self._component_rrc
-             log.debug(f"[{self.name}] {self.log_identifier} Using Component-level RRC.")
+            controller = self._component_rrc
+            log.debug(f"[{self.name}] {self.log_identifier} Using Component-level RRC.")
 
         # If a controller was found (either way)
         if controller:
@@ -542,21 +547,26 @@ class ComponentBase:
                 message, stream, streaming_complete_expression
             )
             if stream:
-                return generator # Return the generator directly for streaming
+                return generator  # Return the generator directly for streaming
             else:
                 # Get the first (and only) item for non-streaming
                 try:
-                    next_message, _ = next(generator) # Ignore the 'last' flag
+                    next_message, _ = next(generator)  # Ignore the 'last' flag
                     return next_message
                 except StopIteration:
-                    log.warning(f"[{self.name}] {self.log_identifier} RRC generator yielded no response.")
+                    log.warning(
+                        f"[{self.name}] {self.log_identifier} RRC generator yielded no response."
+                    )
                     return None
-                except TimeoutError as e: # Catch timeout specifically
-                     log.error(f"[{self.name}] {self.log_identifier} RRC timed out: {e}")
-                     raise e # Re-raise timeout
+                except TimeoutError as e:  # Catch timeout specifically
+                    log.error(f"[{self.name}] {self.log_identifier} RRC timed out: {e}")
+                    raise e  # Re-raise timeout
                 except Exception as e:
-                     log.error(f"[{self.name}] {self.log_identifier} Error during RRC call: {e}", exc_info=True)
-                     raise e # Re-raise other exceptions
+                    log.error(
+                        f"[{self.name}] {self.log_identifier} Error during RRC call: {e}",
+                        exc_info=True,
+                    )
+                    raise e  # Re-raise other exceptions
         else:
             # No controller found
             raise ValueError(
@@ -565,7 +575,6 @@ class ComponentBase:
                 f"'broker' config (recommended) or 'enabled: true' in the component's "
                 f"'broker_request_response' config (deprecated)."
             )
-
 
     def handle_negative_acknowledgements(self, message, exception):
         """Handle NACK for the message."""
