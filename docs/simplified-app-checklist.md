@@ -122,4 +122,3 @@ This checklist corresponds to the steps outlined in the `docs/simplified-app-imp
     *   [ ] Add comments.
     *   [ ] Ensure consistency.
     *   [ ] Perform code reviews.
-```
