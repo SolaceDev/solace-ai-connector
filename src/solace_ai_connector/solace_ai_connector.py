@@ -262,7 +262,7 @@ class SolaceAiConnector:
             try:
                 app.cleanup()
             except Exception as e:
-                log.error(f"Error cleaning up app: {e}")
+                log.error("Error cleaning up app: %s", e)
         self.apps.clear()
         self.flows.clear()
 
@@ -272,7 +272,7 @@ class SolaceAiConnector:
                 while not queue.empty():
                     queue.get_nowait()
             except Exception as e:
-                log.error(f"Error cleaning queue {queue_name}: {e}")
+                log.error("Error cleaning queue %s: %s", queue_name, e)
         self.flow_input_queues.clear()
 
         if hasattr(self, "trace_queue") and self.trace_queue:
@@ -379,13 +379,14 @@ class SolaceAiConnector:
                     )
                 if has_flows and (has_broker or has_components):
                     log.warning(
-                        f"App '{app_name}' defines both 'flows' and 'broker'/'components'. "
-                        "The 'broker' and 'components' keys will be ignored (standard mode)."
+                        "App '%s' defines both 'flows' and 'broker'/'components'. "
+                        "The 'broker' and 'components' keys will be ignored (standard mode).",
+                        app_name,
                     )
 
                 # 4.2.4 Simplified Mode Validation
                 if has_broker and has_components and not has_flows:
-                    log.debug(f"Validating simplified app '{app_name}'")
+                    log.debug("Validating simplified app '%s'", app_name)
                     broker_config = app.get("broker")
                     components_config = app.get("components")
 
@@ -445,7 +446,9 @@ class SolaceAiConnector:
                             subscriptions = component.get("subscriptions")
                             if not subscriptions:
                                 log.warning(
-                                    f"App '{app_name}' component '{comp_name}' has no 'subscriptions' defined, but input is enabled."
+                                    "App '%s' component '%s' has no 'subscriptions' defined, but input is enabled.",
+                                    app_name,
+                                    comp_name,
                                 )
                             elif not isinstance(subscriptions, list):
                                 raise ValueError(
@@ -464,7 +467,7 @@ class SolaceAiConnector:
 
                 # 4.2.5 Standard Mode Validation
                 elif has_flows:
-                    log.debug(f"Validating standard app '{app_name}'")
+                    log.debug("Validating standard app '%s'", app_name)
                     self._validate_flows(app.get("flows"), f"app '{app_name}'")
 
         # Validate top-level flows (for backward compatibility)
