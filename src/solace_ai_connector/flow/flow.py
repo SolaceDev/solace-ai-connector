@@ -109,7 +109,7 @@ class Flow:
         component_class = None
         imported_module = None
 
-        # 1.5.1 Check for component_class
+        # Check for component_class
         if "component_class" in component:
             component_class = component.get("component_class")
             if not isinstance(component_class, type) or not issubclass(component_class, ComponentBase):
@@ -143,7 +143,7 @@ class Flow:
                     f"Error retrieving 'info' for component_class {component_class.__name__}: {e}"
                  ) from e
 
-        # 1.5.3 Use component_module if component_class is not present
+        # Use component_module if component_class is not present
         else:
             component_module = component.get("component_module", "")
             if not component_module:

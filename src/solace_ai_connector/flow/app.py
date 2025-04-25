@@ -75,18 +75,17 @@ class App:
         self._broker_output_component = None # Cache for send_message
         self.request_response_controller = None # Initialize RRC attribute
 
-        # 4.1.1 Check request_reply_enabled flag
         broker_config = self.app_info.get("broker", {})
         if broker_config.get("request_reply_enabled", False):
             log.info(f"Request-reply enabled for app '{self.name}'. Initializing controller.")
             try:
-                # 4.1.2 Instantiate RequestResponseFlowController
+                # Instantiate RequestResponseFlowController
                 # Pass the broker config section and the connector reference
                 self.request_response_controller = RequestResponseFlowController(
                     config={"broker_config": broker_config}, # Pass broker config under 'broker_config' key
                     connector=self.connector
                 )
-                # 4.1.3 Store controller instance (already done by assignment above)
+                # Store controller instance (already done by assignment above)
             except Exception as e:
                 log.error(f"Failed to initialize RequestResponseFlowController for app '{self.name}': {e}", exc_info=True)
                 # Decide if this should be a fatal error for the app
@@ -132,7 +131,7 @@ class App:
         user_components = self.app_info.get("components", [])
         flow_components = []
 
-        # 1. Add BrokerInput if enabled
+        # Add BrokerInput if enabled
         if broker_config.get("input_enabled", False):
             # Collect all subscriptions from user components
             all_subscriptions = [
@@ -166,7 +165,7 @@ class App:
             }
             flow_components.append(input_comp_config)
 
-        # 2. Add SubscriptionRouter if needed (input enabled and more than one user component)
+        # Add SubscriptionRouter if needed (input enabled and more than one user component)
         if broker_config.get("input_enabled", False) and len(user_components) > 1:
             router_comp_config = {
                 "component_name": f"{self.name}_router",
@@ -179,10 +178,10 @@ class App:
             }
             flow_components.append(router_comp_config)
 
-        # 3. Add User Components (make a deep copy to avoid modification issues)
+        # Add User Components (make a deep copy to avoid modification issues)
         flow_components.extend(deepcopy(user_components))
 
-        # 4. Add BrokerOutput if enabled
+        # Add BrokerOutput if enabled
         if broker_config.get("output_enabled", False):
             output_comp_config = {
                 "component_name": f"{self.name}_broker_output",

@@ -47,11 +47,9 @@ class ComponentBase:
         self._component_rrc = None # Initialize component-level RRC attribute
 
         self.component_config = self.config.get("component_config") or {}
-        # --- Start Re-introduced Logic ---
         self.broker_request_response_config = self.config.get(
             "broker_request_response", None
         )
-        # --- End Re-introduced Logic ---
         self.name = self.config.get("component_name", "<unnamed>")
 
         resolve_config_values(self.component_config)
@@ -70,7 +68,6 @@ class ComponentBase:
         self.validate_config()
         self.setup_transforms()
         self.setup_communications()
-        # --- Re-introduce call to setup component-level RRC ---
         self.setup_component_broker_request_response()
 
         self.monitoring = Monitoring()
@@ -275,7 +272,7 @@ class ComponentBase:
                 pass
 
     def get_config(self, key=None, default=None):
-        # 1.6.2 Modify lookup order
+        # Modify lookup order
         # First check component_config (specific config for this component instance)
         val = self.component_config.get(key, None)
 
@@ -342,7 +339,6 @@ class ComponentBase:
         else:
             self.input_queue = queue.Queue(maxsize=self.queue_max_depth)
 
-    # --- Re-introduce method to setup component-level RRC ---
     def setup_component_broker_request_response(self):
         """Initializes RRC if configured at the component level (backward compatibility)."""
         if (
@@ -391,7 +387,6 @@ class ComponentBase:
                 raise e
         else:
              self._component_rrc = None
-    # --- End Re-introduced method ---
 
 
     def is_broker_request_response_enabled(self):
@@ -508,7 +503,6 @@ class ComponentBase:
             self.stop_component()
         except KeyboardInterrupt:
             pass
-        # --- Add cleanup for component-level RRC ---
         if hasattr(self, "_component_rrc") and self._component_rrc:
              try:
                   # RRC cleanup might involve stopping its internal app/flow,
@@ -518,7 +512,6 @@ class ComponentBase:
              except Exception as e:
                   log.error(f"[{self.name}] Error during component-level RRC cleanup reference release: {e}")
              self._component_rrc = None
-        # --- End RRC cleanup ---
         if hasattr(self, "input_queue"):
             while not self.input_queue.empty():
                 try:
@@ -671,7 +664,6 @@ class ComponentBase:
         except KeyboardInterrupt:
             log.info(f"[{self.name}] Monitoring stopped.")
 
-    # 1.6.1 Add get_app() method
     def get_app(self):
         """Get the app that this component belongs to"""
         return self.parent_app
