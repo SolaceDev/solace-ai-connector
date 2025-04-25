@@ -9,7 +9,7 @@ import pathlib
 from datetime import datetime
 from typing import List, Dict, Any
 from .common.log import log, setup_log
-from .common.utils import resolve_config_values
+from .common.utils import resolve_config_values, import_module
 from .flow.flow import Flow
 from .flow.app import App
 from .flow.timer_manager import TimerManager
@@ -70,11 +70,11 @@ class SolaceAiConnector:
         """Create apps from the configuration"""
         try:
             # Check if there are apps defined in the configuration
-            apps_config = self.config.get("apps", [])
+            apps = self.config.get("apps", [])
 
             # If there are no apps defined but there are flows, create a default app
             # This should be rare now that we handle this in main.py, but keeping for robustness
-            if not apps_config and self.config.get("flows"):
+            if not apps and self.config.get("flows"):
                 # Use the first config filename as the app name if available
                 app_name = "default_app"
                 if self.config_filenames:
@@ -104,19 +104,63 @@ class SolaceAiConnector:
                     self.flow_input_queues[name] = queue
             else:
                 # Create apps from the apps configuration
-                for index, app_config in enumerate(apps_config):
-                    log.info("Creating app %s", app_config.get("name"))
-                    num_instances = app_config.get("num_instances", 1)
+                for index, app in enumerate(apps):
+                    log.info("Creating app %s", app.get("name"))
+                    num_instances = app.get("num_instances", 1)
                     if num_instances < 1:
                         num_instances = 1
                         log.warning(
                             "Number of instances for app %s is less than 1. Setting it to 1",
-                            app_config.get("name"),
+                            app.get("name"),
+                        )
+
+                    # Merge app_api configuration from global config if not present in app config
+                    if "app_api" not in app:
+                        app["app_api"] = {}
+
+                    # Only copy 'enabled' from global config if not present in app config
+                    if "enabled" not in app["app_api"] and "app_api" in self.config:
+                        app["app_api"]["enabled"] = self.config["app_api"].get(
+                            "enabled", False
+                        )
+
+                    # Merge app_api configuration from global config if not present in app config
+                    if "app_api" not in app:
+                        app["app_api"] = {}
+
+                    # Only copy 'enabled' from global config if not present in app config
+                    if "enabled" not in app["app_api"] and "app_api" in self.config:
+                        app["app_api"]["enabled"] = self.config["app_api"].get(
+                            "enabled", False
                         )
 
                     for i in range(num_instances):
-                        app = App(
-                            app_config=app_config,
+
+                        # Does this have a custom App module
+                        app_module = app.get("app_module", None)
+                        app_base_path = app.get("app_base_path", None)
+                        app_package = app.get("app_package", None)
+                        if app_module:
+                            imported_module = import_module(
+                                app_module, app_base_path, app_package
+                            )
+                            info = getattr(imported_module, "info")
+                            if not info:
+                                raise ValueError(
+                                    f"App module '{app_module}' does not have an 'info' attribute. It probably isn't a valid app."
+                                )
+                            class_name = info.get("class_name")
+                            if not class_name:
+                                raise ValueError(
+                                    f"App module '{app_module}' does not have a 'class_name' attribute. It probably isn't a valid app."
+                                )
+                            app_class = getattr(imported_module, class_name)
+                        else:
+                            # Use the default App class
+                            app_class = App
+
+                        app_obj = app_class(
+                            app_info=app,
                             app_index=index,
                             stop_signal=self.stop_signal,
                             error_queue=self.error_queue,
@@ -124,17 +168,17 @@ class SolaceAiConnector:
                             trace_queue=self.trace_queue,
                             connector=self,
                         )
-                        self.apps.append(app)
+                        self.apps.append(app_obj)
 
                         # For backward compatibility, also add flows to the flows list
-                        self.flows.extend(app.flows)
+                        self.flows.extend(app_obj.flows)
                         # Add flow input queues to the connector's flow_input_queues
-                        for name, queue in app.flow_input_queues.items():
+                        for name, queue in app_obj.flow_input_queues.items():
                             self.flow_input_queues[name] = queue
 
             # Run all apps
-            for app in self.apps:
-                app.run()
+            for app_obj in self.apps:
+                app_obj.run()
 
         except KeyboardInterrupt:
             log.info("Received keyboard interrupt - stopping")
@@ -154,11 +198,11 @@ class SolaceAiConnector:
         Returns:
             App: The created app
         """
-        app_config = {"name": app_name, "flows": flows}
+        app = {"name": app_name, "flows": flows}
 
         # Create the app
         app = App(
-            app_config=app_config,
+            app_info=app,
             app_index=len(self.apps),
             stop_signal=self.stop_signal,
             error_queue=self.error_queue,

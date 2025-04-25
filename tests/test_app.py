@@ -21,7 +21,7 @@ from solace_ai_connector.test_utils.utils_for_test_files import (
 
 def test_app_creation():
     """Test that an app can be created with a basic configuration"""
-    app_config = {
+    app_info = {
         "name": "test_app",
         "flows": [
             {
@@ -40,7 +40,7 @@ def test_app_creation():
     error_queue = queue.Queue()
 
     app = App(
-        app_config=app_config,
+        app_info=app_info,
         app_index=0,
         stop_signal=stop_signal,
         error_queue=error_queue,
@@ -58,9 +58,11 @@ def test_app_creation():
 
 def test_app_get_config():
     """Test that app.get_config works correctly"""
-    app_config = {
+    app_info = {
         "name": "test_app",
-        "test_key": "test_value",
+        "app_config": {
+            "test_key": "test_value",
+        },
         "flows": [
             {
                 "name": "test_flow",
@@ -78,7 +80,7 @@ def test_app_get_config():
     error_queue = queue.Queue()
 
     app = App(
-        app_config=app_config,
+        app_info=app_info,
         app_index=0,
         stop_signal=stop_signal,
         error_queue=error_queue,
@@ -183,7 +185,7 @@ def test_app_config_inheritance():
         "apps": [
             {
                 "name": "test_app",
-                "app_level_config": "app_value",
+                "app_config": {"app_level_config": "app_value"},
                 "flows": [
                     {
                         "name": "test_flow",

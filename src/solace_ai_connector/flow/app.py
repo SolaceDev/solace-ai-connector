@@ -15,7 +15,7 @@ class App:
 
     def __init__(
         self,
-        app_config: Dict[str, Any],
+        app_info: Dict[str, Any],
         app_index: int,
         stop_signal,
         error_queue=None,
@@ -27,7 +27,7 @@ class App:
         Initialize the App.
 
         Args:
-            app_config: Configuration for the app
+            app_info: Info and configuration for the app
             app_index: Index of the app in the list of apps
             stop_signal: Signal to stop the app
             error_queue: Queue for error messages
@@ -35,10 +35,11 @@ class App:
             trace_queue: Queue for trace messages
             connector: Reference to the parent connector
         """
-        self.app_config = app_config
+        self.app_info = app_info
+        self.app_config = app_info.get("app_config", {})
         self.app_index = app_index
-        self.name = app_config.get("name", f"app_{app_index}")
-        self.num_instances = app_config.get("num_instances", 1)
+        self.name = app_info.get("name", f"app_{app_index}")
+        self.num_instances = app_info.get("num_instances", 1)
         self.flows: List[Flow] = []
         self.stop_signal = stop_signal
         self.error_queue = error_queue
@@ -53,7 +54,7 @@ class App:
     def create_flows(self):
         """Create flows for this app"""
         try:
-            for index, flow in enumerate(self.app_config.get("flows", [])):
+            for index, flow in enumerate(self.app_info.get("flows", [])):
                 log.info(f"Creating flow {flow.get('name')} in app {self.name}")
                 num_instances = flow.get("num_instances", 1)
                 if num_instances < 1:
@@ -140,5 +141,5 @@ class App:
         Returns:
             App: The created app
         """
-        app_config = {"name": app_name, "flows": flows}
-        return cls(app_config=app_config, **kwargs)
+        app_info = {"name": app_name, "flows": flows}
+        return cls(app_info=app_info, **kwargs)
