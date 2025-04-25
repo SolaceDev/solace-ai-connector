@@ -1,6 +1,8 @@
 import pytest
 import re
 import threading
+import sys # Add sys import
+sys.path.append("src") # Add src directory to Python path
 from unittest.mock import MagicMock, patch, ANY
 
 # Imports for classes to test/mock
