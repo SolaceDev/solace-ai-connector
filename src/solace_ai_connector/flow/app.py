@@ -72,20 +72,20 @@ class App:
     def create_flows(self):
         """Create flows for this app"""
         try:
-            # 1.3.1 Detect simplified app configuration
+            # Detect simplified app configuration
             is_simplified = "broker" in self.app_info and "components" in self.app_info and "flows" not in self.app_info
 
             if is_simplified:
-                # 1.3.2 Call helper to generate implicit flow config
+                # Call helper to generate implicit flow config
                 log.info(f"Creating simplified app flow for {self.name}")
                 flow_config = self._create_simplified_flow_config()
-                # 1.3.3 Create the single implicit flow
+                # Create the single implicit flow
                 flow_instance = self.create_flow(flow_config, 0, 0)
                 flow_input_queue = flow_instance.get_flow_input_queue()
                 self.flow_input_queues[flow_config.get("name")] = flow_input_queue
                 self.flows.append(flow_instance)
             else:
-                # 1.3.4 Keep existing logic for standard flows defined in 'flows' list
+                # Keep existing logic for standard flows defined in 'flows' list
                 for index, flow in enumerate(self.app_info.get("flows", [])):
                     log.info(f"Creating flow {flow.get('name')} in app {self.name}")
                     num_instances = flow.get("num_instances", 1)
@@ -102,9 +102,90 @@ class App:
 
     def _create_simplified_flow_config(self) -> Dict[str, Any]:
         """Creates the implicit flow configuration for a simplified app."""
-        # This method will be implemented in step 1.4
-        # For now, return a placeholder or raise NotImplementedError
-        raise NotImplementedError("_create_simplified_flow_config is not yet implemented")
+        broker_config = self.app_info.get("broker", {})
+        user_components = self.app_info.get("components", [])
+        flow_components = []
+
+        # 1. Add BrokerInput if enabled
+        if broker_config.get("input_enabled", False):
+            # Collect all subscriptions from user components
+            all_subscriptions = [
+                sub for comp in user_components for sub in comp.get("subscriptions", [])
+            ]
+            if not all_subscriptions:
+                 log.warning(f"Simplified app '{self.name}' has input_enabled=true but no subscriptions defined in components.")
+
+            input_comp_config = {
+                "component_name": f"{self.name}_broker_input",
+                "component_module": "broker_input",
+                # Pass relevant broker config keys to BrokerInput's component_config
+                "component_config": {
+                    "broker_type": broker_config.get("broker_type"),
+                    "dev_mode": broker_config.get("dev_mode"),
+                    "broker_url": broker_config.get("broker_url"),
+                    "broker_username": broker_config.get("broker_username"),
+                    "broker_password": broker_config.get("broker_password"),
+                    "broker_vpn": broker_config.get("broker_vpn"),
+                    "reconnection_strategy": broker_config.get("reconnection_strategy"),
+                    "retry_interval": broker_config.get("retry_interval"),
+                    "retry_count": broker_config.get("retry_count"),
+                    "trust_store_path": broker_config.get("trust_store_path"),
+                    "broker_queue_name": broker_config.get("queue_name"), # Use the main queue name
+                    "create_queue_on_start": broker_config.get("create_queue_on_start", True),
+                    "payload_encoding": broker_config.get("payload_encoding", "utf-8"),
+                    "payload_format": broker_config.get("payload_format", "json"),
+                    "max_redelivery_count": broker_config.get("max_redelivery_count"),
+                    "broker_subscriptions": all_subscriptions # Pass collected subscriptions
+                }
+            }
+            flow_components.append(input_comp_config)
+
+        # 2. Add SubscriptionRouter if needed (input enabled and more than one user component)
+        if broker_config.get("input_enabled", False) and len(user_components) > 1:
+            router_comp_config = {
+                "component_name": f"{self.name}_router",
+                "component_module": "subscription_router", # Assuming this module exists
+                # Router needs access to the app's component list for routing rules
+                "component_config": {
+                    # Pass the original user components list as defined in the app config
+                    "app_components_config_ref": self.app_info.get("components", [])
+                }
+            }
+            flow_components.append(router_comp_config)
+
+        # 3. Add User Components (make a deep copy to avoid modification issues)
+        flow_components.extend(deepcopy(user_components))
+
+        # 4. Add BrokerOutput if enabled
+        if broker_config.get("output_enabled", False):
+            output_comp_config = {
+                "component_name": f"{self.name}_broker_output",
+                "component_module": "broker_output",
+                # Pass relevant broker config keys to BrokerOutput's component_config
+                "component_config": {
+                    "broker_type": broker_config.get("broker_type"),
+                    "dev_mode": broker_config.get("dev_mode"),
+                    "broker_url": broker_config.get("broker_url"),
+                    "broker_username": broker_config.get("broker_username"),
+                    "broker_password": broker_config.get("broker_password"),
+                    "broker_vpn": broker_config.get("broker_vpn"),
+                    "reconnection_strategy": broker_config.get("reconnection_strategy"),
+                    "retry_interval": broker_config.get("retry_interval"),
+                    "retry_count": broker_config.get("retry_count"),
+                    "trust_store_path": broker_config.get("trust_store_path"),
+                    "payload_encoding": broker_config.get("payload_encoding", "utf-8"),
+                    "payload_format": broker_config.get("payload_format", "json"),
+                    "propagate_acknowledgements": broker_config.get("propagate_acknowledgements", True),
+                    # Add other relevant output-specific configs if needed
+                }
+            }
+            flow_components.append(output_comp_config)
+
+        # Construct the final flow dictionary
+        return {
+            "name": f"{self.name}_implicit_flow",
+            "components": flow_components
+        }
 
 
     def create_flow(self, flow: dict, index: int, flow_instance_index: int) -> Flow:

@@ -24,17 +24,17 @@ Coding rules:
     - [X] 1.3.2 Call `_create_simplified_flow_config()` if simplified.
     - [X] 1.3.3 Call `self.create_flow()` with the generated config.
     - [X] 1.3.4 Keep existing logic for standard flows.
-- [ ] **1.4 Implement `App._create_simplified_flow_config` (`flow/app.py`):**
-    - [ ] 1.4.1 Create the private helper method.
-    *   [ ] 1.4.2 Construct flow dictionary.
-    *   [ ] 1.4.3 Add `broker_input` config if `input_enabled`.
-    *   [ ] 1.4.4 Add `subscription_router` config if `input_enabled` and >1 user component.
-    *   [ ] 1.4.5 Add user components config.
-    *   [ ] 1.4.6 Add `broker_output` config if `output_enabled`.
-    *   [ ] 1.4.7 Pass relevant `broker` config to implicit broker components.
-    *   [ ] 1.4.8 Collect and add all `subscriptions` to `broker_input` config.
-    *   [ ] 1.4.9 Pass user components list reference to `subscription_router` config.
-    *   [ ] 1.4.10 Return generated flow config dictionary.
+- [X] **1.4 Implement `App._create_simplified_flow_config` (`flow/app.py`):**
+    - [X] 1.4.1 Create the private helper method.
+    *   [X] 1.4.2 Construct flow dictionary.
+    *   [X] 1.4.3 Add `broker_input` config if `input_enabled`.
+    *   [X] 1.4.4 Add `subscription_router` config if `input_enabled` and >1 user component.
+    *   [X] 1.4.5 Add user components config.
+    *   [X] 1.4.6 Add `broker_output` config if `output_enabled`.
+    *   [X] 1.4.7 Pass relevant `broker` config to implicit broker components.
+    *   [X] 1.4.8 Collect and add all `subscriptions` to `broker_input` config.
+    *   [X] 1.4.9 Pass user components list reference to `subscription_router` config.
+    *   [X] 1.4.10 Return generated flow config dictionary.
 - [ ] **1.5 Modify `Flow.create_component_group` (`flow/flow.py`):**
     *   [ ] 1.5.1 Check for `component_class` in component config.
     *   [ ] 1.5.2 Use `component_class` for instantiation if present.
