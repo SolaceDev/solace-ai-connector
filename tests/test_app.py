@@ -60,7 +60,8 @@ def test_app_get_config():
     """Test that app.get_config works correctly"""
     app_info = {
         "name": "test_app",
-        "app_config": {
+        # Use 'config' key as expected by App.__init__
+        "config": {
             "test_key": "test_value",
         },
         "flows": [
@@ -186,7 +187,8 @@ def test_app_config_inheritance():
         "apps": [
             {
                 "name": "test_app",
-                "app_config": {"app_level_config": "app_value"},
+                # Use 'config' key as expected by App.__init__
+                "config": {"app_level_config": "app_value"},
                 "flows": [
                     {
                         "name": "test_flow",
@@ -287,6 +289,9 @@ flows:
 
         # Check that an app was created
         assert len(connector.apps) == 1
+        # Check the name derivation logic in main.py/SolaceAiConnector
+        # It should use the filename if available, otherwise 'default_app'
+        # Since we pass YAML directly, it falls back to 'default_app'
         assert connector.apps[0].name == "default_app"
 
         # Check that a flow was created
@@ -355,7 +360,8 @@ def test_component_app_reference():
     # Define a handler function to test app reference
     def invoke_handler(component, message, data):
         # Return the app name from the parent_app reference
-        return component.parent_app.name
+        # Use get_app() method for consistency
+        return component.get_app().name
 
     config = {
         "log": {"stdout_log_level": "INFO", "log_file_level": "INFO"},
