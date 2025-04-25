@@ -2,6 +2,7 @@ import threading
 import queue
 import traceback
 import pprint
+import time
 from abc import abstractmethod
 from typing import Any
 
@@ -127,7 +128,11 @@ class ComponentBase:
 
     def handle_component_error(self, e, event):
         log.error(
-            f"[{self.name}] {self.log_identifier} Component has crashed: {e}\n{traceback.format_exc()}"
+            "[%s] %s Component has crashed: %s\n%s",
+            self.name,
+            self.log_identifier,
+            e,
+            traceback.format_exc(),
         )
         self.handle_error(e, event)
 
@@ -148,7 +153,9 @@ class ComponentBase:
                 timeout = self.queue_timeout_ms or DEFAULT_QUEUE_TIMEOUT_MS
                 event = self.input_queue.get(timeout=timeout / 1000)
                 log.debug(
-                    f"[{self.name}] {self.log_identifier} Component received event from input queue"
+                    "[%s] %s Component received event from input queue",
+                    self.name,
+                    self.log_identifier,
                 )
                 return event
             except queue.Empty:
@@ -188,7 +195,10 @@ class ComponentBase:
             self.handle_cache_expiry_event(event.data)
         else:
             log.warning(
-                f"[{self.name}] {self.log_identifier} Unknown event type: event.event_type"
+                "[%s] %s Unknown event type: %s",
+                self.name,
+                self.log_identifier,
+                event.event_type,
             )
 
     def process_pre_invoke(self, message):
@@ -207,7 +217,10 @@ class ComponentBase:
         # Finally send the message to the next component - or if this is the last component,
         # the component will override send_message and do whatever it needs to do with the message
         log.debug(
-            f"[{self.name}] {self.log_identifier} Sending message from {self.name}"
+            "[%s] %s Sending message from %s",
+            self.name,
+            self.log_identifier,
+            self.name,
         )
         self.send_message(message)
 
@@ -343,8 +356,10 @@ class ComponentBase:
             and self.broker_request_response_config.get("enabled", False)
         ):
             log.warning(
-                f"[{self.name}] {self.log_identifier} Using deprecated component-level 'broker_request_response' config. "
-                "Consider migrating to app-level 'request_reply_enabled' in the 'broker' config."
+                "[%s] %s Using deprecated component-level 'broker_request_response' config. "
+                "Consider migrating to app-level 'request_reply_enabled' in the 'broker' config.",
+                self.name,
+                self.log_identifier,
             )
             broker_config = self.broker_request_response_config.get("broker_config", {})
             request_expiry_ms = self.broker_request_response_config.get(
@@ -377,11 +392,16 @@ class ComponentBase:
                     config=rrc_config, connector=self.connector
                 )
                 log.info(
-                    f"[{self.name}] {self.log_identifier} Initialized component-level RequestResponseFlowController."
+                    "[%s] %s Initialized component-level RequestResponseFlowController.",
+                    self.name,
+                    self.log_identifier,
                 )
             except Exception as e:
                 log.error(
-                    f"[{self.name}] {self.log_identifier} Failed to initialize component-level RRC: {e}",
+                    "[%s] %s Failed to initialize component-level RRC: %s",
+                    self.name,
+                    self.log_identifier,
+                    e,
                     exc_info=True,
                 )
                 # Decide if this should be fatal
@@ -498,7 +518,7 @@ class ComponentBase:
 
     def cleanup(self):
         """Clean up resources used by the component"""
-        log.debug(f"[{self.name}] {self.log_identifier} Cleaning up component")
+        log.debug("[%s] %s Cleaning up component", self.name, self.log_identifier)
         try:
             self.stop_component()
         except KeyboardInterrupt:
@@ -511,7 +531,9 @@ class ComponentBase:
                 pass  # Rely on connector.cleanup() for the internal flow
             except Exception as e:
                 log.error(
-                    f"[{self.name}] Error during component-level RRC cleanup reference release: {e}"
+                    "[%s] Error during component-level RRC cleanup reference release: %s",
+                    self.name,
+                    e,
                 )
             self._component_rrc = None
         if hasattr(self, "input_queue"):
@@ -531,11 +553,13 @@ class ComponentBase:
         # Prioritize App-level controller (new way)
         if app and app.request_response_controller:
             controller = app.request_response_controller
-            log.debug(f"[{self.name}] {self.log_identifier} Using App-level RRC.")
+            log.debug("[%s] %s Using App-level RRC.", self.name, self.log_identifier)
         # Fallback to Component-level controller (old way)
         elif hasattr(self, "_component_rrc") and self._component_rrc:
             controller = self._component_rrc
-            log.debug(f"[{self.name}] {self.log_identifier} Using Component-level RRC.")
+            log.debug(
+                "[%s] %s Using Component-level RRC.", self.name, self.log_identifier
+            )
 
         # If a controller was found (either way)
         if controller:
@@ -552,15 +576,22 @@ class ComponentBase:
                     return next_message
                 except StopIteration:
                     log.warning(
-                        f"[{self.name}] {self.log_identifier} RRC generator yielded no response."
+                        "[%s] %s RRC generator yielded no response.",
+                        self.name,
+                        self.log_identifier,
                     )
                     return None
                 except TimeoutError as e:  # Catch timeout specifically
-                    log.error(f"[{self.name}] {self.log_identifier} RRC timed out: {e}")
+                    log.error(
+                        "[%s] %s RRC timed out: %s", self.name, self.log_identifier, e
+                    )
                     raise e  # Re-raise timeout
                 except Exception as e:
                     log.error(
-                        f"[{self.name}] {self.log_identifier} Error during RRC call: {e}",
+                        "[%s] %s Error during RRC call: %s",
+                        self.name,
+                        self.log_identifier,
+                        e,
                         exc_info=True,
                     )
                     raise e  # Re-raise other exceptions
@@ -576,7 +607,11 @@ class ComponentBase:
     def handle_negative_acknowledgements(self, message, exception):
         """Handle NACK for the message."""
         log.error(
-            f"[{self.name}] {self.log_identifier} Component failed to process message: {exception} \n {traceback.format_exc()}"
+            "[%s] %s Component failed to process message: %s \n %s",
+            self.name,
+            self.log_identifier,
+            exception,
+            traceback.format_exc(),
         )
         nack = self.nack_reaction_to_exception(type(exception))
         message.call_negative_acknowledgements(nack)
@@ -649,7 +684,7 @@ class ComponentBase:
                     # Wait 1 second for the next interval
                     self.stop_signal.wait(timeout=1)
         except KeyboardInterrupt:
-            log.info(f"[{self.name}] Monitoring connection status stopped.")
+            log.info("[%s] Monitoring connection status stopped.", self.name)
 
     def run_micro_monitoring(self) -> None:
         """
@@ -666,9 +701,9 @@ class ComponentBase:
                 # Reset metrics in automatic mode
                 if not self.monitoring.is_flush_manual():
                     self.flush_metrics()
-                    log.debug(f"[{self.name}] Automatically flushed metrics.")
+                    log.debug("[%s] Automatically flushed metrics.", self.name)
         except KeyboardInterrupt:
-            log.info(f"[{self.name}] Monitoring stopped.")
+            log.info("[%s] Monitoring stopped.", self.name)
 
     def get_app(self):
         """Get the app that this component belongs to"""
