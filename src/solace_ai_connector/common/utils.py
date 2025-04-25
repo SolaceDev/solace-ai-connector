@@ -12,7 +12,7 @@ import gzip
 import json
 import yaml
 from copy import deepcopy
-from collections.abc import Mapping, Sequence # Import Sequence
+from collections.abc import Mapping
 
 from .log import log
 
@@ -367,28 +367,28 @@ def encode_payload(payload, encoding, payload_format):
         # Ensure it's bytes before returning
         if isinstance(formatted_payload, str):
             return formatted_payload.encode("utf-8")
-        return formatted_payload # Already bytes/bytearray
+        return formatted_payload  # Already bytes/bytearray
     elif encoding == "base64":
         if isinstance(formatted_payload, str):
-             formatted_payload = formatted_payload.encode("utf-8")
+            formatted_payload = formatted_payload.encode("utf-8")
         return base64.b64encode(formatted_payload)
     elif encoding == "gzip":
         if isinstance(formatted_payload, str):
-             formatted_payload = formatted_payload.encode("utf-8")
+            formatted_payload = formatted_payload.encode("utf-8")
         return gzip.compress(formatted_payload)
-    else: # Includes 'none' encoding
+    else:  # Includes 'none' encoding
         return formatted_payload
 
 
 def decode_payload(payload, encoding, payload_format):
-    decoded_payload = payload # Start with original payload
+    decoded_payload = payload  # Start with original payload
 
     # --- Decoding based on 'encoding' ---
     if encoding == "base64":
         try:
             # Ensure payload is bytes before decoding base64
             if isinstance(payload, str):
-                payload = payload.encode('ascii') # Base64 is ASCII
+                payload = payload.encode("ascii")  # Base64 is ASCII
             decoded_payload = base64.b64decode(payload)
         except Exception as e:
             log.error("Error decoding base64 payload: %s", e)
@@ -397,7 +397,7 @@ def decode_payload(payload, encoding, payload_format):
         try:
             # Ensure payload is bytes before decompressing
             if not isinstance(payload, (bytes, bytearray)):
-                 raise TypeError("Gzip payload must be bytes or bytearray")
+                raise TypeError("Gzip payload must be bytes or bytearray")
             decoded_payload = gzip.decompress(payload)
         except Exception as e:
             log.error("Error decompressing gzip payload: %s", e)
@@ -416,34 +416,48 @@ def decode_payload(payload, encoding, payload_format):
             # For now, assume if it's bytes and encoding isn't handled above, it remains bytes
             # unless format requires string. Let's default to trying utf-8 for string formats.
             elif payload_format in ["json", "yaml", "text"]:
-                 try:
-                      decoded_payload = payload.decode("utf-8")
-                      log.debug("Payload was bytes, decoded as utf-8 for format %s", payload_format)
-                 except UnicodeDecodeError:
-                      log.warning("Could not decode bytes payload as utf-8 for format %s, leaving as bytes.", payload_format)
-                      # Keep decoded_payload as original bytes if utf-8 fails
-                      pass # decoded_payload remains the original byte payload
+                try:
+                    decoded_payload = payload.decode("utf-8")
+                    log.debug(
+                        "Payload was bytes, decoded as utf-8 for format %s",
+                        payload_format,
+                    )
+                except UnicodeDecodeError:
+                    log.warning(
+                        "Could not decode bytes payload as utf-8 for format %s, leaving as bytes.",
+                        payload_format,
+                    )
+                    # Keep decoded_payload as original bytes if utf-8 fails
+                    pass  # decoded_payload remains the original byte payload
 
         except UnicodeDecodeError as e:
             log.error("Error decoding payload with encoding '%s': %s", encoding, e)
             # Decide how to handle - raise error or return raw bytes?
             # Returning raw bytes might be safer if subsequent steps can handle it.
             # For now, let's keep decoded_payload as the original bytes.
-            pass # decoded_payload remains the original byte payload
+            pass  # decoded_payload remains the original byte payload
         except Exception as e:
-             log.error("Unexpected error during payload decoding with encoding '%s': %s", encoding, e)
-             raise e # Re-raise unexpected errors
+            log.error(
+                "Unexpected error during payload decoding with encoding '%s': %s",
+                encoding,
+                e,
+            )
+            raise e  # Re-raise unexpected errors
 
     # --- Parsing based on 'payload_format' ---
     # This step expects decoded_payload to be a string for JSON/YAML
     if payload_format == "json":
         if isinstance(decoded_payload, (bytes, bytearray)):
-             # Attempt to decode as utf-8 if it's still bytes
-             try:
-                  decoded_payload = decoded_payload.decode('utf-8')
-             except UnicodeDecodeError as e:
-                  log.error("Cannot parse JSON, payload is bytes and not valid utf-8: %s", e)
-                  raise ValueError("Invalid payload for JSON format: not valid utf-8 bytes") from e
+            # Attempt to decode as utf-8 if it's still bytes
+            try:
+                decoded_payload = decoded_payload.decode("utf-8")
+            except UnicodeDecodeError as e:
+                log.error(
+                    "Cannot parse JSON, payload is bytes and not valid utf-8: %s", e
+                )
+                raise ValueError(
+                    "Invalid payload for JSON format: not valid utf-8 bytes"
+                ) from e
 
         if isinstance(decoded_payload, str):
             try:
@@ -453,27 +467,31 @@ def decode_payload(payload, encoding, payload_format):
                 # Return original string or raise error? Let's raise.
                 raise ValueError("Invalid JSON payload") from e
         else:
-             # If it wasn't bytes or string, it might already be parsed (e.g., from dev broker)
-             return decoded_payload
+            # If it wasn't bytes or string, it might already be parsed (e.g., from dev broker)
+            return decoded_payload
 
     elif payload_format == "yaml":
         if isinstance(decoded_payload, (bytes, bytearray)):
-             # Attempt to decode as utf-8 if it's still bytes
-             try:
-                  decoded_payload = decoded_payload.decode('utf-8')
-             except UnicodeDecodeError as e:
-                  log.error("Cannot parse YAML, payload is bytes and not valid utf-8: %s", e)
-                  raise ValueError("Invalid payload for YAML format: not valid utf-8 bytes") from e
+            # Attempt to decode as utf-8 if it's still bytes
+            try:
+                decoded_payload = decoded_payload.decode("utf-8")
+            except UnicodeDecodeError as e:
+                log.error(
+                    "Cannot parse YAML, payload is bytes and not valid utf-8: %s", e
+                )
+                raise ValueError(
+                    "Invalid payload for YAML format: not valid utf-8 bytes"
+                ) from e
 
         if isinstance(decoded_payload, str):
             try:
                 return yaml.safe_load(decoded_payload)
-            except Exception as e: # Catches YAML parsing errors
+            except Exception as e:  # Catches YAML parsing errors
                 log.error("Error decoding YAML payload string: %s", e)
                 raise ValueError("Invalid YAML payload") from e
         else:
-             # If it wasn't bytes or string, it might already be parsed
-             return decoded_payload
+            # If it wasn't bytes or string, it might already be parsed
+            return decoded_payload
 
     # If format is 'text' or 'none' or unknown, return the decoded_payload as is
     # (which could be string, bytes, or already parsed object)
@@ -517,7 +535,7 @@ def get_data_value(data_object, expression, resolve_none_colon=False):
             try:
                 current_data = current_data[int(part)]
             except IndexError:
-                 current_data = None # Index out of bounds
+                current_data = None  # Index out of bounds
         # If the current data is neither a dictionary nor a list, or if 'part' is
         # not a number, return None
         elif isinstance(current_data, object):
@@ -525,10 +543,10 @@ def get_data_value(data_object, expression, resolve_none_colon=False):
         else:
             # This case means current_data is a scalar (str, int, etc.) but path continues
             log.debug(
-                 f"Trying to access part '{part}' of a non-collection type "
-                 f"({type(current_data)}) in expression '{expression}'"
+                f"Trying to access part '{part}' of a non-collection type "
+                f"({type(current_data)}) in expression '{expression}'"
             )
-            return None # Cannot traverse further
+            return None  # Cannot traverse further
 
         # If at any point we get None, stop and return None
         if current_data is None:
@@ -547,7 +565,9 @@ def set_data_value(data_object, expression, value):
             data_object[expression] = value
         # Add handling for lists if needed, otherwise raise error or ignore
         else:
-             log.warning(f"Cannot set key '{expression}' on non-dict object: {type(data_object)}")
+            log.warning(
+                f"Cannot set key '{expression}' on non-dict object: {type(data_object)}"
+            )
         return
 
     data_name = expression.split(":")[1]
@@ -578,7 +598,7 @@ def set_data_value(data_object, expression, value):
 
     # Traverse the path
     for i, part in enumerate(path_parts):
-        is_last_part = (i == len(path_parts) - 1)
+        is_last_part = i == len(path_parts) - 1
         next_part_is_digit = not is_last_part and path_parts[i + 1].isdigit()
 
         if isinstance(current_data, dict):
@@ -586,14 +606,22 @@ def set_data_value(data_object, expression, value):
                 current_data[part] = value
             else:
                 # Ensure the next level exists and is the correct type (dict or list)
-                if part not in current_data or not isinstance(current_data[part], (dict, list)):
+                if part not in current_data or not isinstance(
+                    current_data[part], (dict, list)
+                ):
                     current_data[part] = [] if next_part_is_digit else {}
                 elif next_part_is_digit and not isinstance(current_data[part], list):
-                     log.warning(f"Overwriting non-list with list at '{'.'.join(path_parts[:i+1])}' in expression '{expression}'")
-                     current_data[part] = []
-                elif not next_part_is_digit and not isinstance(current_data[part], dict):
-                     log.warning(f"Overwriting non-dict with dict at '{'.'.join(path_parts[:i+1])}' in expression '{expression}'")
-                     current_data[part] = {}
+                    log.warning(
+                        f"Overwriting non-list with list at '{'.'.join(path_parts[:i+1])}' in expression '{expression}'"
+                    )
+                    current_data[part] = []
+                elif not next_part_is_digit and not isinstance(
+                    current_data[part], dict
+                ):
+                    log.warning(
+                        f"Overwriting non-dict with dict at '{'.'.join(path_parts[:i+1])}' in expression '{expression}'"
+                    )
+                    current_data[part] = {}
                 current_data = current_data[part]
 
         elif isinstance(current_data, list) and part.isdigit():
@@ -606,14 +634,20 @@ def set_data_value(data_object, expression, value):
                 current_data[idx] = value
             else:
                 # Ensure the element at idx exists and is the correct type
-                if current_data[idx] is None or not isinstance(current_data[idx], (dict, list)):
-                     current_data[idx] = [] if next_part_is_digit else {}
+                if current_data[idx] is None or not isinstance(
+                    current_data[idx], (dict, list)
+                ):
+                    current_data[idx] = [] if next_part_is_digit else {}
                 elif next_part_is_digit and not isinstance(current_data[idx], list):
-                     log.warning(f"Overwriting non-list with list at index {idx} of '{'.'.join(path_parts[:i])}' in expression '{expression}'")
-                     current_data[idx] = []
+                    log.warning(
+                        f"Overwriting non-list with list at index {idx} of '{'.'.join(path_parts[:i])}' in expression '{expression}'"
+                    )
+                    current_data[idx] = []
                 elif not next_part_is_digit and not isinstance(current_data[idx], dict):
-                     log.warning(f"Overwriting non-dict with dict at index {idx} of '{'.'.join(path_parts[:i])}' in expression '{expression}'")
-                     current_data[idx] = {}
+                    log.warning(
+                        f"Overwriting non-dict with dict at index {idx} of '{'.'.join(path_parts[:i])}' in expression '{expression}'"
+                    )
+                    current_data[idx] = {}
                 current_data = current_data[idx]
         else:
             # Current data is not a container type we can traverse/set into
@@ -634,7 +668,9 @@ def remove_data_value(data_object, expression):
 
     # Allow removing from None or non-containers? No, should raise error or log.
     if data_object is None:
-        log.warning(f"Cannot remove data value for expression '{expression}' - data_object is None")
+        log.warning(
+            f"Cannot remove data value for expression '{expression}' - data_object is None"
+        )
         return
     if not isinstance(data_object, (dict, list)):
         log.warning(
@@ -661,11 +697,13 @@ def remove_data_value(data_object, expression):
             except IndexError:
                 current_data = None
         else:
-            current_data = None # Cannot traverse further
+            current_data = None  # Cannot traverse further
 
         if current_data is None:
-            log.debug(f"Path does not exist for removal: '{expression}' at part '{part}'")
-            return # Path doesn't exist, nothing to remove
+            log.debug(
+                f"Path does not exist for removal: '{expression}' at part '{part}'"
+            )
+            return  # Path doesn't exist, nothing to remove
 
     # Handle the last part
     last_part = path_parts[-1]
@@ -678,9 +716,13 @@ def remove_data_value(data_object, expression):
             # Let's pop for now, consistent with dict behavior.
             current_data.pop(idx)
         else:
-             log.debug(f"Index {idx} out of bounds for removal in list at '{'.'.join(path_parts[:-1])}'")
+            log.debug(
+                f"Index {idx} out of bounds for removal in list at '{'.'.join(path_parts[:-1])}'"
+            )
     else:
-        log.debug(f"Cannot remove '{last_part}'. Parent is not a dict or list, or index is invalid.")
+        log.debug(
+            f"Cannot remove '{last_part}'. Parent is not a dict or list, or index is invalid."
+        )
 
 
 def deep_merge(source, destination):
@@ -702,7 +744,7 @@ def deep_merge(source, destination):
             # Get node from result; if it's also a dict, merge recursively
             node = result.get(key)
             if isinstance(node, Mapping):
-                result[key] = deep_merge(node, value) # Assign the result back
+                result[key] = deep_merge(node, value)  # Assign the result back
             else:
                 # If the source node isn't a dict, destination dict simply replaces it
                 result[key] = deepcopy(value)

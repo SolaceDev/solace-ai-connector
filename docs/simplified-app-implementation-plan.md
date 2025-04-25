@@ -138,4 +138,4 @@ This document outlines the step-by-step plan to implement the "Simplified App Mo
 
 4.  **Refactor and Review:**
     *   Clean up code, add comments, and ensure consistency.
-    *   Perform code reviews.
+        *   Perform code reviews.
