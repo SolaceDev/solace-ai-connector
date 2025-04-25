@@ -3,7 +3,7 @@ import re
 import threading
 import sys # Add sys import
 sys.path.append("src") # Add src directory to Python path
-from unittest.mock import MagicMock, patch, ANY
+from unittest.mock import MagicMock, patch, ANY # Import patch
 
 # Imports for classes to test/mock
 from solace_ai_connector.flow.app import App
@@ -301,12 +301,14 @@ def mock_router_dependencies():
 
     return mock_app, mock_config, mock_comp_a, mock_comp_b
 
-def test_subscription_router_routing_match_a(mock_router_dependencies, mocker):
+@patch('solace_ai_connector.components.component_base.ComponentBase.discard_current_message')
+@patch('solace_ai_connector.flow.subscription_router.SubscriptionRouter.get_config')
+@patch('solace_ai_connector.flow.subscription_router.SubscriptionRouter.get_app')
+def test_subscription_router_routing_match_a(mock_get_app, mock_get_config, mock_discard, mock_router_dependencies):
     """Tests routing when topic matches component A."""
     mock_app, mock_config, mock_comp_a, mock_comp_b = mock_router_dependencies
-    mocker.patch.object(SubscriptionRouter, 'get_app', return_value=mock_app)
-    mocker.patch.object(SubscriptionRouter, 'get_config', side_effect=lambda key, default=None: mock_config['component_config'].get(key, default))
-    mocker.patch.object(ComponentBase, 'discard_current_message') # Mock discard
+    mock_get_app.return_value = mock_app
+    mock_get_config.side_effect = lambda key, default=None: mock_config['component_config'].get(key, default)
 
     router = SubscriptionRouter(config=mock_config, app=mock_app) # Pass mock app
 
@@ -330,15 +332,17 @@ def test_subscription_router_routing_match_a(mock_router_dependencies, mocker):
     assert enqueued_event.data == mock_message
 
     mock_comp_b.enqueue.assert_not_called()
-    ComponentBase.discard_current_message.assert_called_once()
+    mock_discard.assert_called_once()
 
 
-def test_subscription_router_routing_match_b(mock_router_dependencies, mocker):
+@patch('solace_ai_connector.components.component_base.ComponentBase.discard_current_message')
+@patch('solace_ai_connector.flow.subscription_router.SubscriptionRouter.get_config')
+@patch('solace_ai_connector.flow.subscription_router.SubscriptionRouter.get_app')
+def test_subscription_router_routing_match_b(mock_get_app, mock_get_config, mock_discard, mock_router_dependencies):
     """Tests routing when topic matches component B."""
     mock_app, mock_config, mock_comp_a, mock_comp_b = mock_router_dependencies
-    mocker.patch.object(SubscriptionRouter, 'get_app', return_value=mock_app)
-    mocker.patch.object(SubscriptionRouter, 'get_config', side_effect=lambda key, default=None: mock_config['component_config'].get(key, default))
-    mocker.patch.object(ComponentBase, 'discard_current_message') # Mock discard
+    mock_get_app.return_value = mock_app
+    mock_get_config.side_effect = lambda key, default=None: mock_config['component_config'].get(key, default)
 
     router = SubscriptionRouter(config=mock_config, app=mock_app)
 
@@ -353,14 +357,16 @@ def test_subscription_router_routing_match_b(mock_router_dependencies, mocker):
     assert isinstance(enqueued_event, Event)
     assert enqueued_event.event_type == EventType.MESSAGE
     assert enqueued_event.data == mock_message
-    ComponentBase.discard_current_message.assert_called_once()
+    mock_discard.assert_called_once()
 
-def test_subscription_router_routing_no_match(mock_router_dependencies, mocker):
+@patch('solace_ai_connector.components.component_base.ComponentBase.discard_current_message')
+@patch('solace_ai_connector.flow.subscription_router.SubscriptionRouter.get_config')
+@patch('solace_ai_connector.flow.subscription_router.SubscriptionRouter.get_app')
+def test_subscription_router_routing_no_match(mock_get_app, mock_get_config, mock_discard, mock_router_dependencies):
     """Tests routing when topic matches no component."""
     mock_app, mock_config, mock_comp_a, mock_comp_b = mock_router_dependencies
-    mocker.patch.object(SubscriptionRouter, 'get_app', return_value=mock_app)
-    mocker.patch.object(SubscriptionRouter, 'get_config', side_effect=lambda key, default=None: mock_config['component_config'].get(key, default))
-    mocker.patch.object(ComponentBase, 'discard_current_message') # Mock discard
+    mock_get_app.return_value = mock_app
+    mock_get_config.side_effect = lambda key, default=None: mock_config['component_config'].get(key, default)
 
     router = SubscriptionRouter(config=mock_config, app=mock_app)
 
@@ -371,7 +377,7 @@ def test_subscription_router_routing_no_match(mock_router_dependencies, mocker):
 
     mock_comp_a.enqueue.assert_not_called()
     mock_comp_b.enqueue.assert_not_called()
-    ComponentBase.discard_current_message.assert_called_once()
+    mock_discard.assert_called_once()
 
 
 # 5.2.5 Test ComponentBase.get_config hierarchy
