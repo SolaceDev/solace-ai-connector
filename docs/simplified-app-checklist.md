@@ -106,10 +106,10 @@ Coding rules:
 
 ## 5. Phase 5: Documentation and Testing
 
-- [ ] **5.1 Update Documentation:**
-    *   [ ] 5.1.1 Review and update `simplified-app-plan.md`.
-    *   [ ] 5.1.2 Review and update `simplified-app-design.md`.
-    *   [ ] 5.1.3 Create user documentation (`docs/simplified-apps.md`).
+- [X] **5.1 Update Documentation:**
+    *   [X] 5.1.1 Review and update `simplified-app-plan.md`.
+    *   [X] 5.1.2 Review and update `simplified-app-design.md`.
+    *   [X] 5.1.3 Create user documentation (`docs/simplified-apps.md`).
 - [ ] **5.2 Write Unit Tests:**
     *   [ ] 5.2.1 Test `App.__init__` merging.
     *   [ ] 5.2.2 Test `App._create_simplified_flow_config`.
