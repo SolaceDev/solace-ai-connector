@@ -81,9 +81,9 @@ class SubscriptionRouter(ComponentBase):
         start_index = 0
         if flow_component_groups and flow_component_groups[0][0].module_info.get("class_name") == "BrokerInput":
             start_index = 1 # Skip BrokerInput
-        # Skip self (SubscriptionRouter)
-        router_index = start_index
-        start_index += 1
+        # Skip self (SubscriptionRouter) if present
+        if flow_component_groups and len(flow_component_groups) > start_index and flow_component_groups[start_index][0].module_info.get("class_name") == "SubscriptionRouter":
+             start_index += 1
 
         # Map remaining components based on order
         config_idx = 0
@@ -141,7 +141,7 @@ class SubscriptionRouter(ComponentBase):
         msg_topic = message.get_topic()
         if not msg_topic:
             log.warning("%s Message has no topic, cannot route. Discarding.", self.log_identifier)
-            self.discard_current_message() # Discard if unroutable
+            self.discard_current_message() # Discard if unroutable - ACK will be called
             return None
 
         log.debug("%s Attempting to route message with topic: '%s'", self.log_identifier, msg_topic)
@@ -155,17 +155,20 @@ class SubscriptionRouter(ComponentBase):
                         # Re-wrap the message in an Event object to pass to the target
                         original_event = Event(EventType.MESSAGE, message)
                         target_component.enqueue(original_event)
-                        # Signal that this component handled the message dispatch
-                        self.discard_current_message()
+                        # DO NOT discard the message here. Returning None prevents
+                        # ComponentBase from calling process_post_invoke, and
+                        # since discard_current_message was not called, the
+                        # original acknowledgements remain intact on the message
+                        # and will be called by the target component later.
                         return None # Stop processing here
                     except Exception as e:
                          log.error("%s Error enqueuing message to component '%s': %s", self.log_identifier, target_component.name, e, exc_info=True)
-                         # Let error handling proceed, potentially NACKing original message
+                         # Let error handling proceed (ComponentBase will NACK original message)
                          raise e
 
 
         log.warning("%s No matching subscription found for topic '%s'. Discarding message.", self.log_identifier, msg_topic)
-        self.discard_current_message() # Discard if unroutable
+        self.discard_current_message() # Discard if unroutable - ACK will be called
         return None
 
     def get_negative_acknowledgement_callback(self):
