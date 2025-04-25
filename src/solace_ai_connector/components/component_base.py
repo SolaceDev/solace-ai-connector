@@ -270,14 +270,15 @@ class ComponentBase:
                 pass
 
     def get_config(self, key=None, default=None):
-        # First check component config
+        # 1.6.2 Modify lookup order
+        # First check component_config (specific config for this component instance)
         val = self.component_config.get(key, None)
 
-        # If not found in component config, check app config if available
+        # If not found in component_config, check app config if available
         if val is None and self.parent_app:
             val = self.parent_app.get_config(key, None)
 
-        # If still not found, check flow config
+        # If still not found, check self.config (component entry from flow/app config)
         if val is None:
             val = self.config.get(key, default)
 
@@ -605,6 +606,7 @@ class ComponentBase:
         except KeyboardInterrupt:
             log.info(f"[{self.name}] Monitoring stopped.")
 
+    # 1.6.1 Add get_app() method
     def get_app(self):
         """Get the app that this component belongs to"""
         return self.parent_app

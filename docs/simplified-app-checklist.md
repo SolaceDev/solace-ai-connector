@@ -39,9 +39,9 @@ Coding rules:
     *   [X] 1.5.1 Check for `component_class` in component config.
     *   [X] 1.5.2 Use `component_class` for instantiation if present.
     *   [X] 1.5.3 Use `component_module` if `component_class` is not present.
-- [ ] **1.6 Modify `ComponentBase` (`components/component_base.py`):**
-    *   [ ] 1.6.1 Add `get_app()` method.
-    *   [ ] 1.6.2 Modify `get_config` lookup order: `component_config` -> `app.config` -> `self.config`.
+- [X] **1.6 Modify `ComponentBase` (`components/component_base.py`):**
+    *   [X] 1.6.1 Add `get_app()` method.
+    *   [X] 1.6.2 Modify `get_config` lookup order: `component_config` -> `app.config` -> `self.config`.
 
 ## 2. Phase 2: Implement Subscription Router
 
