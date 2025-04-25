@@ -167,7 +167,6 @@ The overall direction looks promising for simplifying common use cases. Addressi
 
 ## High-level Architecture
 
-<inst>
 The simplified app mode introduces a configuration-driven approach where the framework automatically generates the underlying flow structure. Instead of defining explicit flows in the YAML, the user defines an `app` with broker settings, interaction flags (`input_enabled`, `output_enabled`, `request_reply_enabled`), and a list of processing `components`, each associated with topic `subscriptions`.
 
 **Implicit Flow Generation:**
@@ -186,14 +185,15 @@ Based on the `app` configuration, the `SolaceAiConnector` framework will implici
     *   It iterates through the `components` defined in the `app` configuration *in the order they are listed*.
     *   For each component, it checks if the incoming `message.topic` matches any of the `subscriptions` defined for that component.
     *   It routes the `Message` to the *first* component whose subscriptions match. If no match is found, the message might be logged and discarded, or sent to an error handler (TBD).
+    *   This is only created if there are multiple components. If there is only one component, the message will be sent directly to that component.
 
 3.  **Processing Component(s) (User-Defined):** These are the components listed in the `app.components` section of the configuration.
     *   The `SubscriptionRouter` directs the message to the appropriate component instance based on the matched subscription.
-    *   If `num_instances` > 1 is specified for a component, the `SubscriptionRouter` will likely employ a round-robin or similar strategy to distribute messages among the instances of that specific component.
+    *   If `num_instances` > 1 is specified for a component, multiple instances of the component are created, but they all share the same input queue like today. Python queues allow multiple consumers to read from the same queue.
     *   The component executes its `invoke` method using the received `Message`.
     *   The component has access to the app's configuration via `get_config`.
     *   The component can use `self.do_broker_request_response()` if `request_reply_enabled` is true (see below).
-    *   The component can call `self.get_app().send_message(payload, topic, user_properties)` to send additional messages via the `BrokerOutput`.
+    *   The component can call `self.get_app().send_message(payload, topic, user_properties)` to send additional messages via the `BrokerOutput`, but only if `output_enabled` is true.
 
 4.  **BrokerOutput (Implicit):** If `output_enabled` is true, a dedicated `BrokerOutput` component instance is created.
     *   It connects using the *same* broker details as `BrokerInput`.
@@ -247,13 +247,12 @@ graph LR
         BO["BrokerOutput (Implicit)"] -- Formatted Message --> Broker
     end
 
-    style BI fill:#f9f,stroke:#333,stroke-width:2px
-    style Router fill:#ccf,stroke:#333,stroke-width:2px
-    style BO fill:#f9f,stroke:#333,stroke-width:2px
-    style RRC fill:#f9f,stroke:#333,stroke-width:2px
+    style BI fill:#321,stroke:#333,stroke-width:2px
+    style Router fill:#123,stroke:#333,stroke-width:2px
+    style BO fill:#321,stroke:#333,stroke-width:2px
+    style RRC fill:#123,stroke:#333,stroke-width:2px
 ```
 
 This architecture leverages the existing `Flow` and `ComponentBase` structures but hides the flow definition complexity from the user for simpler applications, generating the necessary plumbing automatically based on the simplified `app` configuration.
-</inst>
 
 
