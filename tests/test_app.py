@@ -60,8 +60,8 @@ def test_app_get_config():
     """Test that app.get_config works correctly"""
     app_info = {
         "name": "test_app",
-        # Use 'config' key as expected by App.__init__
-        "config": {
+        # Use 'app_config' key as expected by App.__init__
+        "app_config": {
             "test_key": "test_value",
         },
         "flows": [
@@ -187,8 +187,8 @@ def test_app_config_inheritance():
         "apps": [
             {
                 "name": "test_app",
-                # Use 'config' key as expected by App.__init__
-                "config": {"app_level_config": "app_value"},
+                # Use 'app_config' key as expected by App.__init__
+                "app_config": {"app_level_config": "app_value"},
                 "flows": [
                     {
                         "name": "test_flow",
