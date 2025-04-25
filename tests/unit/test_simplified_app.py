@@ -69,7 +69,7 @@ def test_app_init_merging():
             "shared_param": "yaml_shared", # YAML overrides code
         },
         "components": [
-            {"name": "yaml_comp", "component_module": "yaml_module"} # YAML overrides code list
+            {"name": "yaml_comp", "component_module": "yaml_module"} # YAML extends code list
         ]
         # No 'flows' key, indicating simplified app potentially
     }
@@ -100,9 +100,13 @@ def test_app_init_merging():
     # Assertion for self.name (derived from merged result)
     assert app_instance.name == "app_from_yaml"
 
-    # Assertion for components (YAML should overwrite)
-    assert len(app_instance.app_info["components"]) == 1
-    assert app_instance.app_info["components"][0]["name"] == "yaml_comp"
+    # Assertion for components (YAML should extend the code list)
+    assert len(app_instance.app_info["components"]) == 2
+    # Check contents and order
+    assert app_instance.app_info["components"][0]["name"] == "code_comp"
+    assert app_instance.app_info["components"][0]["component_module"] == "code_module"
+    assert app_instance.app_info["components"][1]["name"] == "yaml_comp"
+    assert app_instance.app_info["components"][1]["component_module"] == "yaml_module"
 
 # 5.2.2 Test App._create_simplified_flow_config
 @pytest.mark.parametrize(
