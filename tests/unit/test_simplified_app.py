@@ -34,7 +34,8 @@ class DummyAppWithCodeConfig(App):
             "broker_url": "code_url",
             "input_enabled": False, # Code default
         },
-        "config": {
+        # Use 'app_config' key here for app-level parameters
+        "app_config": {
             "code_param": "code_value",
             "shared_param": "code_shared",
         },
@@ -59,7 +60,8 @@ def test_app_init_merging():
             "broker_vpn": "yaml_vpn", # YAML adds new key
             "input_enabled": True, # YAML overrides code
         },
-        "config": {
+        # Use 'app_config' key here for app-level parameters
+        "app_config": {
             "yaml_param": "yaml_value", # YAML adds new key
             "shared_param": "yaml_shared", # YAML overrides code
         },
@@ -87,8 +89,8 @@ def test_app_init_merging():
     assert app_instance.app_info["broker"]["broker_vpn"] == "yaml_vpn" # From YAML
     assert app_instance.app_info["broker"]["input_enabled"] is True # From YAML
 
-    # Assertions for self.app_config (extracted 'config' block from merged result)
-    assert app_instance.app_config["code_param"] == "code_value" # From code (not in YAML config block)
+    # Assertions for self.app_config (extracted 'app_config' block from merged result)
+    assert app_instance.app_config["code_param"] == "code_value" # From code (not in YAML app_config block)
     assert app_instance.app_config["yaml_param"] == "yaml_value" # From YAML
     assert app_instance.app_config["shared_param"] == "yaml_shared" # From YAML
 
@@ -418,4 +420,3 @@ def test_get_config_hierarchy_not_found(mock_component_for_get_config):
     """Test getting config when key is not found."""
     assert mock_component_for_get_config.get_config("non_existent_param") is None
     assert mock_component_for_get_config.get_config("non_existent_param", "default_val") == "default_val"
-
