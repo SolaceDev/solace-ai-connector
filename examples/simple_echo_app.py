@@ -1,5 +1,7 @@
 """
-Example of a Simplified App defined entirely within a single Python file.
+Example of a Simplified App defined entirely within a single Python file,
+using a custom App subclass.
+
 This app listens on a Solace queue, logs the received message payload,
 and echoes the payload back to a predefined topic.
 """
@@ -10,6 +12,7 @@ from typing import Any
 from solace_ai_connector.components.component_base import ComponentBase
 from solace_ai_connector.common.log import log, setup_log
 from solace_ai_connector.common.message import Message
+from solace_ai_connector.flow.app import App  # Import the base App class
 
 # --- 1. Define the Component ---
 
@@ -93,65 +96,101 @@ class SimpleEchoComponent(ComponentBase):
         }
 
 
-# --- 2. Define the App Configuration (Code-based) ---
+# --- 2. Define the Custom App Class ---
 
-# This dictionary holds the entire configuration for the simplified app.
-# The framework needs to be able to discover and load this dictionary.
-APP_CONFIG = {
-    "name": "simple_echo_app_from_code",
-    "broker": {
-        # Use environment variables or replace with actual values
-        "broker_type": os.getenv("SOLACE_BROKER_TYPE", "solace"),
-        "broker_url": os.getenv("SOLACE_URL", "ws://localhost:8080"),
-        "broker_vpn": os.getenv("SOLACE_VPN", "default"),
-        "broker_username": os.getenv("SOLACE_USERNAME", "user"),
-        "broker_password": os.getenv("SOLACE_PASSWORD", "password"),
-
-        "input_enabled": True,
-        "output_enabled": True,  # Required for echoing
-        "request_reply_enabled": False,
-
-        "queue_name": "q/simple_echo_app/input",
-        "create_queue_on_start": True,
-        "payload_format": "json",  # Assume input/output is JSON
-        "payload_encoding": "utf-8",
-    },
-    "config": {
-        # Optional app-level config accessible via component.get_config('app_param')
-        "app_param": "global_app_value"
-    },
-    "components": [
-        {
-            "name": "echo_processor",
-            # Use the special __name__ variable. This tells the framework
-            # to look for the component class ('SimpleEchoComponent' based on info)
-            # within *this* file/module.
-            "component_module": __name__,
-            "component_config": {
-                # Configuration specific to SimpleEchoComponent
-                "echo_topic": "echo/output/from_code",
-                "log_prefix": "CODE_ECHO:",
-            },
-            "subscriptions": [
-                # The topic subscription for the implicit BrokerInput queue
-                {"topic": "echo/input/>"}
-            ],
-            # Define input selection for the component (optional, defaults shown)
-            # This tells the component what data to receive from the previous step.
-            # For the first component after BrokerInput/Router, 'previous' holds
-            # the output of BrokerInput.
-            "input_selection": {
-                 "source_expression": "previous"
-            }
-        }
-    ]
+# Info dictionary for the App class itself
+info = {
+    "class_name": "SimpleEchoApp",
+    "description": "A simplified echo application defined entirely in code.",
+    "short_description": "Code-based echo app.",
 }
 
+class SimpleEchoApp(App):
+    """
+    Custom App class that defines its configuration internally.
+    """
+
+    # Define the entire app configuration as a class attribute or within __init__
+    app_config = {
+        "name": "simple_echo_app_from_code", # Internal name, can be overridden by YAML 'name'
+        "broker": {
+            # Use environment variables or replace with actual values
+            "broker_type": os.getenv("SOLACE_BROKER_TYPE", "solace"),
+            "broker_url": os.getenv("SOLACE_URL", "ws://localhost:8080"),
+            "broker_vpn": os.getenv("SOLACE_VPN", "default"),
+            "broker_username": os.getenv("SOLACE_USERNAME", "user"),
+            "broker_password": os.getenv("SOLACE_PASSWORD", "password"),
+
+            "input_enabled": True,
+            "output_enabled": True,  # Required for echoing
+            "request_reply_enabled": False,
+
+            "queue_name": "q/simple_echo_app/input",
+            "create_queue_on_start": True,
+            "payload_format": "json",  # Assume input/output is JSON
+            "payload_encoding": "utf-8",
+        },
+        "config": {
+            # Optional app-level config accessible via component.get_config('app_param')
+            "app_param": "global_app_value"
+        },
+        "components": [
+            {
+                "name": "echo_processor",
+                # Use the special __name__ variable. This tells the framework
+                # to look for the component class ('SimpleEchoComponent' based on component_info)
+                # within *this* file/module.
+                "component_module": __name__,
+                "component_config": {
+                    # Configuration specific to SimpleEchoComponent
+                    "echo_topic": "echo/output/from_code",
+                    "log_prefix": "CODE_ECHO:",
+                },
+                "subscriptions": [
+                    # The topic subscription for the implicit BrokerInput queue
+                    {"topic": "echo/input/>"}
+                ],
+                # Define input selection for the component (optional, defaults shown)
+                # This tells the component what data to receive from the previous step.
+                # For the first component after BrokerInput/Router, 'previous' holds
+                # the output of BrokerInput.
+                "input_selection": {
+                     "source_expression": "previous"
+                }
+            }
+        ]
+    }
+
+    def __init__(self, app_info: dict, **kwargs):
+        """
+        Initialize the custom App.
+
+        Args:
+            app_info (dict): Configuration passed from the main connector (e.g., from YAML).
+                             This implementation ignores it and uses its internal config.
+            **kwargs: Other arguments passed by the connector (stop_signal, etc.)
+        """
+        # Override the passed app_info with the internally defined configuration.
+        # Merge the name from the YAML config if provided, otherwise use internal name.
+        merged_app_info = self.app_config.copy()
+        if app_info and 'name' in app_info:
+             merged_app_info['name'] = app_info['name']
+
+        # Call the base class constructor with our defined configuration
+        super().__init__(app_info=merged_app_info, **kwargs)
+        log.info(f"Initialized SimpleEchoApp '{self.name}' from code definition.")
+
+
 # --- 3. Framework Integration (Conceptual) ---
-# The Solace AI Connector framework needs a way to find this APP_CONFIG.
-# This could involve:
-# - Pointing to this file in the main connector config (e.g., under a 'python_apps' key).
-# - Placing this file in a specific directory scanned by the connector.
+# The Solace AI Connector framework loads this app by specifying its module
+# in the main configuration file (e.g., config.yaml):
+#
+# apps:
+#   - name: my_echo_instance # Name for this specific instance
+#     app_module: examples.simple_echo_app # Points to this file
+#     # Optional: Override specific app-level config here if needed
+#     # config:
+#     #   app_param: "override_value"
 
 # Example of how this *might* be run if the framework supports loading Python app configs.
 # (This requires the main connector logic to be adapted).
@@ -173,14 +212,20 @@ if __name__ == "__main__":
         # Dynamically import the connector - adjust path if necessary
         from solace_ai_connector.solace_ai_connector import SolaceAiConnector
 
-        # Simulate how the main connector might load this config
+        # Simulate how the main connector might load this config via app_module
+        # The actual APP_CONFIG is now inside the SimpleEchoApp class.
         connector_config = {
             "log": { # Basic logging config for the connector itself
                 "stdout_log_level": "INFO",
                 "log_file_level": "DEBUG",
                 "log_file": "connector_main.log",
             },
-            "apps": [APP_CONFIG] # Pass our code-defined app config
+            "apps": [
+                {
+                    "name": "simple_echo_instance_main", # Instance name from YAML
+                    "app_module": __name__ # Point to this module
+                }
+            ]
         }
 
         connector = SolaceAiConnector(config=connector_config)
