@@ -106,29 +106,75 @@ class Flow:
                 self.threads.append(thread)
 
     def create_component_group(self, component, index):
-        component_module = component.get("component_module", "")
-        base_path = component.get("component_base_path", None)
-        component_package = component.get("component_package", None)
+        component_class = None
+        imported_module = None
+
+        # 1.5.1 Check for component_class
+        if "component_class" in component:
+            component_class = component.get("component_class")
+            if not isinstance(component_class, type) or not issubclass(component_class, ComponentBase):
+                raise TypeError(
+                    f"component_class for component '{component.get('component_name')}' "
+                    f"must be a valid class inheriting from ComponentBase, but got {type(component_class)}"
+                )
+            log.debug(f"Using component_class {component_class.__name__} for component '{component.get('component_name')}'")
+            # Get module_info from the class itself (assuming it's defined there or in its base)
+            # We need the info dict to be available on the class or its module
+            try:
+                # Try getting info from the class's module first
+                module_name = component_class.__module__
+                imported_module = import_module(module_name)
+                self.module_info = getattr(imported_module, "info", None)
+                if not self.module_info:
+                     # Fallback: Try getting info directly from the class (less common)
+                     self.module_info = getattr(component_class, "info", None)
+                if not self.module_info:
+                     # Fallback 2: Try getting info from the component_info attribute (used in example)
+                     self.module_info = getattr(component_class, "component_info", None)
+
+                if not self.module_info:
+                    raise ValueError(
+                        f"Could not find 'info' dictionary for component_class {component_class.__name__}. "
+                        "Ensure 'info' is defined in the component's module or class."
+                    )
+
+            except (AttributeError, ValueError) as e:
+                 raise ValueError(
+                    f"Error retrieving 'info' for component_class {component_class.__name__}: {e}"
+                 ) from e
+
+        # 1.5.3 Use component_module if component_class is not present
+        else:
+            component_module = component.get("component_module", "")
+            if not component_module:
+                raise ValueError(
+                    f"Either 'component_class' or 'component_module' must be provided for component '{component.get('component_name')}'"
+                )
+
+            base_path = component.get("component_base_path", None)
+            component_package = component.get("component_package", None)
+            disabled = component.get("disabled", False)
+            if disabled:
+                log.warning(
+                    f"Component '{component.get('component_name')}' is disabled and will not be created."
+                )
+                return
+
+            imported_module = import_module(component_module, base_path, component_package)
+
+            try:
+                self.module_info = getattr(imported_module, "info")
+            except AttributeError as e:
+                raise ValueError(
+                    f"Component module '{component_module}' does not have an 'info' attribute. It probably isn't a valid component."
+                ) from e
+
+            component_class = getattr(imported_module, self.module_info["class_name"])
+
+        # Get num_instances after determining the class and module_info
         num_instances = component.get("num_instances", 1)
-        disabled = component.get("disabled", False)
-        if disabled:
-            log.warning(
-                f"Component '{component.get('component_name')}' is disabled and will not be created."
-            )
-            return
 
-        imported_module = import_module(component_module, base_path, component_package)
-
-        try:
-            self.module_info = getattr(imported_module, "info")
-        except AttributeError as e:
-            raise ValueError(
-                f"Component module '{component_module}' does not have an 'info' attribute. It probably isn't a valid component."
-            ) from e
-
-        component_class = getattr(imported_module, self.module_info["class_name"])
-
-        # Create the component
+        # Create the component instances
         component_group = []
         sibling_component = None
         for component_index in range(num_instances):
@@ -155,7 +201,7 @@ class Flow:
             # Add the component to the list
             component_group.append(component_instance)
 
-        # Add the component to the list
+        # Add the component group to the flow's list
         self.component_groups.append(component_group)
 
     def get_flow_input_queue(self):
@@ -179,7 +225,7 @@ class Flow:
                 component.cleanup()
         self.component_groups.clear()
         self.threads.clear()
-        
+
     def get_app(self):
         """Get the app that this flow belongs to"""
         return self.app
