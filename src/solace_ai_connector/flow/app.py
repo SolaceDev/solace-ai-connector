@@ -69,13 +69,10 @@ class App:
 
         # Store the final merged and resolved config
         self.app_info = merged_app_info
-        # Extract app_config for get_config() - this is the 'config:' block within the app definition
-        # NOTE: The key in the YAML/code structure should ideally be 'config' for app-level params.
-        # If using 'app_config' as the key in the structure, change the line below.
-        # Let's assume the key is 'config' as per the documentation examples.
+        # Extract app_config for get_config() - this is the 'app_config:' block within the app definition
         self.app_config = self.app_info.get(
-            "config", {}
-        )  # Use 'config' key for app parameters
+            "app_config", {}
+        )  # Use 'app_config' key for app parameters
         self.app_index = app_index
         # Derive name from merged config
         self.name = self.app_info.get("name", f"app_{app_index}")
@@ -312,7 +309,7 @@ class App:
 
     def get_config(self, key=None, default=None):
         """
-        Get a configuration value from the app's 'config' block.
+        Get a configuration value from the app's 'app_config' block.
 
         Args:
             key: Configuration key
@@ -321,7 +318,7 @@ class App:
         Returns:
             The configuration value or default
         """
-        # self.app_config holds the 'config:' block from the merged app_info
+        # self.app_config holds the 'app_config:' block from the merged app_info
         return self.app_config.get(key, default)
 
     def send_message(
