@@ -2,7 +2,6 @@ import threading
 import queue
 import traceback
 import pprint
-import time
 from abc import abstractmethod
 from typing import Any
 
@@ -18,7 +17,6 @@ from ..flow.request_response_flow_controller import RequestResponseFlowControlle
 from ..common.monitoring import Monitoring
 from ..common.monitoring import Metrics
 from ..common import Message_NACK_Outcome
-# Import the validation utility function
 from ..common.config_validation import validate_config_block
 
 DEFAULT_QUEUE_TIMEOUT_MS = 1000
@@ -433,7 +431,6 @@ class ComponentBase:
         # Only validate if schema parameters are defined
         if config_params:
             try:
-                # Call the utility function to perform validation
                 validate_config_block(
                     self.component_config, config_params, self.log_identifier
                 )

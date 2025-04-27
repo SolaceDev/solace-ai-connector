@@ -4,7 +4,7 @@ import threading
 import queue
 import traceback
 import os
-import pathlib
+import time
 
 from datetime import datetime
 from typing import List, Dict, Any
@@ -125,7 +125,10 @@ class SolaceAiConnector:
                         app_info["app_api"] = {}
 
                     # Only copy 'enabled' from global config if not present in app config
-                    if "enabled" not in app_info["app_api"] and "app_api" in self.config:
+                    if (
+                        "enabled" not in app_info["app_api"]
+                        and "app_api" in self.config
+                    ):
                         app_info["app_api"]["enabled"] = self.config["app_api"].get(
                             "enabled", False
                         )
@@ -153,14 +156,26 @@ class SolaceAiConnector:
                                 # Look for a class inheriting from App in the module
                                 found_class = None
                                 for name, obj in imported_module.__dict__.items():
-                                    if isinstance(obj, type) and issubclass(obj, App) and obj is not App:
+                                    if (
+                                        isinstance(obj, type)
+                                        and issubclass(obj, App)
+                                        and obj is not App
+                                    ):
                                         if found_class:
-                                            raise ValueError(f"App module '{app_module}' contains multiple App subclasses. Specify class_name in info.")
+                                            raise ValueError(
+                                                f"App module '{app_module}' contains multiple App subclasses. Specify class_name in info."
+                                            )
                                         found_class = obj
                                 if not found_class:
-                                     raise ValueError(f"App module '{app_module}' does not contain an App subclass or define class_name in info.")
+                                    raise ValueError(
+                                        f"App module '{app_module}' does not contain an App subclass or define class_name in info."
+                                    )
                                 app_class = found_class
-                                log.debug("Using App subclass %s found in module %s", app_class.__name__, app_module)
+                                log.debug(
+                                    "Using App subclass %s found in module %s",
+                                    app_class.__name__,
+                                    app_module,
+                                )
 
                         else:
                             # Use the default App class
@@ -255,9 +270,14 @@ class SolaceAiConnector:
         """Wait for the flows to finish"""
         while not self.stop_signal.is_set():
             try:
-                all_threads = [thread for app in self.apps for flow in app.flows for thread in flow.threads]
+                all_threads = [
+                    thread
+                    for app in self.apps
+                    for flow in app.flows
+                    for thread in flow.threads
+                ]
                 if not all_threads:
-                    break # No threads to wait for
+                    break  # No threads to wait for
                 # Wait for any thread to finish or timeout
                 # This prevents blocking indefinitely if one thread hangs
                 for thread in all_threads:
@@ -278,7 +298,7 @@ class SolaceAiConnector:
             except Exception as e:
                 log.error("Error cleaning up app %s: %s", app.name, e)
         self.apps.clear()
-        self.flows.clear() # Keep for backward compatibility refs?
+        self.flows.clear()  # Keep for backward compatibility refs?
 
         # Clean up queues
         for queue_name, q in self.flow_input_queues.items():
@@ -294,10 +314,12 @@ class SolaceAiConnector:
         if self.trace_thread and self.trace_thread.is_alive():
             self.trace_thread.join(timeout=1.0)
         if hasattr(self, "cache_check_thread") and self.cache_check_thread.is_alive():
-             self.cache_check_thread.join(timeout=1.0) # Should be stopped by cache_service.stop()
+            self.cache_check_thread.join(
+                timeout=1.0
+            )  # Should be stopped by cache_service.stop()
         if hasattr(self, "error_queue"):
-             # Don't put None here, error queue might be shared or externally managed
-             pass
+            # Don't put None here, error queue might be shared or externally managed
+            pass
 
         self.timer_manager.cleanup()
         log.info("Cleanup completed")
@@ -350,7 +372,7 @@ class SolaceAiConnector:
                     # Get the next trace message
                     try:
                         trace_message = self.trace_queue.get(timeout=1)
-                        if trace_message is None: # Check for stop signal
+                        if trace_message is None:  # Check for stop signal
                             break
                         # Write the trace message to the file with a timestamp
                         timestamp = datetime.now().isoformat()
@@ -363,7 +385,6 @@ class SolaceAiConnector:
                         continue
         except Exception as e:
             log.error("Error in trace handler thread: %s", e)
-
 
     def validate_config(self):
         """Validate the configuration structure."""
@@ -398,7 +419,10 @@ class SolaceAiConnector:
                 # If app_module is defined, skip the structural check here.
                 # The App constructor will handle validation after merging.
                 if app.get("app_module"):
-                    log.debug("Skipping structural validation for app '%s' (using app_module)", app_name)
+                    log.debug(
+                        "Skipping structural validation for app '%s' (using app_module)",
+                        app_name,
+                    )
                     # Basic validation for app_module itself could be added here if needed
                 else:
                     # Perform structural validation only for YAML-defined apps without app_module
@@ -467,9 +491,9 @@ class SolaceAiConnector:
                                     f"App '{app_name}' component at index {comp_index} missing 'name'"
                                 )
                             comp_name = component.get("name")
-                            if not component.get("component_module") and not component.get(
-                                "component_class"
-                            ):
+                            if not component.get(
+                                "component_module"
+                            ) and not component.get("component_class"):
                                 raise ValueError(
                                     f"App '{app_name}' component '{comp_name}' missing 'component_module' or 'component_class'"
                                 )
@@ -534,7 +558,7 @@ class SolaceAiConnector:
                 raise ValueError(f"Flow name not provided in flow {index} of {context}")
             flow_name = flow.get("name")
 
-            if "components" not in flow: # Check presence of the key
+            if "components" not in flow:  # Check presence of the key
                 raise ValueError(
                     f"Flow components list not provided in flow '{flow_name}' of {context}"
                 )
@@ -544,7 +568,7 @@ class SolaceAiConnector:
                 raise ValueError(
                     f"Flow components is not a list in flow '{flow_name}' of {context}"
                 )
-            if not flow.get("components"): # Check if list is empty
+            if not flow.get("components"):  # Check if list is empty
                 raise ValueError(
                     f"Flow '{flow_name}' in {context} must have at least one component"
                 )
@@ -562,7 +586,9 @@ class SolaceAiConnector:
                 comp_name = component.get("component_name")
 
                 # In standard flows, component_module or component_class is required
-                if not component.get("component_module") and not component.get("component_class"):
+                if not component.get("component_module") and not component.get(
+                    "component_class"
+                ):
                     raise ValueError(
                         f"Either 'component_module' or 'component_class' must be provided for component '{comp_name}' in flow '{flow_name}' of {context}"
                     )
@@ -610,10 +636,12 @@ class SolaceAiConnector:
         time.sleep(0.2)
 
         # Join threads if needed (moved from wait_for_flows)
-        all_threads = [thread for app in self.apps for flow in app.flows for thread in flow.threads]
+        all_threads = [
+            thread for app in self.apps for flow in app.flows for thread in flow.threads
+        ]
         for thread in all_threads:
             if thread.is_alive():
-                thread.join(timeout=1.0) # Give threads a chance to exit cleanly
+                thread.join(timeout=1.0)  # Give threads a chance to exit cleanly
 
         if self.trace_thread and self.trace_thread.is_alive():
             self.trace_thread.join(timeout=1.0)

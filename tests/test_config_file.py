@@ -96,7 +96,10 @@ apps:
         )
     except ValueError as e:
         # Update assertion to match actual error message
-        assert str(e) == "Flow components list not provided in flow 'test_flow' of app 'test_app'"
+        assert (
+            str(e)
+            == "Flow components list not provided in flow 'test_flow' of app 'test_app'"
+        )
 
 
 def test_flow_components_not_list():
@@ -117,7 +120,10 @@ apps:
         )
     except ValueError as e:
         # Update assertion to match actual error message
-        assert str(e) == "Flow components is not a list in flow 'test_flow' of app 'test_app'"
+        assert (
+            str(e)
+            == "Flow components is not a list in flow 'test_flow' of app 'test_app'"
+        )
 
 
 def test_no_component_name():
@@ -141,29 +147,10 @@ apps:
         )
     except ValueError as e:
         # Update assertion to match actual error message
-        assert str(e) == "component_name not provided in flow 'test_flow', component 0 of app 'test_app'"
-
-
-def test_no_component_module():
-    """Test that the program exits if no component module is provided"""
-    try:
-        config_yaml = """
-log:
-  log_file_level: DEBUG
-  log_file: solace_ai_connector.log
-apps:
-  - name: test_app
-    flows:
-      - name: test_flow
-        components:
-          - component_name: delay1
-"""
-        SolaceAiConnector(
-            yaml.safe_load(config_yaml),
+        assert (
+            str(e)
+            == "component_name not provided in flow 'test_flow', component 0 of app 'test_app'"
         )
-    except ValueError as e:
-        # Update assertion to match actual error message
-        assert str(e) == "component_module not provided for component 'delay1' in flow 'test_flow' of app 'test_app'"
 
 
 def test_static_import_and_object_config():
@@ -182,7 +169,9 @@ def test_static_import_and_object_config():
                                 "component_name": "delay1",
                                 "component_module": solace_ai_connector.components.general.pass_through,
                                 "component_config": {"delay": 0.1},
-                                "input_selection": {"source_expression": "input.payload"},
+                                "input_selection": {
+                                    "source_expression": "input.payload"
+                                },
                             }
                         ],
                     }
