@@ -83,6 +83,10 @@ class App:
         self._broker_output_component = None  # Cache for send_message
         self.request_response_controller = None  # Initialize RRC attribute
 
+        # Initialize flows based on the final merged configuration
+        self._initialize_flows()
+
+        # Initialize RRC after flows are potentially created (though RRC doesn't depend on flows)
         broker_config = self.app_info.get("broker", {})
         if broker_config.get("request_reply_enabled", False):
             log.info(
@@ -109,42 +113,49 @@ class App:
                 # Decide if this should be a fatal error for the app
                 raise e
 
-        # Create flows for this app using the merged configuration
-        self.create_flows()
-
-    def create_flows(self):
-        """Create flows for this app"""
+    def _initialize_flows(self):
+        """Create flows based on the final app configuration."""
         try:
-            # Detect simplified app configuration
-            is_simplified = (
-                "broker" in self.app_info
-                and "components" in self.app_info
-                and "flows" not in self.app_info
-            )
+            # Determine mode based on the presence and content of 'flows' key
+            is_standard = "flows" in self.app_info and self.app_info.get("flows")
 
-            if is_simplified:
+            if is_standard:
+                # --- Standard App Mode ---
+                log.debug("Initializing standard flows for app %s", self.name)
+                for index, flow_config in enumerate(self.app_info.get("flows", [])):
+                    log.info("Creating flow %s in app %s", flow_config.get("name"), self.name)
+                    num_instances = flow_config.get("num_instances", 1)
+                    if num_instances < 1:
+                        num_instances = 1
+                    for i in range(num_instances):
+                        flow_instance = self.create_flow(flow_config, index, i)
+                        flow_input_queue = flow_instance.get_flow_input_queue()
+                        # Use flow name and instance index for unique queue key if needed
+                        queue_key = f"{flow_config.get('name')}_{i}"
+                        self.flow_input_queues[queue_key] = flow_input_queue
+                        self.flows.append(flow_instance)
+            else:
+                # --- Simplified App Mode ---
+                log.debug("Initializing simplified flow for app %s", self.name)
+                # Validate presence of broker and components if not a custom App subclass
+                # (Custom subclasses might define flows differently)
+                if type(self) == App: # Only validate for the base App class
+                    if "broker" not in self.app_info or "components" not in self.app_info:
+                        raise ValueError(
+                            f"Simplified app '{self.name}' must define 'broker' and 'components' keys "
+                            "(or be a standard app with a 'flows' key)."
+                        )
+
                 # Call helper to generate implicit flow config
-                log.info("Creating simplified app flow for %s", self.name)
                 flow_config = self._create_simplified_flow_config()
                 # Create the single implicit flow
                 flow_instance = self.create_flow(flow_config, 0, 0)
                 flow_input_queue = flow_instance.get_flow_input_queue()
                 self.flow_input_queues[flow_config.get("name")] = flow_input_queue
                 self.flows.append(flow_instance)
-            else:
-                # Keep existing logic for standard flows defined in 'flows' list
-                for index, flow in enumerate(self.app_info.get("flows", [])):
-                    log.info("Creating flow %s in app %s", flow.get("name"), self.name)
-                    num_instances = flow.get("num_instances", 1)
-                    if num_instances < 1:
-                        num_instances = 1
-                    for i in range(num_instances):
-                        flow_instance = self.create_flow(flow, index, i)
-                        flow_input_queue = flow_instance.get_flow_input_queue()
-                        self.flow_input_queues[flow.get("name")] = flow_input_queue
-                        self.flows.append(flow_instance)
+
         except Exception as e:
-            log.error("Error creating flows for app %s: %s", self.name, e)
+            log.error("Error initializing flows for app %s: %s", self.name, e)
             raise e
 
     def _create_simplified_flow_config(self) -> Dict[str, Any]:
@@ -296,7 +307,7 @@ class App:
             try:
                 flow.cleanup()
             except Exception as e:
-                log.error("Error cleaning up flow in app %s: %s", self.name, e)
+                log.error("Error cleaning up flow %s in app %s: %s", flow.name, self.name, e)
         self.flows.clear()
         self.flow_input_queues.clear()
         self._broker_output_component = None  # Clear cache
@@ -346,16 +357,18 @@ class App:
                 flow = self.flows[0]
                 # BrokerOutput is typically the last component in the implicit flow
                 if flow.component_groups:
-                    last_group = flow.component_groups[-1]
-                    if last_group:
-                        # Check if the last component is indeed BrokerOutput
-                        comp = last_group[0]  # Get the first instance in the group
-                        if comp.module_info.get("class_name") == "BrokerOutput":
-                            broker_output_instance = comp
-                        else:
-                            # Check component_module as fallback (less reliable)
-                            if comp.config.get("component_module") == "broker_output":
+                    # Find the BrokerOutput component by class name
+                    for group in reversed(flow.component_groups): # Search from end
+                        if group:
+                            comp = group[0] # Check first instance in group
+                            if comp.module_info.get("class_name") == "BrokerOutput":
                                 broker_output_instance = comp
+                                break
+                            # Fallback check on module name (less reliable)
+                            elif comp.config.get("component_module") == "broker_output":
+                                broker_output_instance = comp
+                                break
+
 
             if broker_output_instance:
                 self._broker_output_component = broker_output_instance
@@ -412,7 +425,7 @@ class App:
         Returns:
             App: The created app
         """
-        app_info = {"name": app_name, "flows": flows}
+        app_info = {"name": app_name, "flows": flows, "app_config": {}}
         # Note: This path won't automatically merge with code_config unless
         # a specific subclass is used that defines it.
         # It also won't resolve static config within the 'flows' structure here.

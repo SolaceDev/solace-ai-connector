@@ -70,11 +70,11 @@ class SolaceAiConnector:
         """Create apps from the configuration"""
         try:
             # Check if there are apps defined in the configuration
-            apps = self.config.get("apps", [])
+            apps_config = self.config.get("apps", [])
 
             # If there are no apps defined but there are flows, create a default app
             # This should be rare now that we handle this in main.py, but keeping for robustness
-            if not apps and self.config.get("flows"):
+            if not apps_config and self.config.get("flows"):
                 # Use the first config filename as the app name if available
                 app_name = "default_app"
                 if self.config_filenames:
@@ -84,9 +84,15 @@ class SolaceAiConnector:
                     )[0]
 
                 log.info("Creating default app '%s' from flows configuration", app_name)
-                app = App.create_from_flows(
-                    flows=self.config.get("flows", []),
-                    app_name=app_name,
+                # Create app info structure for the default app
+                default_app_info = {
+                    "name": app_name,
+                    "flows": self.config.get("flows", []),
+                    # Add default app_config if needed, or leave empty
+                    "app_config": {},
+                }
+                app = App(
+                    app_info=default_app_info,
                     app_index=0,
                     stop_signal=self.stop_signal,
                     error_queue=self.error_queue,
@@ -104,63 +110,64 @@ class SolaceAiConnector:
                     self.flow_input_queues[name] = queue
             else:
                 # Create apps from the apps configuration
-                for index, app in enumerate(apps):
-                    log.info("Creating app %s", app.get("name"))
-                    num_instances = app.get("num_instances", 1)
+                for index, app_info in enumerate(apps_config):
+                    log.info("Creating app %s", app_info.get("name"))
+                    num_instances = app_info.get("num_instances", 1)
                     if num_instances < 1:
                         num_instances = 1
                         log.warning(
                             "Number of instances for app %s is less than 1. Setting it to 1",
-                            app.get("name"),
+                            app_info.get("name"),
                         )
 
                     # Merge app_api configuration from global config if not present in app config
-                    if "app_api" not in app:
-                        app["app_api"] = {}
+                    if "app_api" not in app_info:
+                        app_info["app_api"] = {}
 
                     # Only copy 'enabled' from global config if not present in app config
-                    if "enabled" not in app["app_api"] and "app_api" in self.config:
-                        app["app_api"]["enabled"] = self.config["app_api"].get(
-                            "enabled", False
-                        )
-
-                    # Merge app_api configuration from global config if not present in app config
-                    if "app_api" not in app:
-                        app["app_api"] = {}
-
-                    # Only copy 'enabled' from global config if not present in app config
-                    if "enabled" not in app["app_api"] and "app_api" in self.config:
-                        app["app_api"]["enabled"] = self.config["app_api"].get(
+                    if "enabled" not in app_info["app_api"] and "app_api" in self.config:
+                        app_info["app_api"]["enabled"] = self.config["app_api"].get(
                             "enabled", False
                         )
 
                     for i in range(num_instances):
 
                         # Does this have a custom App module
-                        app_module = app.get("app_module", None)
-                        app_base_path = app.get("app_base_path", None)
-                        app_package = app.get("app_package", None)
+                        app_module = app_info.get("app_module", None)
+                        app_base_path = app_info.get("app_base_path", None)
+                        app_package = app_info.get("app_package", None)
                         if app_module:
                             imported_module = import_module(
                                 app_module, app_base_path, app_package
                             )
-                            info = getattr(imported_module, "info")
-                            if not info:
-                                raise ValueError(
-                                    f"App module '{app_module}' does not have an 'info' attribute. It probably isn't a valid app."
-                                )
-                            class_name = info.get("class_name")
-                            if not class_name:
-                                raise ValueError(
-                                    f"App module '{app_module}' does not have a 'class_name' attribute. It probably isn't a valid app."
-                                )
-                            app_class = getattr(imported_module, class_name)
+                            # Attempt to get info, but allow it to be missing for custom apps
+                            info = getattr(imported_module, "info", None)
+                            class_name = None
+                            if info:
+                                class_name = info.get("class_name")
+
+                            if class_name:
+                                app_class = getattr(imported_module, class_name)
+                            else:
+                                # If no class_name in info, assume the module itself might contain the App subclass
+                                # Look for a class inheriting from App in the module
+                                found_class = None
+                                for name, obj in imported_module.__dict__.items():
+                                    if isinstance(obj, type) and issubclass(obj, App) and obj is not App:
+                                        if found_class:
+                                            raise ValueError(f"App module '{app_module}' contains multiple App subclasses. Specify class_name in info.")
+                                        found_class = obj
+                                if not found_class:
+                                     raise ValueError(f"App module '{app_module}' does not contain an App subclass or define class_name in info.")
+                                app_class = found_class
+                                log.debug("Using App subclass %s found in module %s", app_class.__name__, app_module)
+
                         else:
                             # Use the default App class
                             app_class = App
 
                         app_obj = app_class(
-                            app_info=app,
+                            app_info=app_info,
                             app_index=index,
                             stop_signal=self.stop_signal,
                             error_queue=self.error_queue,
@@ -198,11 +205,11 @@ class SolaceAiConnector:
         Returns:
             App: The created app
         """
-        app = {"name": app_name, "flows": flows}
+        app_info = {"name": app_name, "flows": flows, "app_config": {}}
 
         # Create the app
         app = App(
-            app_info=app,
+            app_info=app_info,
             app_index=len(self.apps),
             stop_signal=self.stop_signal,
             error_queue=self.error_queue,
@@ -248,11 +255,18 @@ class SolaceAiConnector:
         """Wait for the flows to finish"""
         while not self.stop_signal.is_set():
             try:
-                for app in self.apps:
-                    app.wait_for_flows()
-                break
+                all_threads = [thread for app in self.apps for flow in app.flows for thread in flow.threads]
+                if not all_threads:
+                    break # No threads to wait for
+                # Wait for any thread to finish or timeout
+                # This prevents blocking indefinitely if one thread hangs
+                for thread in all_threads:
+                    thread.join(timeout=0.1)
+                # Check if all threads are done
+                if not any(thread.is_alive() for thread in all_threads):
+                    break
             except KeyboardInterrupt:
-                log.info("Received keyboard interrupt - stopping")
+                log.info("Received keyboard interrupt - stopping wait")
                 raise KeyboardInterrupt
 
     def cleanup(self):
@@ -262,27 +276,28 @@ class SolaceAiConnector:
             try:
                 app.cleanup()
             except Exception as e:
-                log.error("Error cleaning up app: %s", e)
+                log.error("Error cleaning up app %s: %s", app.name, e)
         self.apps.clear()
-        self.flows.clear()
+        self.flows.clear() # Keep for backward compatibility refs?
 
         # Clean up queues
-        for queue_name, queue in self.flow_input_queues.items():
+        for queue_name, q in self.flow_input_queues.items():
             try:
-                while not queue.empty():
-                    queue.get_nowait()
+                while not q.empty():
+                    q.get_nowait()
             except Exception as e:
                 log.error("Error cleaning queue %s: %s", queue_name, e)
         self.flow_input_queues.clear()
 
         if hasattr(self, "trace_queue") and self.trace_queue:
             self.trace_queue.put(None)  # Signal the trace thread to stop
-        if self.trace_thread:
-            self.trace_thread.join()
-        if hasattr(self, "cache_check_thread"):
-            self.cache_check_thread.join()
+        if self.trace_thread and self.trace_thread.is_alive():
+            self.trace_thread.join(timeout=1.0)
+        if hasattr(self, "cache_check_thread") and self.cache_check_thread.is_alive():
+             self.cache_check_thread.join(timeout=1.0) # Should be stopped by cache_service.stop()
         if hasattr(self, "error_queue"):
-            self.error_queue.put(None)
+             # Don't put None here, error queue might be shared or externally managed
+             pass
 
         self.timer_manager.cleanup()
         log.info("Cleanup completed")
@@ -324,21 +339,31 @@ class SolaceAiConnector:
     def handle_trace(self, trace_file):
         """Handle trace messages - this is a separate thead"""
 
-        # Create the trace file
-        with open(trace_file, "a", encoding="utf-8") as f:
-            while True:
-                # Get the next trace message
-                try:
-                    trace_message = self.trace_queue.get(timeout=1)
-                    # Write the trace message to the file with a timestamp
-                    timestamp = datetime.now().isoformat()
-                    f.write(f"{timestamp}: {trace_message}\n")
-                    f.flush()
+        # Create the trace file directory if it doesn't exist
+        trace_dir = os.path.dirname(trace_file)
+        if trace_dir and not os.path.exists(trace_dir):
+            os.makedirs(trace_dir)
 
-                except queue.Empty:
-                    if self.stop_signal.is_set():
-                        break
-                    continue
+        try:
+            with open(trace_file, "a", encoding="utf-8") as f:
+                while True:
+                    # Get the next trace message
+                    try:
+                        trace_message = self.trace_queue.get(timeout=1)
+                        if trace_message is None: # Check for stop signal
+                            break
+                        # Write the trace message to the file with a timestamp
+                        timestamp = datetime.now().isoformat()
+                        f.write(f"{timestamp}: {trace_message}\n")
+                        f.flush()
+
+                    except queue.Empty:
+                        if self.stop_signal.is_set():
+                            break
+                        continue
+        except Exception as e:
+            log.error("Error in trace handler thread: %s", e)
+
 
     def validate_config(self):
         """Validate the configuration structure."""
@@ -369,106 +394,115 @@ class SolaceAiConnector:
                     )
                 app_name = app.get("name")
 
-                has_flows = "flows" in app
-                has_broker = "broker" in app
-                has_components = "components" in app
+                # --- Modified Validation Logic ---
+                # If app_module is defined, skip the structural check here.
+                # The App constructor will handle validation after merging.
+                if app.get("app_module"):
+                    log.debug("Skipping structural validation for app '%s' (using app_module)", app_name)
+                    # Basic validation for app_module itself could be added here if needed
+                else:
+                    # Perform structural validation only for YAML-defined apps without app_module
+                    has_flows = "flows" in app
+                    has_broker = "broker" in app
+                    has_components = "components" in app
 
-                if not has_flows and not (has_broker and has_components):
-                    raise ValueError(
-                        f"App '{app_name}' must define either 'flows' or both 'broker' and 'components'"
-                    )
-                if has_flows and (has_broker or has_components):
-                    log.warning(
-                        "App '%s' defines both 'flows' and 'broker'/'components'. "
-                        "The 'broker' and 'components' keys will be ignored (standard mode).",
-                        app_name,
-                    )
-
-                # Simplified Mode Validation
-                if has_broker and has_components and not has_flows:
-                    log.debug("Validating simplified app '%s'", app_name)
-                    broker_config = app.get("broker")
-                    components_config = app.get("components")
-
-                    # Validate broker structure
-                    if not isinstance(broker_config, dict):
+                    if not has_flows and not (has_broker and has_components):
                         raise ValueError(
-                            f"App '{app_name}' has invalid 'broker' section (must be a dictionary)"
+                            f"App '{app_name}' must define either 'flows' or both 'broker' and 'components'"
                         )
-                    required_broker_keys = [
-                        "broker_url",
-                        "broker_username",
-                        "broker_password",
-                        "broker_vpn",
-                    ]
-                    for key in required_broker_keys:
-                        if not broker_config.get(key):
+                    if has_flows and (has_broker or has_components):
+                        log.warning(
+                            "App '%s' defines both 'flows' and 'broker'/'components'. "
+                            "The 'broker' and 'components' keys will be ignored (standard mode).",
+                            app_name,
+                        )
+
+                    # Simplified Mode Validation (only if structure implies simplified)
+                    if has_broker and has_components and not has_flows:
+                        log.debug("Validating simplified app '%s'", app_name)
+                        broker_config = app.get("broker")
+                        components_config = app.get("components")
+
+                        # Validate broker structure
+                        if not isinstance(broker_config, dict):
                             raise ValueError(
-                                f"App '{app_name}' broker config missing required key: '{key}'"
+                                f"App '{app_name}' has invalid 'broker' section (must be a dictionary)"
                             )
-                    if broker_config.get("input_enabled") and not broker_config.get(
-                        "queue_name"
-                    ):
-                        raise ValueError(
-                            f"App '{app_name}' broker config missing 'queue_name' when 'input_enabled' is true"
-                        )
-
-                    # Validate components is a list
-                    if not isinstance(components_config, list):
-                        raise ValueError(
-                            f"App '{app_name}' has invalid 'components' section (must be a list)"
-                        )
-                    if not components_config:
-                        raise ValueError(
-                            f"App '{app_name}' must have at least one component defined in 'components'"
-                        )
-
-                    # Validate each component entry
-                    for comp_index, component in enumerate(components_config):
-                        if not isinstance(component, dict):
-                            raise ValueError(
-                                f"App '{app_name}' component definition at index {comp_index} must be a dictionary"
-                            )
-                        if not component.get("name"):
-                            raise ValueError(
-                                f"App '{app_name}' component at index {comp_index} missing 'name'"
-                            )
-                        comp_name = component.get("name")
-                        if not component.get("component_module") and not component.get(
-                            "component_class"
+                        required_broker_keys = [
+                            "broker_url",
+                            "broker_username",
+                            "broker_password",
+                            "broker_vpn",
+                        ]
+                        for key in required_broker_keys:
+                            if not broker_config.get(key):
+                                raise ValueError(
+                                    f"App '{app_name}' broker config missing required key: '{key}'"
+                                )
+                        if broker_config.get("input_enabled") and not broker_config.get(
+                            "queue_name"
                         ):
                             raise ValueError(
-                                f"App '{app_name}' component '{comp_name}' missing 'component_module' or 'component_class'"
+                                f"App '{app_name}' broker config missing 'queue_name' when 'input_enabled' is true"
                             )
 
-                        # Validate subscriptions if input is enabled
-                        if broker_config.get("input_enabled"):
-                            subscriptions = component.get("subscriptions")
-                            if not subscriptions:
-                                log.warning(
-                                    "App '%s' component '%s' has no 'subscriptions' defined, but input is enabled.",
-                                    app_name,
-                                    comp_name,
-                                )
-                            elif not isinstance(subscriptions, list):
-                                raise ValueError(
-                                    f"App '{app_name}' component '{comp_name}' has invalid 'subscriptions' (must be a list)"
-                                )
-                            else:
-                                for sub_index, sub in enumerate(subscriptions):
-                                    if not isinstance(sub, dict):
-                                        raise ValueError(
-                                            f"App '{app_name}' component '{comp_name}' subscription at index {sub_index} must be a dictionary"
-                                        )
-                                    if not sub.get("topic"):
-                                        raise ValueError(
-                                            f"App '{app_name}' component '{comp_name}' subscription at index {sub_index} missing 'topic'"
-                                        )
+                        # Validate components is a list
+                        if not isinstance(components_config, list):
+                            raise ValueError(
+                                f"App '{app_name}' has invalid 'components' section (must be a list)"
+                            )
+                        if not components_config:
+                            raise ValueError(
+                                f"App '{app_name}' must have at least one component defined in 'components'"
+                            )
 
-                # Standard Mode Validation
-                elif has_flows:
-                    log.debug("Validating standard app '%s'", app_name)
-                    self._validate_flows(app.get("flows"), f"app '{app_name}'")
+                        # Validate each component entry
+                        for comp_index, component in enumerate(components_config):
+                            if not isinstance(component, dict):
+                                raise ValueError(
+                                    f"App '{app_name}' component definition at index {comp_index} must be a dictionary"
+                                )
+                            if not component.get("name"):
+                                raise ValueError(
+                                    f"App '{app_name}' component at index {comp_index} missing 'name'"
+                                )
+                            comp_name = component.get("name")
+                            if not component.get("component_module") and not component.get(
+                                "component_class"
+                            ):
+                                raise ValueError(
+                                    f"App '{app_name}' component '{comp_name}' missing 'component_module' or 'component_class'"
+                                )
+
+                            # Validate subscriptions if input is enabled
+                            if broker_config.get("input_enabled"):
+                                subscriptions = component.get("subscriptions")
+                                if not subscriptions:
+                                    log.warning(
+                                        "App '%s' component '%s' has no 'subscriptions' defined, but input is enabled.",
+                                        app_name,
+                                        comp_name,
+                                    )
+                                elif not isinstance(subscriptions, list):
+                                    raise ValueError(
+                                        f"App '{app_name}' component '{comp_name}' has invalid 'subscriptions' (must be a list)"
+                                    )
+                                else:
+                                    for sub_index, sub in enumerate(subscriptions):
+                                        if not isinstance(sub, dict):
+                                            raise ValueError(
+                                                f"App '{app_name}' component '{comp_name}' subscription at index {sub_index} must be a dictionary"
+                                            )
+                                        if not sub.get("topic"):
+                                            raise ValueError(
+                                                f"App '{app_name}' component '{comp_name}' subscription at index {sub_index} missing 'topic'"
+                                            )
+
+                    # Standard Mode Validation (only if structure implies standard)
+                    elif has_flows:
+                        log.debug("Validating standard app '%s'", app_name)
+                        self._validate_flows(app.get("flows"), f"app '{app_name}'")
+                # --- End Modified Validation Logic ---
 
         # Validate top-level flows (for backward compatibility)
         if self.config.get("flows"):
@@ -500,7 +534,7 @@ class SolaceAiConnector:
                 raise ValueError(f"Flow name not provided in flow {index} of {context}")
             flow_name = flow.get("name")
 
-            if not flow.get("components"):
+            if "components" not in flow: # Check presence of the key
                 raise ValueError(
                     f"Flow components list not provided in flow '{flow_name}' of {context}"
                 )
@@ -510,7 +544,7 @@ class SolaceAiConnector:
                 raise ValueError(
                     f"Flow components is not a list in flow '{flow_name}' of {context}"
                 )
-            if not flow.get("components"):
+            if not flow.get("components"): # Check if list is empty
                 raise ValueError(
                     f"Flow '{flow_name}' in {context} must have at least one component"
                 )
@@ -527,10 +561,10 @@ class SolaceAiConnector:
                     )
                 comp_name = component.get("component_name")
 
-                # In standard flows, component_module is strictly required (component_class is not supported here yet)
-                if not component.get("component_module"):
+                # In standard flows, component_module or component_class is required
+                if not component.get("component_module") and not component.get("component_class"):
                     raise ValueError(
-                        f"component_module not provided for component '{comp_name}' in flow '{flow_name}' of {context}"
+                        f"Either 'component_module' or 'component_class' must be provided for component '{comp_name}' in flow '{flow_name}' of {context}"
                     )
 
     def get_flows(self):
@@ -559,7 +593,8 @@ class SolaceAiConnector:
         """Setup the cache service"""
         cache_config = self.config.get("cache", {})
         backend_type = cache_config.get("backend", "memory")
-        backend = create_storage_backend(backend_type)
+        # Pass kwargs to allow backend-specific config like connection_string
+        backend = create_storage_backend(backend_type, **cache_config)
         return CacheService(backend)
 
     def stop(self):
@@ -571,5 +606,14 @@ class SolaceAiConnector:
         self.timer_manager.stop()  # Stop the timer manager first
         self.cache_service.stop()  # Stop the cache service
 
-        if self.trace_thread:
-            self.trace_thread.join()
+        # Wait briefly for threads to acknowledge stop signal
+        time.sleep(0.2)
+
+        # Join threads if needed (moved from wait_for_flows)
+        all_threads = [thread for app in self.apps for flow in app.flows for thread in flow.threads]
+        for thread in all_threads:
+            if thread.is_alive():
+                thread.join(timeout=1.0) # Give threads a chance to exit cleanly
+
+        if self.trace_thread and self.trace_thread.is_alive():
+            self.trace_thread.join(timeout=1.0)
