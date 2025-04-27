@@ -1,8 +1,7 @@
 """App class for the Solace AI Event Connector"""
 
 from typing import List, Dict, Any, Optional
-import os
-from copy import deepcopy  # Import deepcopy
+from copy import deepcopy
 
 from ..common.log import log
 from .flow import Flow
@@ -10,6 +9,7 @@ from ..common.utils import (
     deep_merge,
     resolve_config_values,
 )  # Import deep_merge and resolve_config_values
+
 # Import the validation utility function
 from ..common.config_validation import validate_config_block
 from .request_response_flow_controller import RequestResponseFlowController
@@ -90,9 +90,7 @@ class App:
         self._broker_output_component = None  # Cache for send_message
         self.request_response_controller = None  # Initialize RRC attribute
 
-        # --- Validate the extracted app_config block ---
         self._validate_app_config()
-        # --- End Validation ---
 
         # Initialize flows based on the final merged configuration
         self._initialize_flows()
@@ -132,27 +130,37 @@ class App:
             schema_params = schema.get("config_parameters", [])
             # Ensure schema_params is a list before proceeding
             if schema_params and isinstance(schema_params, list):
-                log.debug("Validating app_config for app '%s' against schema.", self.name)
+                log.debug(
+                    "Validating app_config for app '%s' against schema.", self.name
+                )
                 try:
                     # Validate self.app_config which holds the merged app-level config block
                     validate_config_block(
-                        self.app_config,
-                        schema_params,
-                        f"App '{self.name}'"
+                        self.app_config, schema_params, f"App '{self.name}'"
                     )
                 except ValueError as e:
                     # Re-raise with context
-                    raise ValueError(f"Configuration error in app '{self.name}': {e}") from e
+                    raise ValueError(
+                        f"Configuration error in app '{self.name}': {e}"
+                    ) from e
             else:
                 # Log if 'config_parameters' exists but is not a valid list
                 if "config_parameters" in schema:
-                     log.warning("Invalid 'config_parameters' in app_schema for app '%s' (must be a list). Skipping validation.", self.name)
+                    log.warning(
+                        "Invalid 'config_parameters' in app_schema for app '%s' (must be a list). Skipping validation.",
+                        self.name,
+                    )
                 else:
-                     log.debug("No 'config_parameters' found in app_schema for app '%s'. Skipping validation.", self.name)
+                    log.debug(
+                        "No 'config_parameters' found in app_schema for app '%s'. Skipping validation.",
+                        self.name,
+                    )
         else:
             # Log if 'app_schema' is missing or not a dict
-            log.debug("No valid app_schema defined for app class '%s'. Skipping validation.", self.__class__.__name__)
-
+            log.debug(
+                "No valid app_schema defined for app class '%s'. Skipping validation.",
+                self.__class__.__name__,
+            )
 
     def _initialize_flows(self):
         """Create flows based on the final app configuration."""
@@ -164,7 +172,9 @@ class App:
                 # --- Standard App Mode ---
                 log.debug("Initializing standard flows for app %s", self.name)
                 for index, flow_config in enumerate(self.app_info.get("flows", [])):
-                    log.info("Creating flow %s in app %s", flow_config.get("name"), self.name)
+                    log.info(
+                        "Creating flow %s in app %s", flow_config.get("name"), self.name
+                    )
                     num_instances = flow_config.get("num_instances", 1)
                     if num_instances < 1:
                         num_instances = 1
@@ -180,8 +190,11 @@ class App:
                 log.debug("Initializing simplified flow for app %s", self.name)
                 # Validate presence of broker and components if not a custom App subclass
                 # (Custom subclasses might define flows differently)
-                if type(self) == App: # Only validate for the base App class
-                    if "broker" not in self.app_info or "components" not in self.app_info:
+                if type(self) == App:  # Only validate for the base App class
+                    if (
+                        "broker" not in self.app_info
+                        or "components" not in self.app_info
+                    ):
                         raise ValueError(
                             f"Simplified app '{self.name}' must define 'broker' and 'components' keys "
                             "(or be a standard app with a 'flows' key)."
@@ -348,7 +361,9 @@ class App:
             try:
                 flow.cleanup()
             except Exception as e:
-                log.error("Error cleaning up flow %s in app %s: %s", flow.name, self.name, e)
+                log.error(
+                    "Error cleaning up flow %s in app %s: %s", flow.name, self.name, e
+                )
         self.flows.clear()
         self.flow_input_queues.clear()
         self._broker_output_component = None  # Clear cache
@@ -399,9 +414,9 @@ class App:
                 # BrokerOutput is typically the last component in the implicit flow
                 if flow.component_groups:
                     # Find the BrokerOutput component by class name
-                    for group in reversed(flow.component_groups): # Search from end
+                    for group in reversed(flow.component_groups):  # Search from end
                         if group:
-                            comp = group[0] # Check first instance in group
+                            comp = group[0]  # Check first instance in group
                             if comp.module_info.get("class_name") == "BrokerOutput":
                                 broker_output_instance = comp
                                 break
@@ -409,7 +424,6 @@ class App:
                             elif comp.config.get("component_module") == "broker_output":
                                 broker_output_instance = comp
                                 break
-
 
             if broker_output_instance:
                 self._broker_output_component = broker_output_instance
