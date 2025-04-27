@@ -6,7 +6,10 @@ from copy import deepcopy  # Import deepcopy
 
 from ..common.log import log
 from .flow import Flow
-from ..common.utils import deep_merge, resolve_config_values  # Import deep_merge and resolve_config_values
+from ..common.utils import (
+    deep_merge,
+    resolve_config_values,
+)  # Import deep_merge and resolve_config_values
 from .request_response_flow_controller import RequestResponseFlowController
 
 
@@ -55,12 +58,8 @@ class App:
                 "Merged app config for %s", merged_app_info.get("name", "unnamed app")
             )
 
-            # ---> RESOLVE the merged config <---
-            # This handles static invokes and env vars from the code_config part.
-            # It's safe because we don't have message context here, so evaluate_expression
-            # lambdas won't be executed, only created if they somehow exist.
+            # Resolve any environment variables or other placeholders in the merged config
             resolve_config_values(merged_app_info)
-            # <-----------------------------------
 
         else:
             # If no code_config, app_info comes from YAML and was already resolved
@@ -69,10 +68,7 @@ class App:
 
         # Store the final merged and resolved config
         self.app_info = merged_app_info
-        # Extract app_config for get_config() - this is the 'app_config:' block within the app definition
-        self.app_config = self.app_info.get(
-            "app_config", {}
-        )  # Use 'app_config' key for app parameters
+        self.app_config = self.app_info.get("app_config", {})
         self.app_index = app_index
         # Derive name from merged config
         self.name = self.app_info.get("name", f"app_{app_index}")
@@ -138,9 +134,7 @@ class App:
             else:
                 # Keep existing logic for standard flows defined in 'flows' list
                 for index, flow in enumerate(self.app_info.get("flows", [])):
-                    log.info(
-                        "Creating flow %s in app %s", flow.get("name"), self.name
-                    )
+                    log.info("Creating flow %s in app %s", flow.get("name"), self.name)
                     num_instances = flow.get("num_instances", 1)
                     if num_instances < 1:
                         num_instances = 1
