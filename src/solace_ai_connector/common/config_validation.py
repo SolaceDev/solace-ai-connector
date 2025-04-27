@@ -81,4 +81,3 @@ def validate_config_block(
         # Parameter exists, no action needed regarding required/default checks.
         # Type checking could be added here in the future if desired.
 
-```
