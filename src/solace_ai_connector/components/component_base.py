@@ -18,6 +18,8 @@ from ..flow.request_response_flow_controller import RequestResponseFlowControlle
 from ..common.monitoring import Monitoring
 from ..common.monitoring import Metrics
 from ..common import Message_NACK_Outcome
+# Import the validation utility function
+from ..common.config_validation import validate_config_block
 
 DEFAULT_QUEUE_TIMEOUT_MS = 1000
 DEFAULT_QUEUE_MAX_DEPTH = 5
@@ -426,24 +428,25 @@ class ComponentBase:
         )
 
     def validate_config(self):
+        """Validates the component_config against the schema in module_info."""
         config_params = self.module_info.get("config_parameters", [])
-        # Loop through the parameters and make sure they are all present if they are required
-        # and set the default if it is not present
-        for param in config_params:
-            name = param.get("name", None)
-            if name is None:
-                raise ValueError(
-                    f"config_parameters schema for module {self.config.get('component_module')} "
-                    "does not have a name: {param}"
+        # Only validate if schema parameters are defined
+        if config_params:
+            try:
+                # Call the utility function to perform validation
+                validate_config_block(
+                    self.component_config, config_params, self.log_identifier
                 )
-            required = param.get("required", False)
-            if required and name not in self.component_config:
+            except ValueError as e:
+                # Re-raise the error with more context
                 raise ValueError(
-                    f"Config parameter {name} is required but not present in component {self.name}"
-                )
-            default = param.get("default", None)
-            if default is not None and name not in self.component_config:
-                self.component_config[name] = default
+                    f"Configuration error in component '{self.name}': {e}"
+                ) from e
+        else:
+            log.debug(
+                "%s No 'config_parameters' defined in module_info. Skipping config validation.",
+                self.log_identifier,
+            )
 
     def trace_event(self, event):
         trace_message = TraceMessage(
