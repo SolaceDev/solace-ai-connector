@@ -6,7 +6,7 @@ from copy import deepcopy  # Import deepcopy
 
 from ..common.log import log
 from .flow import Flow
-from ..common.utils import deep_merge  # Import deep_merge
+from ..common.utils import deep_merge, resolve_config_values  # Import deep_merge and resolve_config_values
 from .request_response_flow_controller import RequestResponseFlowController
 
 
@@ -54,15 +54,28 @@ class App:
             log.debug(
                 "Merged app config for %s", merged_app_info.get("name", "unnamed app")
             )
+
+            # ---> RESOLVE the merged config <---
+            # This handles static invokes and env vars from the code_config part.
+            # It's safe because we don't have message context here, so evaluate_expression
+            # lambdas won't be executed, only created if they somehow exist.
+            resolve_config_values(merged_app_info)
+            # <-----------------------------------
+
         else:
+            # If no code_config, app_info comes from YAML and was already resolved
+            # by SolaceAiConnector.__init__
             merged_app_info = app_info
 
-        # Store the final merged config
+        # Store the final merged and resolved config
         self.app_info = merged_app_info
-        # Extract app_config for get_config() - this is the 'app_config' block within the app definition
+        # Extract app_config for get_config() - this is the 'config:' block within the app definition
+        # NOTE: The key in the YAML/code structure should ideally be 'config' for app-level params.
+        # If using 'app_config' as the key in the structure, change the line below.
+        # Let's assume the key is 'config' as per the documentation examples.
         self.app_config = self.app_info.get(
-            "app_config", {}
-        )  # <-- Changed "config" to "app_config"
+            "config", {}
+        )  # Use 'config' key for app parameters
         self.app_index = app_index
         # Derive name from merged config
         self.name = self.app_info.get("name", f"app_{app_index}")
@@ -299,7 +312,7 @@ class App:
 
     def get_config(self, key=None, default=None):
         """
-        Get a configuration value from the app's 'app_config' block.
+        Get a configuration value from the app's 'config' block.
 
         Args:
             key: Configuration key
@@ -308,7 +321,7 @@ class App:
         Returns:
             The configuration value or default
         """
-        # self.app_config holds the 'app_config:' block from the merged app_info
+        # self.app_config holds the 'config:' block from the merged app_info
         return self.app_config.get(key, default)
 
     def send_message(
@@ -411,4 +424,5 @@ class App:
         app_info = {"name": app_name, "flows": flows}
         # Note: This path won't automatically merge with code_config unless
         # a specific subclass is used that defines it.
+        # It also won't resolve static config within the 'flows' structure here.
         return cls(app_info=app_info, **kwargs)
