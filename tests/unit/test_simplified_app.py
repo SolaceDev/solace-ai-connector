@@ -48,9 +48,12 @@ class DummyAppWithCodeConfig(App):
         "components": [{"name": "code_comp", "component_module": "code_module"}],
     }
 
-    # Override create_flows to prevent actual flow creation during init test
-    def create_flows(self):
-        pass
+    # Override _initialize_flows to prevent actual flow/component creation during init test
+    # This focuses the test on the config merging part of App.__init__
+    def _initialize_flows(self):
+        print("Skipping flow initialization for merging test.")
+        self.flows = [] # Ensure flows list exists but is empty
+        self.flow_input_queues = {} # Ensure queues dict exists
 
 
 # --- Test Cases ---
