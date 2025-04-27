@@ -10,6 +10,8 @@ from ..common.utils import (
     deep_merge,
     resolve_config_values,
 )  # Import deep_merge and resolve_config_values
+# Import the validation utility function
+from ..common.config_validation import validate_config_block
 from .request_response_flow_controller import RequestResponseFlowController
 
 
@@ -18,6 +20,10 @@ class App:
     App class for the Solace AI Event Connector.
     An app is a collection of flows that are logically grouped together.
     """
+
+    # Define the schema for app_config parameters for the base App class
+    # Subclasses can override or extend this.
+    app_schema: Dict[str, List[Dict[str, Any]]] = {"config_parameters": []}
 
     def __init__(
         self,
@@ -68,6 +74,7 @@ class App:
 
         # Store the final merged and resolved config
         self.app_info = merged_app_info
+        # Extract the specific 'app_config' block AFTER merging and resolving
         self.app_config = self.app_info.get("app_config", {})
         self.app_index = app_index
         # Derive name from merged config
@@ -82,6 +89,10 @@ class App:
         self.flow_input_queues = {}
         self._broker_output_component = None  # Cache for send_message
         self.request_response_controller = None  # Initialize RRC attribute
+
+        # --- Validate the extracted app_config block ---
+        self._validate_app_config()
+        # --- End Validation ---
 
         # Initialize flows based on the final merged configuration
         self._initialize_flows()
@@ -112,6 +123,36 @@ class App:
                 )
                 # Decide if this should be a fatal error for the app
                 raise e
+
+    def _validate_app_config(self):
+        """Validates self.app_config against the class's app_schema."""
+        # Use getattr to safely access the class attribute
+        schema = getattr(self.__class__, "app_schema", None)
+        if schema and isinstance(schema, dict):
+            schema_params = schema.get("config_parameters", [])
+            # Ensure schema_params is a list before proceeding
+            if schema_params and isinstance(schema_params, list):
+                log.debug("Validating app_config for app '%s' against schema.", self.name)
+                try:
+                    # Validate self.app_config which holds the merged app-level config block
+                    validate_config_block(
+                        self.app_config,
+                        schema_params,
+                        f"App '{self.name}'"
+                    )
+                except ValueError as e:
+                    # Re-raise with context
+                    raise ValueError(f"Configuration error in app '{self.name}': {e}") from e
+            else:
+                # Log if 'config_parameters' exists but is not a valid list
+                if "config_parameters" in schema:
+                     log.warning("Invalid 'config_parameters' in app_schema for app '%s' (must be a list). Skipping validation.", self.name)
+                else:
+                     log.debug("No 'config_parameters' found in app_schema for app '%s'. Skipping validation.", self.name)
+        else:
+            # Log if 'app_schema' is missing or not a dict
+            log.debug("No valid app_schema defined for app class '%s'. Skipping validation.", self.__class__.__name__)
+
 
     def _initialize_flows(self):
         """Create flows based on the final app configuration."""
