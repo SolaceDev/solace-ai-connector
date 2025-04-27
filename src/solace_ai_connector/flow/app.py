@@ -165,12 +165,13 @@ class App:
     def _initialize_flows(self):
         """Create flows based on the final app configuration."""
         try:
-            # Determine mode based on the presence and content of 'flows' key
-            is_standard = "flows" in self.app_info and self.app_info.get("flows")
+            # Determine mode based on the presence of the 'flows' key
+            is_standard = "flows" in self.app_info
 
             if is_standard:
                 # --- Standard App Mode ---
                 log.debug("Initializing standard flows for app %s", self.name)
+                # Process flows even if the list is empty (valid standard app structure)
                 for index, flow_config in enumerate(self.app_info.get("flows", [])):
                     log.info(
                         "Creating flow %s in app %s", flow_config.get("name"), self.name
