@@ -14,6 +14,7 @@ Table of Contents
       - [Simplified App Configuration](#simplified-app-configuration)
       - [Simplified App: `broker` Configuration](#simplified-app-broker-configuration)
       - [Simplified App: `components` Configuration](#simplified-app-components-configuration)
+      - [App-Level Configuration (`config`) and Validation (`app_schema`)](#app-level-configuration-config-and-validation-app_schema)
     - [Flow Configuration (Standard Apps)](#flow-configuration-standard-apps)
   - [Message Data](#message-data)
   - [Expression Syntax](#expression-syntax)
@@ -146,19 +147,21 @@ A standard app configuration requires the following keys:
 - `name`: <string> - The unique name of the app.
 - `num_instances`: <int> - The number of instances of the app to run (optional, default is 1). Each instance runs independently.
 - `flows`: A list of flow configurations. Check [Flow Configuration (Standard Apps)](#flow-configuration-standard-apps) for more details.
-- `config`: <dictionary> - Optional app-level configuration accessible by components within this app via `self.get_config()`.
+- `config`: <dictionary> - Optional app-level configuration accessible by components within this app via `self.get_config()`. See [App-Level Configuration (`config`) and Validation (`app_schema`)](#app-level-configuration-config-and-validation-app_schema).
 
 ```yaml
 apps:
   - name: my_standard_app
     num_instances: 1
-    config:
+    config: # This is the app-level config block
       global_threshold: 50
+      api_key: ${MY_API_KEY}
     flows:
       - name: my_explicit_flow
         components:
           - component_name: my_component
             # ... component details ...
+            # This component can access 'global_threshold' via self.get_config('global_threshold')
   - name: another_standard_app
     flows:
       - name: another_explicit_flow
@@ -177,7 +180,7 @@ It requires the following keys:
 - `num_instances`: <int> - The number of instances of the app definition to run (optional, default is 1). Note: This scales the entire app definition, including broker connections. For scaling only processing logic, use `num_instances` at the component level.
 - `broker`: <dictionary> - Defines how the app interacts with the Solace broker. See [Simplified App: `broker` Configuration](#simplified-app-broker-configuration).
 - `components`: <list> - Defines the processing logic components. See [Simplified App: `components` Configuration](#simplified-app-components-configuration).
-- `config`: <dictionary> - Optional app-level configuration accessible by components within this app via `self.get_config()`.
+- `config`: <dictionary> - Optional app-level configuration accessible by components within this app via `self.get_config()`. See [App-Level Configuration (`config`) and Validation (`app_schema`)](#app-level-configuration-config-and-validation-app_schema).
 
 ```yaml
 apps:
@@ -187,14 +190,16 @@ apps:
       input_enabled: true
       output_enabled: true
       queue_name: "q/my_simple_app/input"
-    config:
+    config: # This is the app-level config block
       api_key: ${MY_API_KEY}
+      default_model: "gpt-4o"
     components:
       - name: processor
         component_module: my_processor
         subscriptions:
           - topic: "data/input/>"
         # ... other component details ...
+        # This component can access 'api_key' via self.get_config('api_key')
 ```
 
 #### Simplified App: `broker` Configuration
@@ -268,6 +273,66 @@ This section is a list defining the processing logic components for the simplifi
         subscriptions:
           - topic: "audit/events/>"
 ```
+
+#### App-Level Configuration (`config`) and Validation (`app_schema`)
+
+Both Standard and Simplified apps support an optional `config:` block at the app level in the YAML configuration. This block defines key-value pairs that are accessible to all components within that app instance using `self.get_config('your_key')`. This is useful for sharing common settings like API keys, endpoints, or global thresholds.
+
+```yaml
+apps:
+  - name: my_app_with_shared_config
+    # ... other app settings (broker/flows) ...
+    config:
+      shared_api_key: ${GLOBAL_API_KEY}
+      default_model_name: "model-x"
+      processing_threshold: 0.75
+    # ... components ...
+```
+
+**Validation (for Custom Apps):**
+
+If you create a custom `App` subclass in Python (using `app_module`), you can define an `app_schema` class attribute to enable validation of the `config:` block. This works similarly to the `info` dictionary for components.
+
+```python
+# my_custom_app.py
+from solace_ai_connector.flow.app import App
+
+class MyValidatedApp(App):
+    # Define the schema for parameters expected in the 'config:' block
+    app_schema = {
+        "config_parameters": [
+            {"name": "shared_api_key", "required": True, "type": "string", "description": "API key needed by components"},
+            {"name": "processing_threshold", "required": False, "type": "float", "default": 0.8, "description": "Default threshold"},
+        ]
+    }
+
+    # Optional: Define default values in code (merged with YAML)
+    app_config = {
+        "shared_api_key": "default_key_from_code", # Will be overridden by YAML/env var
+        "processing_threshold": 0.8,
+    }
+
+    def __init__(self, app_info: dict, **kwargs):
+        # super().__init__ handles merging and calls _validate_app_config
+        super().__init__(app_info, **kwargs)
+        # self.app_config is now validated and has defaults applied
+        # Access validated config via self.get_config()
+```
+
+**YAML referencing the custom app:**
+
+```yaml
+apps:
+  - name: validated_app_instance
+    app_module: my_custom_app # Assumes my_custom_app.py exists
+    config:
+      shared_api_key: ${MY_API_KEY} # Provided via env var or YAML
+      # processing_threshold: 0.7 # Optional override
+```
+
+If `shared_api_key` is not provided in the YAML or environment variables, the connector will raise a `ValueError` during startup because it's marked as `required` in the `app_schema`. If `processing_threshold` is omitted, the default value (0.8) from the schema will be applied.
+
+**Note:** Validation only occurs for custom `App` subclasses that define a valid `app_schema` with a `config_parameters` list. Standard apps defined purely in YAML do not have their `config:` block validated against a schema.
 
 #### Backward Compatibility (`flows` at top level)
 
