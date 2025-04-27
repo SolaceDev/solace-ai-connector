@@ -13,23 +13,23 @@ The primary goal is to facilitate the integration of AI capabilities into event-
 - **Modes:**
     - **Standard App:** Explicitly defines one or more `flows` in the configuration. Offers maximum flexibility.
     - **Simplified App:** Defines `broker` interactions and `components` directly, omitting `flows`. The framework automatically generates a single implicit flow. Ideal for common patterns (receive -> process -> optional send/reply).
-- **Configuration:** Defined under the top-level `apps:` list in YAML. Each app has a `name`, optional `num_instances`, and either `flows` (standard) or `broker` and `components` (simplified). Can also have an app-level `config` block.
+- **Configuration:** Defined under the top-level `apps:` list in YAML. Each app has a `name`, optional `num_instances`, and either `flows` (standard) or `broker` and `components` (simplified). Can also have an app-level `app_config` block.
     ```yaml
     # Example App Definitions in YAML
     apps:
       # Standard App
       - name: my_standard_app
-        config: { global_param: "value" }
+        app_config: { global_param: "value" }
         flows:
           - name: my_flow
             components: [ ... ] # Component definitions here
       # Simplified App
       - name: my_simplified_app
         broker: { ... } # Broker connection and interaction settings
-        config: { api_key: ${API_KEY} }
+        app_config: { api_key: ${API_KEY} }
         components: [ ... ] # Component definitions here
     ```
-- **Code-Based Apps:** Apps can be defined in Python by subclassing `solace_ai_connector.flow.app.App` and defining an `app_config` class attribute. Referenced in YAML via `app_module`.
+- **Code-Based Apps:** Apps can be defined in Python by subclassing `solace_ai_connector.flow.app.App` and defining an `app_config` class attribute (which defines the app structure). Referenced in YAML via `app_module`.
 
 ### 2.2. Flows
 - **Definition:** A "Flow" represents a single processing pipeline instance. It consists of a sequence of "Components".
@@ -157,7 +157,7 @@ The primary goal is to facilitate the integration of AI capabilities into event-
     apps:
       - name: my_standard_app
         num_instances: 1 # Optional: Default 1
-        config: # Optional: App-level config accessible via self.get_config()
+        app_config: # Optional: App-level config accessible via self.get_config()
           app_param: value
         flows:
           - name: flow1
@@ -177,7 +177,7 @@ The primary goal is to facilitate the integration of AI capabilities into event-
           request_reply_enabled: false # Optional
           queue_name: "q/my_app/in" # REQUIRED if input_enabled
           # Other optional broker settings (encoding, format, create_queue, etc.)
-        config: # Optional: App-level config
+        app_config: # Optional: App-level config
           api_key: ${API_KEY}
         components:
           - name: processor1
@@ -399,6 +399,7 @@ The primary goal is to facilitate the integration of AI capabilities into event-
 
     class MyCustomApp(App):
         # Define the entire app structure as a class attribute
+        # This 'app_config' defines the STRUCTURE and DEFAULTS for the app
         app_config = {
             "name": "my_code_defined_app", # Default name for instances of this app
             "broker": {
@@ -429,12 +430,22 @@ The primary goal is to facilitate the integration of AI capabilities into event-
             ]
         }
 
+        # Optional: Define app_schema for validating the YAML 'app_config:' block
+        app_schema = {
+            "config_parameters": [
+                 {"name": "global_threshold", "required": False, "type": "float"},
+                 {"name": "default_reply_topic", "required": True, "type": "string"},
+                 # Add other parameters expected in the YAML 'app_config:' block
+            ]
+        }
+
         # Optional: Override __init__ for custom app initialization logic
         # def __init__(self, app_info: dict, **kwargs):
         #     # app_info contains the merged config (YAML over code)
         #     super().__init__(app_info, **kwargs)
         #     # Custom app initialization, e.g., setting up shared resources
         #     log.info("MyCustomApp instance created with name: %s", self.name)
+        #     # self.app_config (instance attribute) is now validated
 
         # Optional: Add custom methods to the app class
         # def get_reply_topic(self):
@@ -446,7 +457,7 @@ The primary goal is to facilitate the integration of AI capabilities into event-
         def __init__(self, **kwargs):
             super().__init__(MyProcessor.info, **kwargs)
             self.mode = self.get_config("processing_mode")
-            # Access app config:
+            # Access app config (validated instance attribute):
             self.threshold = self.get_app().get_config("global_threshold")
 
         def invoke(self, message, data):
@@ -465,8 +476,9 @@ The primary goal is to facilitate the integration of AI capabilities into event-
         broker:
           broker_url: ${PROD_SOLACE_URL} # Override URL from env var
           broker_password: ${PROD_SOLACE_PASS}
-        config:
+        app_config: # This block is validated by MyCustomApp.app_schema
           global_threshold: 0.7 # Override app-level config
+          default_reply_topic: "prod/replies" # Provide required value
         # You can even override component configs, but structure must match code
         # components:
         #   - name: main_processor # Must match name in code config
@@ -475,7 +487,7 @@ The primary goal is to facilitate the integration of AI capabilities into event-
     ```
 
 ### 5.2. Key `App` Methods/Attributes for Use (within Components via `self.get_app()`)
-- `app.get_config(key, default=None)`: Access app-level configuration defined in the `config:` block (merged from code and YAML).
+- `app.get_config(key, default=None)`: Access app-level configuration defined in the `app_config:` block (merged from code and YAML, and validated if schema exists).
 - `app.send_message(payload, topic, user_properties=None)`: (Simplified Apps Only) Send a message via the implicit `BrokerOutput`. Useful for sending multiple/side-effect messages.
     ```python
     # Inside a component in a simplified app:
@@ -690,3 +702,6 @@ apps:
 solace-ai-connector simplified_suffix_app.yaml
 ```
 Publish a JSON message (e.g., `{"data": "hello"}`) to a topic like `app/suffix/request/123`. The connector will consume it, process it with `CustomSuffixComponent`, and publish the modified payload (e.g., `{"data": "hello", "status": " (Processed by Simplified App)"}`) to the corresponding reply topic (e.g., `app/suffix/reply/123`).
+```
+
+examples/simple_echo_app.py

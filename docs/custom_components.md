@@ -123,14 +123,14 @@ Custom components can take advantage of advanced features provided by the Solace
 - **Broker Request-Response:** Use `self.do_broker_request_response()` to interact synchronously with services via the broker (requires app-level configuration).
 - **Cache Service:** Use `self.cache_service` (`add_data`, `get_data`, `remove_data`) for temporary data storage with optional expiry.
 - **Timer Management:** Use `self.add_timer()` and `self.cancel_timer()` to schedule actions, handled in `handle_timer_event()`.
-- **App-Level Configuration:** Access shared configuration defined in the parent app's `config:` block using `self.get_config()`.
+- **App-Level Configuration:** Access shared configuration defined in the parent app's `app_config:` block using `self.get_config()`.
 - **Logging:** Use the standard Python `logging` module via `from solace_ai_connector.common.log import log`. Use `self.log_identifier` for context.
 
 For more information on these advanced features and how to use them in your custom components, please refer to the [Advanced Component Features](advanced_component_features.md) documentation.
 
 ## Custom Apps and Validation
 
-Similar to how custom components define an `info` dictionary for configuration and validation, custom *Apps* (subclasses of `solace_ai_connector.flow.app.App`) can define an `app_schema` class attribute. This allows you to specify required parameters and defaults for the app-level `config:` block in your YAML, enabling validation during app initialization. See the [App-Level Configuration and Validation](configuration.md#app-level-configuration-config-and-validation-app_schema) section in the configuration documentation for details.
+Similar to how custom components define an `info` dictionary for configuration and validation, custom *Apps* (subclasses of `solace_ai_connector.flow.app.App`) can define an `app_schema` class attribute. This allows you to specify required parameters and defaults for the app-level `app_config:` block in your YAML, enabling validation during app initialization. See the [App-Level Configuration and Validation](configuration.md#app-level-configuration-app_config-and-validation-app_schema) section in the configuration documentation for details.
 
 By creating custom components (and potentially custom Apps), you can extend the Solace AI Connector to meet your specific needs while still benefiting from the framework's built-in capabilities for event processing, flow management, and integration with Solace event brokers.
 
@@ -138,3 +138,5 @@ By creating custom components (and potentially custom Apps), you can extend the 
 
 See the [Tips and Tricks page](tips_and_tricks.md#using-custom-modules-with-the-ai-connector) for an example of creating and using a custom component.
 ```
+
+docs/simplified-apps.md
