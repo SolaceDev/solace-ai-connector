@@ -62,7 +62,9 @@ class SimpleEchoComponent(ComponentBase):
         super().__init__(component_info, **kwargs)
         self.echo_topic = self.get_config("echo_topic")
         self.log_prefix = self.get_config("log_prefix")
-        log.info(f"{self.log_identifier} SimpleEchoComponent initialized. Echoing to topic: {self.echo_topic}")
+        log.info(
+            f"{self.log_identifier} SimpleEchoComponent initialized. Echoing to topic: {self.echo_topic}"
+        )
 
     def invoke(self, message: Message, data: Any) -> dict:
         """
@@ -82,7 +84,9 @@ class SimpleEchoComponent(ComponentBase):
         input_topic = data.get("topic")
         input_user_props = data.get("user_properties", {})
 
-        log.info(f"{self.log_identifier} {self.log_prefix} Received payload from topic '{input_topic}': {input_payload}")
+        log.info(
+            f"{self.log_identifier} {self.log_prefix} Received payload from topic '{input_topic}': {input_payload}"
+        )
 
         # Prepare output user properties, adding an echo timestamp
         output_user_props = input_user_props.copy()
@@ -105,6 +109,7 @@ info = {
     "short_description": "Code-based echo app.",
 }
 
+
 class SimpleEchoApp(App):
     """
     Custom App class that defines its configuration internally.
@@ -112,7 +117,7 @@ class SimpleEchoApp(App):
 
     # Define the entire app configuration as a class attribute or within __init__
     app_config = {
-        "name": "simple_echo_app_from_code", # Internal name, can be overridden by YAML 'name'
+        "name": "simple_echo_app_from_code",  # Internal name, can be overridden by YAML 'name'
         "broker": {
             # Use environment variables or replace with actual values
             "broker_type": os.getenv("SOLACE_BROKER_TYPE", "solace"),
@@ -120,17 +125,15 @@ class SimpleEchoApp(App):
             "broker_vpn": os.getenv("SOLACE_VPN", "default"),
             "broker_username": os.getenv("SOLACE_USERNAME", "user"),
             "broker_password": os.getenv("SOLACE_PASSWORD", "password"),
-
             "input_enabled": True,
             "output_enabled": True,  # Required for echoing
             "request_reply_enabled": False,
-
             "queue_name": "q/simple_echo_app/input",
             "create_queue_on_start": True,
             "payload_format": "json",  # Assume input/output is JSON
             "payload_encoding": "utf-8",
         },
-        "config": {
+        "app_config": {
             # Optional app-level config accessible via component.get_config('app_param')
             "app_param": "global_app_value"
         },
@@ -155,11 +158,9 @@ class SimpleEchoApp(App):
                 # This tells the component what data to receive from the previous step.
                 # For the first component after BrokerInput/Router, 'previous' holds
                 # the output of BrokerInput.
-                "input_selection": {
-                     "source_expression": "previous"
-                }
+                "input_selection": {"source_expression": "previous"},
             }
-        ]
+        ],
     }
 
     def __init__(self, app_info: dict, **kwargs):
@@ -174,8 +175,8 @@ class SimpleEchoApp(App):
         # Override the passed app_info with the internally defined configuration.
         # Merge the name from the YAML config if provided, otherwise use internal name.
         merged_app_info = self.app_config.copy()
-        if app_info and 'name' in app_info:
-             merged_app_info['name'] = app_info['name']
+        if app_info and "name" in app_info:
+            merged_app_info["name"] = app_info["name"]
 
         # Call the base class constructor with our defined configuration
         super().__init__(app_info=merged_app_info, **kwargs)
@@ -216,39 +217,43 @@ if __name__ == "__main__":
         # Simulate how the main connector might load this config via app_module
         # The actual APP_CONFIG is now inside the SimpleEchoApp class.
         connector_config = {
-            "log": { # Basic logging config for the connector itself
+            "log": {  # Basic logging config for the connector itself
                 "stdout_log_level": "INFO",
                 "log_file_level": "DEBUG",
                 "log_file": "connector_main.log",
             },
             "apps": [
                 {
-                    "name": "simple_echo_instance_main", # Instance name from YAML
-                    "app_module": __name__ # Point to this module
+                    "name": "simple_echo_instance_main",  # Instance name from YAML
+                    "app_module": __name__,  # Point to this module
                 }
-            ]
+            ],
         }
 
         connector = SolaceAiConnector(config=connector_config)
         connector.run()
 
-        log.info("Simple Echo App started. Waiting for messages on queue 'q/simple_echo_app/input' matching 'echo/input/>'. Press Ctrl+C to stop.")
+        log.info(
+            "Simple Echo App started. Waiting for messages on queue 'q/simple_echo_app/input' matching 'echo/input/>'. Press Ctrl+C to stop."
+        )
 
         # Keep the main thread alive
         while True:
             time.sleep(5)
 
     except ImportError as e:
-        print(f"Error: Could not import SolaceAiConnector. Make sure it's installed and accessible.")
+        print(
+            f"Error: Could not import SolaceAiConnector. Make sure it's installed and accessible."
+        )
         print(e)
     except KeyboardInterrupt:
         log.info("Ctrl+C received. Stopping the connector.")
-        if 'connector' in locals():
+        if "connector" in locals():
             connector.stop()
     except Exception as e:
         log.error(f"An unexpected error occurred: {e}", exc_info=True)
     finally:
-        if 'connector' in locals():
+        if "connector" in locals():
             log.info("Cleaning up connector resources.")
             connector.cleanup()
         log.info("Simple Echo App finished.")

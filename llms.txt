@@ -702,6 +702,3 @@ apps:
 solace-ai-connector simplified_suffix_app.yaml
 ```
 Publish a JSON message (e.g., `{"data": "hello"}`) to a topic like `app/suffix/request/123`. The connector will consume it, process it with `CustomSuffixComponent`, and publish the modified payload (e.g., `{"data": "hello", "status": " (Processed by Simplified App)"}`) to the corresponding reply topic (e.g., `app/suffix/reply/123`).
-```
-
-examples/simple_echo_app.py
