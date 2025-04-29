@@ -55,7 +55,10 @@ class TestBrokerOutput(unittest.TestCase):
                 "user_properties": {"ttl": 1},
             }
         )
+        # Call the send_message method
         self.broker_output.send_message(message)
+
+        # Verify that messaging_service.send_message was called with the expected arguments
         self.broker_output.messaging_service.send_message.assert_called_once_with(
             payload="test-payload",
             destination_name="test-topic",

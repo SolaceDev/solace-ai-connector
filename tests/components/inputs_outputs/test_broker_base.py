@@ -38,7 +38,7 @@ class TestBrokerBase(unittest.TestCase):
         }
         self.broker = BrokerBase(module_info={})
         self.assertEqual(self.broker.broker_properties["broker_type"], "test")
-        self.assertFalse(self.broker.connected)
+        self.assertEqual(self.broker.connected, False)
         self.assertTrue(self.broker.needs_acknowledgement)
 
     def test_connect(self):
@@ -50,7 +50,7 @@ class TestBrokerBase(unittest.TestCase):
         self.broker.connect()
         self.broker.disconnect()
         self.mock_messaging_service.disconnect.assert_called_once()
-        self.assertFalse(self.broker.connected)
+        self.assertEqual(self.broker.connected, False)
 
     @patch(
         "solace_ai_connector.components.inputs_outputs.broker_base.BrokerBase.get_config"
