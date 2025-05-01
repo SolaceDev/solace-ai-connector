@@ -76,15 +76,35 @@ class LangChainTextSplitter(LangChainBase):
         Returns:
             list: A list of strings representing the split text segments.
         """
-        if "text" not in data:
-            log.error("Text not provided in input data")
+        try:
+            chunks = self.component.split_text(data)
+            return chunks
+        except Exception:
+            log.error("Error splitting text")
             return []
 
+
+class SingleChunkSplitter:
+    """
+    A class to split a long text into smaller parts using the LangChain text splitter module.
+    """
+
+    def split_text(self, data):
+        return [data]
+
+    def invoke(self, message, data):
+        """
+        Wrap the text in a list.
+
+        Args:
+            message (Message): The message object containing metadata.
+            data (dict): A dictionary containing the input text to be split.
+
+        Returns:
+            list: A list of strings representing the text.
+        """
         try:
-            text = data.get("text")
-            texts = self.component.split_text(text)
-            log.debug(f"Split text: {texts}")
-            return texts
-        except Exception as e:
-            log.error(f"Error splitting text: {str(e)}")
+            return [data]
+        except Exception:
+            log.error("Error wrapping data")
             return []

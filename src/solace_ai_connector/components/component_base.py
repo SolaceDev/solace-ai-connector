@@ -2,15 +2,22 @@ import threading
 import queue
 import traceback
 import pprint
+import time
 from abc import abstractmethod
+from typing import Any
+
 from ..common.log import log
 from ..common.utils import resolve_config_values
 from ..common.utils import get_source_expression
 from ..transforms.transforms import Transforms
 from ..common.message import Message
+from ..common.messaging.solace_messaging import ConnectionStatus
 from ..common.trace_message import TraceMessage
 from ..common.event import Event, EventType
 from ..flow.request_response_flow_controller import RequestResponseFlowController
+from ..common.monitoring import Monitoring
+from ..common.monitoring import Metrics
+from ..common import Message_NACK_Outcome
 
 DEFAULT_QUEUE_TIMEOUT_MS = 1000
 DEFAULT_QUEUE_MAX_DEPTH = 5
@@ -35,6 +42,7 @@ class ComponentBase:
         self.timer_manager = kwargs.pop("timer_manager", None)
         self.cache_service = kwargs.pop("cache_service", None)
         self.put_errors_in_error_queue = kwargs.pop("put_errors_in_error_queue", True)
+        self.parent_app = kwargs.pop("app", None)
 
         self.component_config = self.config.get("component_config") or {}
         self.broker_request_response_config = self.config.get(
@@ -51,6 +59,7 @@ class ComponentBase:
         self.stop_thread_event = threading.Event()
         self.current_message = None
         self.current_message_has_been_discarded = False
+        self.event_message_repeat_sleep_time = 1
 
         self.log_identifier = f"[{self.instance_name}.{self.flow_name}.{self.name}] "
 
@@ -59,24 +68,57 @@ class ComponentBase:
         self.setup_communications()
         self.setup_broker_request_response()
 
+        self.monitoring = Monitoring()
+
+    def grow_sleep_time(self):
+        if self.event_message_repeat_sleep_time < 60:
+            self.event_message_repeat_sleep_time *= 2
+
+    def reset_sleep_time(self):
+        self.event_message_repeat_sleep_time = 1
+
     def create_thread_and_run(self):
-        self.thread = threading.Thread(target=self.run)
+        self.thread = threading.Thread(target=self.run, daemon=True)
         self.thread.start()
         return self.thread
 
     def run(self):
+        self.monitoring.register_callback(self.flush_metrics)
+        # Start the micro monitoring thread
+        monitoring_thread = threading.Thread(
+            target=self.run_micro_monitoring, daemon=True
+        )
+        connection_status_thread = threading.Thread(
+            target=self.run_connection_status_monitoring, daemon=True
+        )
+        monitoring_thread.start()
+        connection_status_thread.start()
+        # Process events until the stop signal is set
         while not self.stop_signal.is_set():
             event = None
             try:
                 event = self.get_next_event()
                 if event is not None:
                     self.process_event_with_tracing(event)
+                self.reset_sleep_time()
             except AssertionError as e:
-                raise e
+                try:
+                    self.stop_signal.wait(timeout=self.event_message_repeat_sleep_time)
+                except KeyboardInterrupt:
+                    self.handle_component_error(e, event)
+                self.grow_sleep_time()
+                self.handle_component_error(e, event)
             except Exception as e:
+                try:
+                    self.stop_signal.wait(timeout=self.event_message_repeat_sleep_time)
+                except KeyboardInterrupt:
+                    self.handle_component_error(e, event)
+                self.grow_sleep_time()
                 self.handle_component_error(e, event)
 
         self.stop_component()
+        monitoring_thread.join()
+        connection_status_thread.join()
 
     def process_event_with_tracing(self, event):
         if self.trace_queue:
@@ -84,12 +126,7 @@ class ComponentBase:
         self.process_event(event)
 
     def handle_component_error(self, e, event):
-        log.error(
-            "%sComponent has crashed: %s\n%s",
-            self.log_identifier,
-            e,
-            traceback.format_exc(),
-        )
+        log.error(f"[{self.name}] {self.log_identifier} Component has crashed")
         self.handle_error(e, event)
 
     def get_next_event(self):
@@ -109,9 +146,7 @@ class ComponentBase:
                 timeout = self.queue_timeout_ms or DEFAULT_QUEUE_TIMEOUT_MS
                 event = self.input_queue.get(timeout=timeout / 1000)
                 log.debug(
-                    "%sComponent received event %s from input queue",
-                    self.log_identifier,
-                    event,
+                    f"[{self.name}] {self.log_identifier} Component received event from input queue"
                 )
                 return event
             except queue.Empty:
@@ -131,7 +166,14 @@ class ComponentBase:
                 self.trace_data(data)
 
             self.current_message_has_been_discarded = False
-            result = self.invoke(message, data)
+            try:
+                result = self.invoke(message, data)
+            except Exception as e:
+                self.current_message = None
+                self.handle_negative_acknowledgements(message, e)
+                raise ValueError("Error in processing message") from None
+            finally:
+                self.current_message = None
 
             if self.current_message_has_been_discarded:
                 message.call_acknowledgements()
@@ -144,10 +186,11 @@ class ComponentBase:
             self.handle_cache_expiry_event(event.data)
         else:
             log.warning(
-                "%sUnknown event type: %s", self.log_identifier, event.event_type
+                f"[{self.name}] {self.log_identifier} Unknown event type: event.event_type"
             )
 
     def process_pre_invoke(self, message):
+
         self.apply_input_transforms(message)
         return self.get_input_data(message)
 
@@ -162,7 +205,7 @@ class ComponentBase:
         # Finally send the message to the next component - or if this is the last component,
         # the component will override send_message and do whatever it needs to do with the message
         log.debug(
-            "%sSending message from %s: %s", self.log_identifier, self.name, message
+            f"[{self.name}] {self.log_identifier} Sending message from {self.name}"
         )
         self.send_message(message)
 
@@ -225,7 +268,14 @@ class ComponentBase:
                 pass
 
     def get_config(self, key=None, default=None):
+        # First check component config
         val = self.component_config.get(key, None)
+
+        # If not found in component config, check app config if available
+        if val is None and self.parent_app:
+            val = self.parent_app.get_config(key, None)
+
+        # If still not found, check flow config
         if val is None:
             val = self.config.get(key, default)
 
@@ -243,7 +293,7 @@ class ComponentBase:
                     "that contains a 'evaluate_expression()' in a context that does not "
                     "have a message available. This is likely a bug in the "
                     "component's configuration."
-                )
+                ) from None
             val = val(self.current_message)
         return val
 
@@ -298,13 +348,21 @@ class ComponentBase:
         if not broker_config:
             raise ValueError(
                 f"Broker request response config not found for component {self.name}"
-            )
+            ) from None
         rrc_config = {
             "broker_config": broker_config,
             "request_expiry_ms": request_expiry_ms,
         }
 
-        for key in ["response_topic_prefix", "response_queue_prefix", "response_topic_insertion_expression"]:
+        optional_keys = [
+            "response_topic_prefix",
+            "response_queue_prefix",
+            "user_properties_reply_topic_key",
+            "user_properties_reply_metadata_key",
+            "response_topic_insertion_expression",
+        ]
+
+        for key in optional_keys:
             if key in self.broker_request_response_config:
                 rrc_config[key] = self.broker_request_response_config[key]
 
@@ -330,12 +388,12 @@ class ComponentBase:
                 raise ValueError(
                     f"config_parameters schema for module {self.config.get('component_module')} "
                     "does not have a name: {param}"
-                )
+                ) from None
             required = param.get("required", False)
             if required and name not in self.component_config:
                 raise ValueError(
                     f"Config parameter {name} is required but not present in component {self.name}"
-                )
+                ) from None
             default = param.get("default", None)
             if default is not None and name not in self.component_config:
                 self.component_config[name] = default
@@ -413,7 +471,7 @@ class ComponentBase:
 
     def cleanup(self):
         """Clean up resources used by the component"""
-        log.debug("%sCleaning up component", self.log_identifier)
+        log.debug(f"[{self.name}] {self.log_identifier} Cleaning up component")
         try:
             self.stop_component()
         except KeyboardInterrupt:
@@ -446,4 +504,105 @@ class ComponentBase:
                 return next_message
         raise ValueError(
             f"Broker request response controller not found for component {self.name}"
+        ) from None
+
+    def handle_negative_acknowledgements(self, message, exception):
+        """Handle NACK for the message."""
+        log.error(
+            f"[{self.name}] {self.log_identifier} Component failed to process message"
         )
+        nack = self.nack_reaction_to_exception(type(exception))
+        message.call_negative_acknowledgements(nack)
+        self.handle_error(exception, Event(EventType.MESSAGE, message))
+
+    @abstractmethod
+    def get_negative_acknowledgement_callback(self):
+        """This should be overridden by the component if it needs to NACK messages."""
+        return None
+
+    @abstractmethod
+    def nack_reaction_to_exception(self, exception_type):
+        """This should be overridden by the component if it needs to determine
+        NACK reaction regarding the exception type."""
+        return Message_NACK_Outcome.REJECTED
+
+    def get_metrics_with_header(self) -> dict[dict[Metrics, Any], Any]:
+        metrics = {}
+        required_metrics = self.monitoring.get_required_metrics()
+
+        pure_metrics = self.get_metrics()
+        for metric, value in pure_metrics.items():
+            # filter metrics
+            if metric in required_metrics:
+                key = tuple(
+                    [
+                        ("flow", self.flow_name),
+                        ("flow_index", self.index),
+                        ("component", self.name),
+                        ("component_module", self.config.get("component_module")),
+                        ("component_index", self.component_index),
+                        ("metric", metric),
+                    ]
+                )
+
+                metrics[key] = value
+        return metrics
+
+    def get_metrics(self) -> dict[Metrics, Any]:
+        # This method should be overridden by components that need to provide metrics.
+        return {}
+
+    def flush_metrics(self):
+        # This method is intentionally left empty because not all components need to reset metrics.
+        # Components that require metric reset functionality should override this method.
+        pass
+
+    def get_connection_status(self) -> ConnectionStatus:
+        # This method should be overridden by components that need to provide connection status.
+        # If the component does not need to provide connection status, it can leave this method empty.
+        pass
+
+    def run_connection_status_monitoring(self) -> None:
+        """
+        Get connection status
+        """
+        try:
+            if self.config.get("component_module") in {"broker_input", "broker_output"}:
+                while not self.stop_signal.is_set():
+                    key = tuple(
+                        [
+                            ("flow", self.flow_name),
+                            ("flow_index", self.index),
+                            ("component", self.name),
+                            ("component_index", self.component_index),
+                        ]
+                    )
+                    value = self.get_connection_status()
+                    self.monitoring.set_connection_status(key, value)
+                    # Wait 1 second for the next interval
+                    self.stop_signal.wait(timeout=1)
+        except KeyboardInterrupt:
+            log.info(f"[{self.name}] Monitoring connection status stopped.")
+
+    def run_micro_monitoring(self) -> None:
+        """
+        Start the metric collection process in a loop.
+        """
+        try:
+            while not self.stop_signal.is_set():
+                # Collect metrics
+                metrics = self.get_metrics_with_header()
+                self.monitoring.collect_metrics(metrics)
+                # Wait for the next interval
+                sleep_interval = self.monitoring.get_interval()
+                self.stop_signal.wait(timeout=sleep_interval)
+                # Reset metrics in automatic mode
+                if not self.monitoring.is_flush_manual():
+                    self.flush_metrics()
+                    log.debug(f"[{self.name}] Automatically flushed metrics.")
+        except KeyboardInterrupt:
+            log.info(f"[{self.name}] Monitoring stopped.")
+
+    def get_app(self):
+        """Get the app that this component belongs to"""
+        return self.parent_app

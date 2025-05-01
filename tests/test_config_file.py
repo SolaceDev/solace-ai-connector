@@ -44,7 +44,7 @@ log:
             yaml.safe_load(config_yaml),
         )
     except ValueError as e:
-        assert str(e) == "No flows defined in configuration file"
+        assert str(e) == "No apps or flows defined in configuration file"
 
 
 def test_no_flow_name():
@@ -54,25 +54,27 @@ def test_no_flow_name():
 log:
   log_file_level: DEBUG
   log_file: solace_ai_connector.log
-flows:
-  - components:
-      - component_name: delay1
-        component_module: delay
-        component_config:
-          delay: 0.1
-        num_instances: 4
-        input_transforms:
-          - type: append
-            source_expression: self:component_index
-            dest_expression: user_data.path:my_path
-        input_selection:
-          source_expression: input.payload:text
+apps:
+  - name: test_app
+    flows:
+      - components:
+          - component_name: delay1
+            component_module: delay
+            component_config:
+              delay: 0.1
+            num_instances: 4
+            input_transforms:
+              - type: append
+                source_expression: self:component_index
+                dest_expression: user_data.path:my_path
+            input_selection:
+              source_expression: input.payload:text
 """
         SolaceAiConnector(
             yaml.safe_load(config_yaml),
         )
     except ValueError as e:
-        assert str(e) == "Flow name not provided in flow 0"
+        assert str(e) == "Flow name not provided in flow 0 of app test_app"
 
 
 def test_no_flow_components():
@@ -82,14 +84,16 @@ def test_no_flow_components():
 log:
   log_file_level: DEBUG
   log_file: solace_ai_connector.log
-flows:
-  - name: test_flow
+apps:
+  - name: test_app
+    flows:
+      - name: test_flow
 """
         SolaceAiConnector(
             yaml.safe_load(config_yaml),
         )
     except ValueError as e:
-        assert str(e) == "Flow components list not provided in flow 0"
+        assert str(e) == "Flow components list not provided in flow 0 of app test_app"
 
 
 def test_flow_components_not_list():
@@ -99,15 +103,17 @@ def test_flow_components_not_list():
 log:
   log_file_level: DEBUG
   log_file: solace_ai_connector.log
-flows:
-  - name: test_flow
-    components: not_a_list
+apps:
+  - name: test_app
+    flows:
+      - name: test_flow
+        components: not_a_list
 """
         SolaceAiConnector(
             yaml.safe_load(config_yaml),
         )
     except ValueError as e:
-        assert str(e) == "Flow components is not a list in flow 0"
+        assert str(e) == "Flow components is not a list in flow 0 of app test_app"
 
 
 def test_no_component_name():
@@ -117,18 +123,23 @@ def test_no_component_name():
 log:
   log_file_level: DEBUG
   log_file: solace_ai_connector.log
-flows:
-  - name: test_flow
-    components:
-      - component_module: delay
-        input_selection:
-          source_expression: input.payload:text
+apps:
+  - name: test_app
+    flows:
+      - name: test_flow
+        components:
+          - component_module: delay
+            input_selection:
+              source_expression: input.payload:text
 """
         SolaceAiConnector(
             yaml.safe_load(config_yaml),
         )
     except ValueError as e:
-        assert str(e) == "component_name not provided in flow 0, component 0"
+        assert (
+            str(e)
+            == "component_name not provided in flow 0, component 0 of app test_app"
+        )
 
 
 def test_no_component_module():
@@ -138,16 +149,21 @@ def test_no_component_module():
 log:
   log_file_level: DEBUG
   log_file: solace_ai_connector.log 
-flows:
-  - name: test_flow
-    components:
-      - component_name: delay1
+apps:
+  - name: test_app
+    flows:
+      - name: test_flow
+        components:
+          - component_name: delay1
 """
         SolaceAiConnector(
             yaml.safe_load(config_yaml),
         )
     except ValueError as e:
-        assert str(e) == "component_module not provided in flow 0, component 0"
+        assert (
+            str(e)
+            == "component_module not provided in flow 0, component 0 of app test_app"
+        )
 
 
 def test_static_import_and_object_config():
@@ -155,15 +171,22 @@ def test_static_import_and_object_config():
 
     config = {
         "log": {"log_file_level": "DEBUG", "log_file": "solace_ai_connector.log"},
-        "flows": [
+        "apps": [
             {
-                "name": "test_flow",
-                "components": [
+                "name": "test_app",
+                "flows": [
                     {
-                        "component_name": "delay1",
-                        "component_module": solace_ai_connector.components.general.pass_through,
-                        "component_config": {"delay": 0.1},
-                        "input_selection": {"source_expression": "input.payload"},
+                        "name": "test_flow",
+                        "components": [
+                            {
+                                "component_name": "delay1",
+                                "component_module": solace_ai_connector.components.general.pass_through,
+                                "component_config": {"delay": 0.1},
+                                "input_selection": {
+                                    "source_expression": "input.payload"
+                                },
+                            }
+                        ],
                     }
                 ],
             }
@@ -197,18 +220,20 @@ def test_bad_module():
 log:
   log_file_level: DEBUG
   log_file: solace_ai_connector.log
-flows:
-  - name: test_flow
-    components:
-      - component_name: delay1
-        component_module: not_a_module
+apps:
+  - name: test_app
+    flows:
+      - name: test_flow
+        components:
+          - component_name: delay1
+            component_module: not_a_module
 """
         sac = SolaceAiConnector(
             yaml.safe_load(config_yaml),
         )
         sac.run()
     except Exception as e:
-        assert str(e) == "Module 'not_a_module' not found"
+        assert str(e) == "An error occurred during startup"
     finally:
         print("Finally")
 
@@ -219,17 +244,16 @@ def test_component_missing_info_attribute():
 log:
   log_file_level: DEBUG
   log_file: solace_ai_connector.log
-flows:
-  - name: test_flow
-    components:
-      - component_name: delay1
-        component_module: utils
+apps:
+  - name: test_app
+    flows:
+      - name: test_flow
+        components:
+          - component_name: delay1
+            component_module: utils
 """
     with pytest.raises(ValueError) as e:
         create_connector(
             config_yaml,
         )
-    assert (
-        str(e.value)
-        == "Component module 'utils' does not have an 'info' attribute. It probably isn't a valid component."
-    )
+    assert str(e.value) == "An error occurred during startup"

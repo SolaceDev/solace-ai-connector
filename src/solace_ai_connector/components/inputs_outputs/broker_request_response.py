@@ -7,6 +7,7 @@ import queue
 from copy import deepcopy
 
 from ...common.log import log
+from ...common.utils import set_data_value, get_data_value, remove_data_value
 from .broker_base import BrokerBase
 from ...common.message import Message
 from ...common.utils import ensure_slash_on_end, ensure_slash_on_start
@@ -22,8 +23,15 @@ info = {
     "config_parameters": [
         {
             "name": "broker_type",
-            "required": True,
+            "required": False,
             "description": "Type of broker (Solace, MQTT, etc.)",
+            "default": "solace",
+        },
+        {
+            "name": "dev_mode",
+            "required": False,
+            "description": "Operate in development mode, which just uses local queues",
+            "default": "false",
         },
         {
             "name": "broker_url",
@@ -89,6 +97,18 @@ info = {
             "required": False,
             "description": "Prefix for reply queues",
             "default": "reply-queue",
+        },
+        {
+            "name": "user_properties_reply_topic_key",
+            "required": False,
+            "description": "Key to store the reply topic in the user properties. Start with : for nested object",
+            "default": "__solace_ai_connector_broker_request_response_topic__",
+        },
+        {
+            "name": "user_properties_reply_metadata_key",
+            "required": False,
+            "description": "Key to store the reply metadata in the user properties. Start with : for nested object",
+            "default": "__solace_ai_connector_broker_request_reply_metadata__",
         },
         {
             "name": "request_expiry_ms",
@@ -193,6 +213,9 @@ info = {
     },
 }
 
+DEFAULT_REPLY_TOPIC_KEY = "__solace_ai_connector_broker_request_response_topic__"
+DEFAULT_REPLY_METADATA_KEY = "__solace_ai_connector_broker_request_reply_metadata__"
+
 
 class BrokerRequestResponse(BrokerBase):
     """Request-Response broker component for the Solace AI Event Connector"""
@@ -209,6 +232,12 @@ class BrokerRequestResponse(BrokerBase):
         )
         self.response_queue_prefix = ensure_slash_on_end(
             self.get_config("response_queue_prefix")
+        )
+        self.user_properties_reply_topic_key = self.get_config(
+            "user_properties_reply_topic_key", DEFAULT_REPLY_TOPIC_KEY
+        )
+        self.user_properties_reply_metadata_key = self.get_config(
+            "user_properties_reply_metadata_key", DEFAULT_REPLY_METADATA_KEY
         )
         self.requestor_id = str(uuid.uuid4())
         self.reply_queue_name = f"{self.response_queue_prefix}{self.requestor_id}"
@@ -265,10 +294,12 @@ class BrokerRequestResponse(BrokerBase):
     def start_response_thread(self):
         if self.test_mode:
             self.response_thread = threading.Thread(
-                target=self.handle_test_pass_through
+                target=self.handle_test_pass_through, daemon=True
             )
         else:
-            self.response_thread = threading.Thread(target=self.handle_responses)
+            self.response_thread = threading.Thread(
+                target=self.handle_responses, daemon=True
+            )
         self.response_thread.start()
 
     def handle_responses(self):
@@ -279,8 +310,8 @@ class BrokerRequestResponse(BrokerBase):
                 )
                 if broker_message:
                     self.process_response(broker_message)
-            except Exception as e:
-                log.error("Error handling response: %s", e)
+            except Exception:
+                log.error("Error handling response.")
 
     def handle_test_pass_through(self):
         while not self.stop_signal.is_set():
@@ -291,8 +322,8 @@ class BrokerRequestResponse(BrokerBase):
                 self.process_response(message)
             except queue.Empty:
                 continue
-            except Exception as e:
-                log.error("Error handling test passthrough: %s", e)
+            except Exception:
+                log.error("Error handling test passthrough.")
 
     def process_response(self, broker_message):
         if self.test_mode:
@@ -305,43 +336,43 @@ class BrokerRequestResponse(BrokerBase):
             topic = broker_message.get("topic")
             user_properties = broker_message.get("user_properties", {})
 
+            self.messaging_service.ack_message(broker_message)
+
         if not user_properties:
-            log.error("Received response without user properties: %s", payload)
+            log.error("Received response without user properties.")
             return
 
         streaming_complete_expression = None
-        metadata_json = user_properties.get(
-            "__solace_ai_connector_broker_request_reply_metadata__"
+        metadata_json = get_data_value(
+            user_properties, self.user_properties_reply_metadata_key, True
         )
         if not metadata_json:
-            log.error("Received response without metadata: %s", payload)
+            log.error("Received response without metadata.")
             return
 
         try:
             metadata_stack = json.loads(metadata_json)
         except json.JSONDecodeError:
-            log.error("Received response with invalid metadata JSON: %s", metadata_json)
+            log.error("Received response with invalid metadata JSON.")
             return
 
         if not metadata_stack:
-            log.error("Received response with empty metadata stack: %s", payload)
+            log.error("Received response with empty metadata stack.")
             return
 
         try:
             current_metadata = metadata_stack.pop()
         except IndexError:
-            log.error(
-                "Received response with invalid metadata stack: %s", metadata_stack
-            )
+            log.error("Received response with invalid metadata stack.")
             return
         request_id = current_metadata.get("request_id")
         if not request_id:
-            log.error("Received response without request_id in metadata: %s", payload)
+            log.error("Received response without request_id in metadata.")
             return
 
         cached_request = self.cache_service.get_data(request_id)
         if not cached_request:
-            log.error("Received response for unknown request_id: %s", request_id)
+            log.error("Received response for unknown request_id.")
             return
 
         stream = cached_request.get("stream", False)
@@ -357,20 +388,24 @@ class BrokerRequestResponse(BrokerBase):
 
         # Update the metadata in the response
         if metadata_stack:
-            response["user_properties"][
-                "__solace_ai_connector_broker_request_reply_metadata__"
-            ] = json.dumps(metadata_stack)
+            set_data_value(
+                response["user_properties"],
+                self.user_properties_reply_metadata_key,
+                json.dumps(metadata_stack),
+            )
             # Put the last reply topic back in the user properties
-            response["user_properties"][
-                "__solace_ai_connector_broker_request_response_topic__"
-            ] = metadata_stack[-1]["response_topic"]
+            set_data_value(
+                response["user_properties"],
+                self.user_properties_reply_topic_key,
+                metadata_stack[-1]["response_topic"],
+            )
         else:
             # Remove the metadata and reply topic from the user properties
-            response["user_properties"].pop(
-                "__solace_ai_connector_broker_request_reply_metadata__", None
+            remove_data_value(
+                response["user_properties"], self.user_properties_reply_metadata_key
             )
-            response["user_properties"].pop(
-                "__solace_ai_connector_broker_request_response_topic__", None
+            remove_data_value(
+                response["user_properties"], self.user_properties_reply_topic_key
             )
 
         message = Message(
@@ -387,6 +422,12 @@ class BrokerRequestResponse(BrokerBase):
             is_last = message.get_data(streaming_complete_expression)
             if not is_last:
                 last_piece = False
+                self.cache_service.add_data(
+                    key=request_id,
+                    value=cached_request,
+                    expiry=self.request_expiry_ms / 1000,  # Reset expiry time
+                    component=self,
+                )
 
         if last_piece:
             self.cache_service.remove_data(request_id)
@@ -410,39 +451,30 @@ class BrokerRequestResponse(BrokerBase):
 
         metadata = {"request_id": request_id, "response_topic": topic}
 
-        if (
-            "__solace_ai_connector_broker_request_reply_metadata__"
-            in data["user_properties"]
-        ):
+        existing_metadata_json = get_data_value(
+            data["user_properties"], self.user_properties_reply_metadata_key, True
+        )
+        if existing_metadata_json:
             try:
-                existing_metadata = json.loads(
-                    data["user_properties"][
-                        "__solace_ai_connector_broker_request_reply_metadata__"
-                    ]
-                )
+                existing_metadata = json.loads(existing_metadata_json)
                 if isinstance(existing_metadata, list):
                     existing_metadata.append(metadata)
                     metadata = existing_metadata
                 else:
-                    log.warning(
-                        "Invalid existing metadata format: %s", existing_metadata
-                    )
+                    log.warning("Invalid existing metadata format.")
             except json.JSONDecodeError:
-                log.warning(
-                    "Failed to decode existing metadata JSON: %s",
-                    data["user_properties"][
-                        "__solace_ai_connector_broker_request_reply_metadata__"
-                    ],
-                )
+                log.warning("Failed to decode existing metadata JSON.")
         else:
             metadata = [metadata]
 
-        data["user_properties"][
-            "__solace_ai_connector_broker_request_reply_metadata__"
-        ] = json.dumps(metadata)
-        data["user_properties"][
-            "__solace_ai_connector_broker_request_response_topic__"
-        ] = topic
+        set_data_value(
+            data["user_properties"],
+            self.user_properties_reply_metadata_key,
+            json.dumps(metadata),
+        )
+        set_data_value(
+            data["user_properties"], self.user_properties_reply_topic_key, topic
+        )
 
         # If we are configured to also insert the response topic into the request message
         # then create a temporary message to do so
@@ -462,7 +494,9 @@ class BrokerRequestResponse(BrokerBase):
             if self.broker_type == "test_streaming":
                 # The payload should be an array. Send one message per item in the array
                 if not isinstance(data["payload"], list):
-                    raise ValueError("Payload must be a list for test_streaming broker")
+                    raise ValueError(
+                        "Payload must be a list for test_streaming broker"
+                    ) from None
                 for item in data["payload"]:
                     encoded_payload = self.encode_payload(item)
                     self.pass_through_queue.put(
@@ -505,3 +539,7 @@ class BrokerRequestResponse(BrokerBase):
         if self.response_thread:
             self.response_thread.join()
         super().cleanup()
+
+    def get_metrics(self):
+        # override because it removes messaging_service from the BrokerBase
+        return {}

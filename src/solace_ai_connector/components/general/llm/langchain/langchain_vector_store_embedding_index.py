@@ -116,6 +116,7 @@ info = {
 
 
 class LangChainVectorStoreEmbeddingsIndex(LangChainVectorStoreEmbeddingsBase):
+
     def __init__(self, **kwargs):
         super().__init__(info, **kwargs)
 
@@ -130,13 +131,15 @@ class LangChainVectorStoreEmbeddingsIndex(LangChainVectorStoreEmbeddingsBase):
         metadatas = data.get("metadatas", None)
         if metadatas is not None:
             if not isinstance(metadatas, list):
-                metadatas = [metadatas]
+                # repeat metadata for each text
+                metadatas = [metadatas for _ in range(len(texts))]
 
         # Get the ids if they exist
         ids = data.get("ids", None)
         if ids is not None:
             if not isinstance(ids, list):
-                ids = [ids]
+                # repeat metadata for each text
+                ids = [ids for _ in range(len(texts))]
 
         action = data.get("action", "add")
         match action:
@@ -145,18 +148,19 @@ class LangChainVectorStoreEmbeddingsIndex(LangChainVectorStoreEmbeddingsBase):
             case "delete":
                 return self.delete_data(ids)
             case _:
-                raise ValueError("Invalid action: {}".format(action))
+                raise ValueError("Invalid action: {}".format(action)) from None
 
     def add_data(self, texts, metadatas=None, ids=None):
         # Add the texts to the vector store
         args = [texts]
         if metadatas is not None:
             args.append(metadatas)
+
         self.vector_store.add_texts(*args, ids=ids)
         return {"result": "OK"}
 
     def delete_data(self, ids):
         if not ids:
-            raise ValueError("No IDs provided to delete")
+            raise ValueError("No IDs provided to delete") from None
         self.vector_store.delete(ids)
         return {"result": "OK"}
