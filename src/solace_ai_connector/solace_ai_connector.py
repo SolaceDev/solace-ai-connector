@@ -120,8 +120,6 @@ class SolaceAiConnector:
                             app_info.get("name"),
                         )
 
-                    # Removed unused app_api handling logic
-
                     for i in range(num_instances):
 
                         # Does this have a custom App module
