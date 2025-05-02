@@ -109,4 +109,3 @@
 *   Consider the exact placement of the `validate_config_block` function (new file vs. `utils.py`). A new file might be cleaner.
 *   Ensure error messages from `validate_config_block` and the calling methods (`App._validate_app_config`, `ComponentBase.validate_config`) provide sufficient context (app/component name).
 *   Double-check the timing of the `_validate_app_config()` call within `App.__init__` relative to config merging and resolution.
-```

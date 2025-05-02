@@ -9,6 +9,7 @@ from solace_ai_connector.flow.app import App
 
 # --- Test Fixtures and Helper Classes ---
 
+
 # Define a custom App subclass WITH a schema for testing validation
 class ValidatedApp(App):
     app_schema = {
@@ -166,7 +167,9 @@ def test_unvalidated_app_no_error(mock_dependencies):
         assert app.app_config["arbitrary_param"] == "some_value"
         assert app.app_config["another_one"] == 123
     except ValueError:
-        pytest.fail("UnvalidatedApp raised ValueError unexpectedly during initialization.")
+        pytest.fail(
+            "UnvalidatedApp raised ValueError unexpectedly during initialization."
+        )
 
 
 def test_base_app_no_error(mock_dependencies):
@@ -177,7 +180,7 @@ def test_base_app_no_error(mock_dependencies):
             "base_app_param": True,
             "whatever": "data",
         },
-        "flows": [], # Need flows for standard app structure
+        "flows": [],  # Need flows for standard app structure
     }
     try:
         app = App(app_info=app_info, **mock_dependencies)
@@ -185,6 +188,6 @@ def test_base_app_no_error(mock_dependencies):
         assert app.app_config["base_app_param"] is True
         assert app.app_config["whatever"] == "data"
     except ValueError:
-        pytest.fail("Base App class raised ValueError unexpectedly during initialization.")
-
-```
+        pytest.fail(
+            "Base App class raised ValueError unexpectedly during initialization."
+        )

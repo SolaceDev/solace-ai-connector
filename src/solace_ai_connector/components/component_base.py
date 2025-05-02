@@ -405,7 +405,7 @@ class ComponentBase:
                     exc_info=True,
                 )
                 # Decide if this should be fatal
-                raise e
+                raise ValueError("Failed to initialize component-level RRC") from None
         else:
             self._component_rrc = None
 
