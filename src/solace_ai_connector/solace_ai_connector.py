@@ -120,18 +120,7 @@ class SolaceAiConnector:
                             app_info.get("name"),
                         )
 
-                    # Merge app_api configuration from global config if not present in app config
-                    if "app_api" not in app_info:
-                        app_info["app_api"] = {}
-
-                    # Only copy 'enabled' from global config if not present in app config
-                    if (
-                        "enabled" not in app_info["app_api"]
-                        and "app_api" in self.config
-                    ):
-                        app_info["app_api"]["enabled"] = self.config["app_api"].get(
-                            "enabled", False
-                        )
+                    # Removed unused app_api handling logic
 
                     for i in range(num_instances):
 
