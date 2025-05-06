@@ -2,7 +2,7 @@
 
 import pytest
 from unittest.mock import patch, MagicMock
-import threading # Changed from 'from threading import Lock'
+from threading import Lock # Import Lock directly for isinstance check
 
 from litellm.exceptions import APIConnectionError
 from solace_ai_connector.common.message import Message_NACK_Outcome
@@ -57,7 +57,7 @@ class TestLiteLLMBaseInitialization:
             assert component.stats[key] == []
 
         # Check lock initialization
-        assert isinstance(component._lock_stats, threading.Lock) # Changed to threading.Lock
+        assert isinstance(component._lock_stats, Lock) # Use directly imported Lock
 
         # Check that init_load_balancer was called (implicitly, router mock is called)
         mock_litellm_router_fixture.assert_called_once()
@@ -97,7 +97,7 @@ class TestLiteLLMBaseInitialization:
 
         # Stats and lock should still be initialized
         assert isinstance(component.stats, dict)
-        assert isinstance(component._lock_stats, threading.Lock) # Changed to threading.Lock
+        assert isinstance(component._lock_stats, Lock) # Use directly imported Lock
         mock_litellm_router_fixture.assert_called_once()
 
     @patch.object(
@@ -128,7 +128,7 @@ class TestLiteLLMBaseInitialization:
         Tests that _lock_stats is initialized as a threading.Lock instance.
         """
         component = LiteLLMBase(module_info=litellm_base_module_info, config={})
-        assert isinstance(component._lock_stats, threading.Lock) # Changed to threading.Lock
+        assert isinstance(component._lock_stats, Lock) # Use directly imported Lock
 
     def test_initialization_calls_init_and_init_load_balancer(
         self, litellm_base_module_info, minimal_component_config
@@ -137,9 +137,9 @@ class TestLiteLLMBaseInitialization:
         Tests that __init__ calls both init() and init_load_balancer().
         """
         with patch.object(
-            LiteLLMBase, "init", wraps=LiteLLMBase.init, autospec=True # Added autospec=True
+            LiteLLMBase, "init", wraps=LiteLLMBase.init, autospec=True
         ) as mock_init, patch.object(
-            LiteLLMBase, "init_load_balancer", wraps=LiteLLMBase.init_load_balancer, autospec=True # Added autospec=True
+            LiteLLMBase, "init_load_balancer", wraps=LiteLLMBase.init_load_balancer, autospec=True
         ) as mock_init_load_balancer, patch(
             "solace_ai_connector.components.general.llm.litellm.litellm_base.litellm.Router"
         ):  # Mock router to let init_load_balancer run
