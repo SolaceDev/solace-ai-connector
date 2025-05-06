@@ -245,6 +245,15 @@ splitter_ext_release = [
     "zstandard==0.23.0",
 ]
 
+# Test specific dependencies
+test = [
+    "pytest>=8.0.0", # Example version, adjust as needed
+    "pytest-mock>=3.0.0", # Example version
+    "pytest-cov>=4.0.0", # If you use coverage
+    # Add other test-specific dependencies here
+]
+
+
 # All dependencies
 all = [
     # From langchain
@@ -308,6 +317,14 @@ solace-ai-connector-gen-docs = "solace_ai_connector.tools.gen_component_docs:mai
 
 [tool.hatch.envs.hatch-test]
 installer = "pip"
+dependencies = [
+  "pytest>=8.0.0",
+  "pytest-mock>=3.0.0",
+  "pytest-cov>=4.0.0", # If you use coverage
+  # You might want to include 'llm' extras here if LLM tests need those deps
+  # e.g., "solace_ai_connector[llm,test]" if solace_ai_connector is the project name
+  # For now, we'll install extras explicitly in the run command as per plan.txt
+]
 
 # Specify minimum and maximum Python versions to test
 [[tool.hatch.envs.hatch-test.matrix]]
