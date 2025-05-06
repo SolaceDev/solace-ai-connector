@@ -1,5 +1,60 @@
 """Pytest fixtures for LLM component tests."""
 
+import sys
+import os
+
+# Add the project's 'src' directory to the Python path
+# This allows finding the 'solace_ai_connector' module.
+# This assumes pytest is run from the project root directory.
+# For a more robust path, you could calculate it relative to this file's location,
+# but 'sys.path.append("src")' is a common pattern if the CWD is the project root.
+# Example of a more robust way (if needed later):
+# project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
+# src_dir = os.path.join(project_root, "src")
+# if src_dir not in sys.path:
+#    sys.path.insert(0, src_dir)
+
+# Simple approach, consistent with other test files like tests/test_flows.py:
+if os.path.join(os.getcwd(), "src") not in sys.path and "src" not in sys.path:
+    # Check if 'src' is directly accessible (e.g. running from project root)
+    if os.path.isdir("src"):
+        sys.path.insert(0, "src")
+    else:
+        # Fallback for deeper execution paths: try to find project root
+        # This conftest is at tests/components/general/llm/conftest.py
+        # Project root is four levels up from this file's directory.
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root_marker = "pyproject.toml" # A file that typically exists at the project root
+        
+        # Traverse up to find the project root (where pyproject.toml is)
+        path_to_check = current_dir
+        found_root = False
+        for _ in range(5): # Limit search depth
+            if os.path.exists(os.path.join(path_to_check, project_root_marker)):
+                project_root = path_to_check
+                src_dir_abs = os.path.join(project_root, "src")
+                if os.path.isdir(src_dir_abs) and src_dir_abs not in sys.path:
+                    sys.path.insert(0, src_dir_abs)
+                found_root = True
+                break
+            parent_dir = os.path.dirname(path_to_check)
+            if parent_dir == path_to_check: # Reached filesystem root
+                break
+            path_to_check = parent_dir
+        
+        if not found_root:
+            # If specific project root marker not found, fall back to simpler relative path
+            # This assumes conftest.py is at tests/components/general/llm/conftest.py
+            # and src is at ../../../../src from this file's location.
+            # This is less robust than finding a marker file.
+            # For now, let's stick to the simpler "src" append if running from root,
+            # and rely on hatch to set up paths correctly.
+            # The initial simple 'sys.path.insert(0, "src")' if os.path.isdir("src")
+            # should cover the common case of running pytest from project root.
+            # If that doesn't work, the hatch environment setup is the primary fix.
+            pass
+
+
 import pytest
 from unittest.mock import patch
 from threading import Lock
