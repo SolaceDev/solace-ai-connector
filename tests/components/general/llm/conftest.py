@@ -1,19 +1,9 @@
 """Pytest fixtures for LLM component tests."""
 
-import sys
-import os
-
-# Add the project's 'src' directory to the Python path
-# This allows finding the 'solace_ai_connector' module.
-# Calculate path to 'src' relative to this conftest.py file.
-# This conftest.py is at: tests/components/general/llm/conftest.py
-# Project root is 4 levels up. src is then in project_root/src.
-_current_dir = os.path.dirname(os.path.abspath(__file__))
-_project_root = os.path.abspath(os.path.join(_current_dir, "..", "..", "..", ".."))
-_src_dir = os.path.join(_project_root, "src")
-
-if _src_dir not in sys.path:
-    sys.path.insert(0, _src_dir)
+# Removed sys.path manipulations.
+# It's expected that the project is installed in editable mode
+# in the test environment (e.g., via 'pip install -e .'),
+# making 'solace_ai_connector' directly importable.
 
 import pytest
 from unittest.mock import patch
