@@ -1,2 +1,86 @@
 
 This plan provides a comprehensive approach to ensure the reliability and correctness of the LLM components.
+
+## 6. Running Tests
+
+The tests in this project are designed to be run using the `pytest` framework. Your project uses `hatch` for environment and build management, as defined in `pyproject.toml`.
+
+### Prerequisites
+1.  **Install `hatch`:**
+    If you don't have `hatch` installed, you can install it via pip:
+    ```bash
+    pip install hatch
+    ```
+
+2.  **Set up the test environment and install dependencies:**
+    `hatch` uses the `pyproject.toml` file to manage environments and dependencies. The `llm` components require dependencies defined under `project.optional-dependencies.llm`. `pytest` is typically included by `hatch` in its test environments.
+
+    To create or update the `hatch-test` environment (as defined in your `pyproject.toml`) and install necessary dependencies including the `llm` extras:
+    ```bash
+    hatch env create hatch-test  # If the environment doesn't exist
+    hatch run hatch-test:pip install -e .[llm] # Install project in editable mode with 'llm' extras
+    ```
+    Alternatively, if your `hatch-test` environment in `pyproject.toml` is configured to install these, a simple `hatch env run -e hatch-test -- pytest` might suffice after initial setup.
+    Ensure `pytest` is available in the `hatch-test` environment. If not explicitly listed as a dependency for the environment in `pyproject.toml`, you might need to add it or install it manually into the environment:
+    ```bash
+    hatch run hatch-test:pip install pytest
+    ```
+
+### Execution
+1.  **Navigate to the project root:**
+    Open your terminal or command prompt and change to the root directory of the Solace AI Connector project (the directory that contains `pyproject.toml`, `src`, and `tests` folders).
+
+2.  **Run `pytest` commands via `hatch`:**
+    It's recommended to run `pytest` within the context of the `hatch` managed environment to ensure all dependencies are correctly resolved.
+
+    *   **Run all tests:**
+        To discover and run all tests in the project using the `hatch-test` environment:
+        ```bash
+        hatch run hatch-test:pytest
+        ```
+        or, if you have a specific script defined in `pyproject.toml` for tests:
+        ```bash
+        hatch run test # (or similar, depending on your hatch scripts)
+        ```
+
+    *   **Run tests in a specific file:**
+        ```bash
+        hatch run hatch-test:pytest tests/components/general/llm/test_litellm_base.py
+        ```
+
+    *   **Run tests in a specific directory:**
+        ```bash
+        hatch run hatch-test:pytest tests/components/general/llm/
+        ```
+
+    *   **Run a specific test class:**
+        ```bash
+        hatch run hatch-test:pytest tests/components/general/llm/test_litellm_base.py::TestLiteLLMBaseInitialization
+        ```
+
+    *   **Run a specific test method:**
+        ```bash
+        hatch run hatch-test:pytest tests/components/general/llm/test_litellm_base.py::TestLiteLLMBaseInitialization::test_initialization_with_defaults_and_minimal_config
+        ```
+
+    *   **Passing additional `pytest` options via `hatch`:**
+        To pass options like `-v` (verbose) or `-k` (keyword expression) to `pytest` when running through `hatch`, append them after `--`:
+        ```bash
+        hatch run hatch-test:pytest -- -v
+        hatch run hatch-test:pytest -- -k "initialization"
+        ```
+        If your hatch script is just `pytest`, it might be:
+        ```bash
+        hatch run hatch-test:pytest -v
+        hatch run hatch-test:pytest -k "initialization"
+        ```
+        Consult `hatch` documentation for the precise way to pass arguments to the underlying command.
+
+        Common `pytest` options:
+        -   `-v` for verbose output.
+        -   `-k "expression"` to run tests whose names match the given expression.
+        -   `-m marker_name` to run tests decorated with a specific marker.
+        -   `--lf` or `--last-failed` to run only the tests that failed during the last run.
+        -   `--ff` or `--failed-first` to run all tests but run the last failed tests first.
+
+        Refer to the `pytest` and `hatch` documentation for more comprehensive information.
