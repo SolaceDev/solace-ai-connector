@@ -7,7 +7,7 @@
 
 import pytest
 from unittest.mock import patch
-from threading import Lock # Keep this import for fixtures if they create Locks directly
+from threading import Lock  # Keep this import for fixtures if they create Locks directly
 
 from solace_ai_connector.common.message import Message
 from solace_ai_connector.components.general.llm.litellm.litellm_base import (
@@ -59,21 +59,3 @@ def minimal_component_config(valid_load_balancer_config):
 @pytest.fixture
 def mock_message_fixture():
     return Message(payload={"text": "hello"}, topic="test/topic")
-
-
-# Example of how you might mock other litellm functions if needed elsewhere
-# @pytest.fixture
-# def mock_litellm_completion(mocker):
-#     return mocker.patch("litellm.completion", autospec=True)
-
-# @pytest.fixture
-# def mock_litellm_embedding(mocker):
-#     return mocker.patch("litellm.embedding", autospec=True)
-
-# @pytest.fixture
-# def mock_litellm_cost_per_token(mocker):
-#     return mocker.patch(
-#         "solace_ai_connector.components.general.llm.litellm.litellm_base.cost_per_token",
-#         autospec=True
-#     )
-
