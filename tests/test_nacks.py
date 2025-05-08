@@ -4,12 +4,6 @@ import sys
 import os
 
 sys.path.append("src")
-# Add the directory containing the test modules to the Python path
-test_modules_dir = os.path.join(
-    "src", "solace_ai_connector", "components", "general", "for_testing"
-)
-if test_modules_dir not in sys.path:
-    sys.path.append(test_modules_dir)
 import queue
 
 from solace_ai_connector.test_utils.utils_for_test_files import (  # pylint: disable=wrong-import-position
@@ -35,11 +29,11 @@ flows:
   - name: test_flow
     components:
       - component_name: need_nack_input
-        component_module: solace_ai_connector.components.general.for_testing.need_nack_input.need_nack_input
+        component_module: need_nack_input
         component_config:
           nack_message: This is a nack message
       - component_name: give_nack_output
-        component_module: solace_ai_connector.components.general.for_testing.give_nack_output.give_nack_output
+        component_module: give_nack_output
         component_config:
           nack_outcome: REJECTED
 """
@@ -85,11 +79,11 @@ flows:
   - name: test_flow
     components:
       - component_name: need_nack_input
-        component_module: solace_ai_connector.components.general.for_testing.need_nack_input.need_nack_input
+        component_module: need_nack_input
         component_config:
           nack_message: This is a nack message
       - component_name: give_nack_output
-        component_module: solace_ai_connector.components.general.for_testing.give_nack_output.give_nack_output
+        component_module: give_nack_output
         component_config:
           nack_outcome: FAILED
 """

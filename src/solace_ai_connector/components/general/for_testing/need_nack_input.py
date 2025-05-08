@@ -38,6 +38,10 @@ class NeedNackInput(ComponentBase):
         self.need_negative_acknowledgement = True
 
     def invoke(self, message, data):
+        # Add the negative acknowledgement callback to the message
+        callback = self.get_negative_acknowledgement_callback()
+        if callback is not None:
+            message.add_negative_acknowledgements(callback)
         return {}
 
     def get_negative_acknowledgement_callback(self):
@@ -48,3 +52,7 @@ class NeedNackInput(ComponentBase):
         raise Exception(  # pylint: disable=broad-exception-raised
             f"{self.get_config('nack_message')} with outcome {nack}"
         ) from None
+
+    def nack_reaction_to_exception(self, exception_type):
+        """Determine NACK reaction based on the exception type."""
+        return Message_NACK_Outcome.REJECTED
