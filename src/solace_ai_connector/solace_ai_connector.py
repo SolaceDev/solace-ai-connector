@@ -63,7 +63,6 @@ class SolaceAiConnector:
             raise KeyboardInterrupt from None
         except Exception as e:
             log.error("Error during Solace AI Event Connector startup")
-            log.error("Traceback: %s", traceback.format_exc())
             raise e from None
 
     def create_apps(self):
@@ -242,7 +241,9 @@ class SolaceAiConnector:
         This is now handled by App.create_flow().
         """
         # This should not be called directly anymore
-        raise NotImplementedError("create_flow is deprecated, use create_apps instead") from None
+        raise NotImplementedError(
+            "create_flow is deprecated, use create_apps instead"
+        ) from None
 
     def send_message_to_flow(self, flow_name, message):
         """Send a message to a flow"""
@@ -292,7 +293,7 @@ class SolaceAiConnector:
             try:
                 while not q.empty():
                     q.get_nowait()
-            except Exception as e:
+            except Exception:
                 log.error("Error cleaning queue %s", queue_name)
         self.flow_input_queues.clear()
 
@@ -370,7 +371,7 @@ class SolaceAiConnector:
                         if self.stop_signal.is_set():
                             break
                         continue
-        except Exception as e:
+        except Exception:
             log.error("Error in trace handler thread")
 
     def validate_config(self):
@@ -380,7 +381,9 @@ class SolaceAiConnector:
 
         # Check if either apps or flows are defined at the top level
         if not self.config.get("apps") and not self.config.get("flows"):
-            raise ValueError("No 'apps' or 'flows' defined in configuration file") from None
+            raise ValueError(
+                "No 'apps' or 'flows' defined in configuration file"
+            ) from None
 
         if not self.config.get("log"):
             log.warning("No log config provided - using defaults")
@@ -542,7 +545,9 @@ class SolaceAiConnector:
                     f"Flow definition at index {index} in {context} must be a dictionary"
                 ) from None
             if not flow.get("name"):
-                raise ValueError(f"Flow name not provided in flow {index} of {context}") from None
+                raise ValueError(
+                    f"Flow name not provided in flow {index} of {context}"
+                ) from None
             flow_name = flow.get("name")
 
             if "components" not in flow:  # Check presence of the key
