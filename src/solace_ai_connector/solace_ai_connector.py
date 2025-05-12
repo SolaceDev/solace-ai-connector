@@ -569,7 +569,7 @@ class SolaceAiConnector:
                 if not component.get("component_name"):
                     raise ValueError(
                         f"component_name not provided in flow '{flow_name}', component {component_index} of {context}"
-                    )
+                    ) from None
                 comp_name = component.get("component_name")
 
                 # In standard flows, component_module or component_class is required
