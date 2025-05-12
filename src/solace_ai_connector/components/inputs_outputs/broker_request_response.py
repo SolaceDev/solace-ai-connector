@@ -16,9 +16,10 @@ from ...common.utils import ensure_slash_on_end, ensure_slash_on_start
 info = {
     "class_name": "BrokerRequestResponse",
     "description": (
-        "Connect to a messaging broker, send request messages, and receive responses. "
-        "This component combines the functionality of broker_input and broker_output "
-        "with additional request-response handling."
+        "This component sends request messages to a broker and waits for correlated responses, "
+        "handling both outbound requests and inbound responses within a single component. "
+        "This is performed asynchronously, allowing to to handle multiple requests and responses "
+        "at the same time. "
     ),
     "config_parameters": [
         {
@@ -337,7 +338,7 @@ class BrokerRequestResponse(BrokerBase):
             user_properties = broker_message.get("user_properties", {})
 
             self.messaging_service.ack_message(broker_message)
-        
+
         if not user_properties:
             log.error("Received response without user properties: %s", payload)
             return
@@ -427,8 +428,8 @@ class BrokerRequestResponse(BrokerBase):
                 self.cache_service.add_data(
                     key=request_id,
                     value=cached_request,
-                    expiry=self.request_expiry_ms / 1000, # Reset expiry time
-                    component=self
+                    expiry=self.request_expiry_ms / 1000,  # Reset expiry time
+                    component=self,
                 )
 
         if last_piece:
