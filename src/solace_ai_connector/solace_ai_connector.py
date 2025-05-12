@@ -558,7 +558,7 @@ class SolaceAiConnector:
             if not flow.get("components"):  # Check if list is empty
                 raise ValueError(
                     f"Flow '{flow_name}' in {context} must have at least one component"
-                )
+                ) from None
 
             # Loop through the components and validate them
             for component_index, component in enumerate(flow.get("components", [])):
