@@ -534,7 +534,7 @@ class SolaceAiConnector:
     def _validate_flows(self, flows, context):
         """Validate flows configuration (helper method)."""
         if not isinstance(flows, list):
-            raise ValueError(f"Flows definition in {context} must be a list")
+            raise ValueError(f"Flows definition in {context} must be a list") from None
 
         for index, flow in enumerate(flows):
             if not isinstance(flow, dict):
