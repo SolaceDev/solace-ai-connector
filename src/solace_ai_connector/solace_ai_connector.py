@@ -438,7 +438,7 @@ class SolaceAiConnector:
                         if not isinstance(broker_config, dict):
                             raise ValueError(
                                 f"App '{app_name}' has invalid 'broker' section (must be a dictionary)"
-                            )
+                            ) from None
                         required_broker_keys = [
                             "broker_url",
                             "broker_username",
