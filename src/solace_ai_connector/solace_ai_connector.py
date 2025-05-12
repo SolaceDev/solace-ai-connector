@@ -399,7 +399,7 @@ class SolaceAiConnector:
                 if not app.get("name"):
                     raise ValueError(
                         f"App name not provided in app definition at index {index}"
-                    )
+                    ) from None
                 app_name = app.get("name")
 
                 # --- Modified Validation Logic ---
