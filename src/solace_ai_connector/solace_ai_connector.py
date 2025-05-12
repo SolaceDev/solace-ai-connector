@@ -282,7 +282,7 @@ class SolaceAiConnector:
         for app in self.apps:
             try:
                 app.cleanup()
-            except Exception as e:
+            except Exception:
                 log.error("Error cleaning up app %s", app.name)
         self.apps.clear()
         self.flows.clear()  # Keep for backward compatibility refs?
