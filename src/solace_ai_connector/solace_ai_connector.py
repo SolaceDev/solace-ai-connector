@@ -540,7 +540,7 @@ class SolaceAiConnector:
             if not isinstance(flow, dict):
                 raise ValueError(
                     f"Flow definition at index {index} in {context} must be a dictionary"
-                )
+                ) from None
             if not flow.get("name"):
                 raise ValueError(f"Flow name not provided in flow {index} of {context}")
             flow_name = flow.get("name")
