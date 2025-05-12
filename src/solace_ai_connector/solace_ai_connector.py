@@ -62,7 +62,7 @@ class SolaceAiConnector:
             log.info("Received keyboard interrupt - stopping")
             raise KeyboardInterrupt from None
         except Exception as e:
-            log.error("Error during Solace AI Event Connector startup: %s", str(e))
+            log.error("Error during Solace AI Event Connector startup")
             log.error("Traceback: %s", traceback.format_exc())
             raise e from None
 
@@ -193,7 +193,7 @@ class SolaceAiConnector:
             log.info("Received keyboard interrupt - stopping")
             raise KeyboardInterrupt from None
         except Exception as e:
-            log.error("Error creating apps: %s", e)
+            log.error("Error creating apps")
             raise e from None
 
     def create_internal_app(self, app_name: str, flows: List[Dict[str, Any]]) -> App:
@@ -293,7 +293,7 @@ class SolaceAiConnector:
                 while not q.empty():
                     q.get_nowait()
             except Exception as e:
-                log.error("Error cleaning queue %s: %s", queue_name, e)
+                log.error("Error cleaning queue %s", queue_name)
         self.flow_input_queues.clear()
 
         if hasattr(self, "trace_queue") and self.trace_queue:
@@ -371,7 +371,7 @@ class SolaceAiConnector:
                             break
                         continue
         except Exception as e:
-            log.error("Error in trace handler thread: %s", e)
+            log.error("Error in trace handler thread")
 
     def validate_config(self):
         """Validate the configuration structure."""
