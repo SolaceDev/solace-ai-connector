@@ -5,8 +5,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "solace_ai_connector"
-# dynamic = ["version"] # Commented out for workaround
-version = "0.0.1" # Added static version for workaround
+dynamic = ["version"] # Commented out for workaround
 authors = [
   { name="Edward Funnekotter", email="edward.funnekotter@solace.com" },
 ]
