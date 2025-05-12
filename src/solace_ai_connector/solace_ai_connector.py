@@ -426,7 +426,7 @@ class SolaceAiConnector:
                             "App '%s' defines both 'flows' and 'broker'/'components'. "
                             "The 'broker' and 'components' keys will be ignored (standard mode).",
                             app_name,
-                        ) from None
+                        )
 
                     # Simplified Mode Validation (only if structure implies simplified)
                     if has_broker and has_components and not has_flows:
