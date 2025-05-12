@@ -565,7 +565,7 @@ class SolaceAiConnector:
                 if not isinstance(component, dict):
                     raise ValueError(
                         f"Component definition at index {component_index} in flow '{flow_name}' of {context} must be a dictionary"
-                    )
+                    ) from None
                 if not component.get("component_name"):
                     raise ValueError(
                         f"component_name not provided in flow '{flow_name}', component {component_index} of {context}"
