@@ -222,22 +222,22 @@ class BrokerInput(BrokerBase):
             return False
 
         success = False
-        if hasattr(self.messaging_service, "add_topic_subscription") and hasattr(
-            self, "persistent_receiver"
-        ):  # SolaceMessaging
-            if not self.persistent_receiver:
+        # Check for SolaceMessaging-like service
+        if hasattr(self.messaging_service, "add_topic_subscription"):
+            if hasattr(self.messaging_service, "persistent_receiver") and \
+               self.messaging_service.persistent_receiver is not None:
+                success = self.messaging_service.add_topic_subscription(
+                    topic_str, self.messaging_service.persistent_receiver
+                )
+            else:
                 log.error(
-                    "%s Cannot add subscription '%s'. Persistent receiver not available for SolaceMessaging.",
+                    "%s Cannot add subscription '%s'. Persistent receiver not available on SolaceMessaging service.",
                     self.log_identifier,
                     topic_str,
                 )
                 return False
-            success = self.messaging_service.add_topic_subscription(
-                topic_str, self.persistent_receiver
-            )
-        elif hasattr(
-            self.messaging_service, "add_topic_to_queue"
-        ):  # DevBrokerMessaging
+        # Check for DevBrokerMessaging-like service
+        elif hasattr(self.messaging_service, "add_topic_to_queue"):  # DevBrokerMessaging
             queue_name = self.broker_properties.get("queue_name")
             if not queue_name:
                 log.error(
@@ -279,22 +279,22 @@ class BrokerInput(BrokerBase):
             return False
 
         success = False
-        if hasattr(self.messaging_service, "remove_topic_subscription") and hasattr(
-            self, "persistent_receiver"
-        ):  # SolaceMessaging
-            if not self.persistent_receiver:
+        # Check for SolaceMessaging-like service
+        if hasattr(self.messaging_service, "remove_topic_subscription"):
+            if hasattr(self.messaging_service, "persistent_receiver") and \
+               self.messaging_service.persistent_receiver is not None:
+                success = self.messaging_service.remove_topic_subscription(
+                    topic_str, self.messaging_service.persistent_receiver
+                )
+            else:
                 log.error(
-                    "%s Cannot remove subscription '%s'. Persistent receiver not available for SolaceMessaging.",
+                    "%s Cannot remove subscription '%s'. Persistent receiver not available on SolaceMessaging service.",
                     self.log_identifier,
                     topic_str,
                 )
                 return False
-            success = self.messaging_service.remove_topic_subscription(
-                topic_str, self.persistent_receiver
-            )
-        elif hasattr(
-            self.messaging_service, "remove_topic_from_queue"
-        ):  # DevBrokerMessaging
+        # Check for DevBrokerMessaging-like service
+        elif hasattr(self.messaging_service, "remove_topic_from_queue"):  # DevBrokerMessaging
             queue_name = self.broker_properties.get("queue_name")
             if not queue_name:
                 log.error(
