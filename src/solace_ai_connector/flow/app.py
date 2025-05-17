@@ -249,6 +249,7 @@ class App:
                     "broker_queue_name": broker_config.get(
                         "queue_name"
                     ),  # Use the main queue name
+                    "temporary_queue": broker_config.get("temporary_queue", False),
                     "create_queue_on_start": broker_config.get(
                         "create_queue_on_start", True
                     ),
