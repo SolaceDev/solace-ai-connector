@@ -394,13 +394,11 @@ class ComponentBase:
                     self.name,
                     self.log_identifier,
                 )
-            except Exception as e:
+            except Exception:
                 log.error(
-                    "[%s] %s Failed to initialize component-level RRC: %s",
+                    "[%s] %s Failed to initialize component-level RRC",
                     self.name,
                     self.log_identifier,
-                    e,
-                    exc_info=True,
                 )
                 # Decide if this should be fatal
                 raise ValueError("Failed to initialize component-level RRC") from None
