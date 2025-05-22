@@ -760,5 +760,5 @@ def deep_merge(d, u):
                 result[k] = v
         else:
             # Otherwise, destination value replaces source value (including replacing list with non-list, etc.)
-            result[key] = deepcopy(value)
+            result[k] = deepcopy(v)
     return result
