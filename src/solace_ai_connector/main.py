@@ -32,8 +32,8 @@ def load_config(file):
 
         return config
 
-    except Exception as e:  # pylint: disable=locally-disabled, broad-exception-caught
-        print(f"Error loading configuration file '{file}': {e}", file=sys.stderr)
+    except Exception:  # pylint: disable=locally-disabled, broad-exception-caught
+        print("Error loading configuration file")
         sys.exit(1)
 
 
@@ -48,7 +48,7 @@ def process_includes(file_path, base_dir):
         include_path = match.group(2).strip("'\"")
         full_path = os.path.join(base_dir, include_path)
         if not os.path.exists(full_path):
-            raise FileNotFoundError(f"Included file not found: {full_path}")
+            raise FileNotFoundError("Included file not found.") from None
         included_content = process_includes(full_path, os.path.dirname(full_path))
         # Indent each line of the included content
         indented_content = "\n".join(
@@ -120,7 +120,10 @@ def main():
             load_dotenv(dotenv_path=args.envfile, override=True)
             print(f"Loaded environment variables from {args.envfile}")
         else:
-            print(f"Warning: Specified --envfile '{args.envfile}' not found.", file=sys.stderr)
+            print(
+                f"Warning: Specified --envfile '{args.envfile}' not found.",
+                file=sys.stderr,
+            )
 
     # Use the config files provided via arguments
     files = args.config_files
@@ -129,8 +132,8 @@ def main():
     full_config = {}
     for file in files:
         if not os.path.exists(file):
-             print(f"Error: Configuration file '{file}' not found.", file=sys.stderr)
-             sys.exit(1)
+            print(f"Error: Configuration file '{file}' not found.", file=sys.stderr)
+            sys.exit(1)
         # Load the configuration from the file
         config = load_config(file)
         # Merge the configuration into the full configuration
@@ -149,28 +152,28 @@ def main():
 
     def signal_handler(signum, frame):
         if signum == signal.SIGINT:
-            print("\nCTRL+C pressed, initiating shutdown...")
-            raise KeyboardInterrupt("CTRL+C pressed")
+            raise KeyboardInterrupt("CTRL+C pressed") from None
         elif signum == signal.SIGTERM:
-            print("SIGTERM received, initiating shutdown...")
-            raise SystemExit("SIGTERM received")
+            raise SystemExit("SIGTERM received") from None
 
-    if sys.platform == 'win32':
+    if sys.platform == "win32":
         import win32api
+
         def handler(type):
             # Map Windows signals to Python exceptions for consistent handling
             if type == signal.CTRL_C_EVENT:
-                 print("\nCTRL+C pressed, initiating shutdown...")
-                 # Raising KeyboardInterrupt here might not work reliably across threads
-                 # Directly call shutdown for Windows console events
-                 shutdown()
-                 return True # Indicate we handled it
+                print("\nCTRL+C pressed, initiating shutdown...")
+                # Raising KeyboardInterrupt here might not work reliably across threads
+                # Directly call shutdown for Windows console events
+                shutdown()
+                return True  # Indicate we handled it
             elif type == signal.CTRL_BREAK_EVENT:
-                 print("\nCTRL+BREAK pressed, initiating shutdown...")
-                 shutdown()
-                 return True
+                print("\nCTRL+BREAK pressed, initiating shutdown...")
+                shutdown()
+                return True
             # Add other Windows signals if needed (CTRL_CLOSE_EVENT, etc.)
-            return False # Let default handler run for other signals
+            return False  # Let default handler run for other signals
+
         win32api.SetConsoleCtrlHandler(handler, True)
     else:
         signal.signal(signal.SIGINT, signal_handler)
@@ -188,13 +191,14 @@ def main():
     except Exception as e:
         print(f"Error running Solace AI Connector: {e}", file=sys.stderr)
         import traceback
+
         traceback.print_exc(file=sys.stderr)
         # Attempt graceful shutdown even on unexpected errors
         try:
             shutdown()
         except Exception as shutdown_err:
-             print(f"Error during shutdown: {shutdown_err}", file=sys.stderr)
-             sys.exit(1) # Exit with error code if shutdown fails
+            print(f"Error during shutdown: {shutdown_err}", file=sys.stderr)
+            sys.exit(1)  # Exit with error code if shutdown fails
 
 
 if __name__ == "__main__":

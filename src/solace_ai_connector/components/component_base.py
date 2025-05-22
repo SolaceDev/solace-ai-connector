@@ -128,11 +128,9 @@ class ComponentBase:
 
     def handle_component_error(self, e, event):
         log.error(
-            "[%s] %s Component has crashed: %s\n%s",
+            "[%s] %s Component has crashed",
             self.name,
             self.log_identifier,
-            e,
-            traceback.format_exc(),
         )
         self.handle_error(e, event)
 
@@ -180,7 +178,7 @@ class ComponentBase:
             except Exception as e:
                 self.current_message = None
                 self.handle_negative_acknowledgements(message, e)
-                raise e
+                raise ValueError("Error in processing message") from None
             finally:
                 self.current_message = None
 
@@ -308,7 +306,7 @@ class ComponentBase:
                     "that contains a 'evaluate_expression()' in a context that does not "
                     "have a message available. This is likely a bug in the "
                     "component's configuration."
-                )
+                ) from None
             val = val(self.current_message)
         return val
 
@@ -368,7 +366,7 @@ class ComponentBase:
             if not broker_config:
                 raise ValueError(
                     f"Component-level broker_request_response config missing 'broker_config' for component {self.name}"
-                )
+                ) from None
 
             # Construct config for the controller, extracting relevant keys
             rrc_config = {
@@ -434,11 +432,11 @@ class ComponentBase:
                 validate_config_block(
                     self.component_config, config_params, self.log_identifier
                 )
-            except ValueError as e:
+            except ValueError:
                 # Re-raise the error with more context
                 raise ValueError(
                     f"Configuration error in component '{self.name}': {e}"
-                ) from e
+                ) from None
         else:
             log.debug(
                 "%s No 'config_parameters' defined in module_info. Skipping config validation.",
@@ -570,18 +568,14 @@ class ComponentBase:
                         self.log_identifier,
                     )
                     return None
-                except TimeoutError as e:  # Catch timeout specifically
-                    log.error(
-                        "[%s] %s RRC timed out: %s", self.name, self.log_identifier, e
-                    )
+                except TimeoutError:  # Catch timeout specifically
+                    log.error("[%s] %s RRC timed out", self.name, self.log_identifier)
                     raise e  # Re-raise timeout
-                except Exception as e:
+                except Exception:
                     log.error(
-                        "[%s] %s Error during RRC call: %s",
+                        "[%s] %s Error during RRC call",
                         self.name,
                         self.log_identifier,
-                        e,
-                        exc_info=True,
                     )
                     raise e  # Re-raise other exceptions
         else:
@@ -596,11 +590,9 @@ class ComponentBase:
     def handle_negative_acknowledgements(self, message, exception):
         """Handle NACK for the message."""
         log.error(
-            "[%s] %s Component failed to process message: %s \n %s",
+            "[%s] %s Component failed to process message",
             self.name,
             self.log_identifier,
-            exception,
-            traceback.format_exc(),
         )
         nack = self.nack_reaction_to_exception(type(exception))
         message.call_negative_acknowledgements(nack)

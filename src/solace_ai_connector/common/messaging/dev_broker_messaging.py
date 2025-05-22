@@ -11,19 +11,24 @@ from .messaging import Messaging
 from ...common import Message_NACK_Outcome
 from ..log import log
 
+
 class DevConnectionStatus(Enum):
     CONNECTED = "CONNECTED"
     DISCONNECTED = "DISCONNECTED"
 
+
 class DevMetricValue:
+
     def get_value(self, metric_name):
         # Return 0 for all metrics
         return 0
+
 
 class DevMessagingService:
 
     def metrics(self):
         return DevMetricValue()
+
 
 class DevBroker(Messaging):
 
@@ -57,11 +62,15 @@ class DevBroker(Messaging):
         self.connected = False
 
     def get_connection_status(self):
-        return DevConnectionStatus.CONNECTED if self.connected else DevConnectionStatus.DISCONNECTED
+        return (
+            DevConnectionStatus.CONNECTED
+            if self.connected
+            else DevConnectionStatus.DISCONNECTED
+        )
 
     def receive_message(self, timeout_ms, queue_name: str):
         if not self.connected:
-            raise RuntimeError("DevBroker is not connected")
+            raise RuntimeError("DevBroker is not connected") from None
 
         try:
             return self.queues[queue_name].get(timeout=timeout_ms / 1000)
@@ -76,7 +85,7 @@ class DevBroker(Messaging):
         user_context: Dict = None,
     ):
         if not self.connected:
-            raise RuntimeError("DevBroker is not connected")
+            raise RuntimeError("DevBroker is not connected") from None
 
         message = {
             "payload": payload,
@@ -95,7 +104,7 @@ class DevBroker(Messaging):
 
     def subscribe(self, subscription: str, queue_name: str):
         if not self.connected:
-            raise RuntimeError("DevBroker is not connected")
+            raise RuntimeError("DevBroker is not connected") from None
 
         subscription = self._subscription_to_regex(subscription)
 

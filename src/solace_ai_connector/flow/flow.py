@@ -96,7 +96,7 @@ class Flow:
             self.flow_input_queue = self.component_groups[0][0].get_input_queue()
         else:
             log.error(f"No components created for flow {self.name}")
-            raise ValueError(f"No components created for flow {self.name}")
+            raise ValueError(f"No components created for flow {self.name}") from None
 
     def run(self):
         # Now one more time to create threads and run them
@@ -112,12 +112,16 @@ class Flow:
         # Check for component_class
         if "component_class" in component:
             component_class = component.get("component_class")
-            if not isinstance(component_class, type) or not issubclass(component_class, ComponentBase):
+            if not isinstance(component_class, type) or not issubclass(
+                component_class, ComponentBase
+            ):
                 raise TypeError(
                     f"component_class for component '{component.get('component_name')}' "
                     f"must be a valid class inheriting from ComponentBase, but got {type(component_class)}"
                 )
-            log.debug(f"Using component_class {component_class.__name__} for component '{component.get('component_name')}'")
+            log.debug(
+                f"Using component_class {component_class.__name__} for component '{component.get('component_name')}'"
+            )
             # Get module_info from the class itself (assuming it's defined there or in its base)
             # We need the info dict to be available on the class or its module
             try:
@@ -126,11 +130,11 @@ class Flow:
                 imported_module = import_module(module_name)
                 self.module_info = getattr(imported_module, "info", None)
                 if not self.module_info:
-                     # Fallback: Try getting info directly from the class (less common)
-                     self.module_info = getattr(component_class, "info", None)
+                    # Fallback: Try getting info directly from the class (less common)
+                    self.module_info = getattr(component_class, "info", None)
                 if not self.module_info:
-                     # Fallback 2: Try getting info from the component_info attribute (used in example)
-                     self.module_info = getattr(component_class, "component_info", None)
+                    # Fallback 2: Try getting info from the component_info attribute (used in example)
+                    self.module_info = getattr(component_class, "component_info", None)
 
                 if not self.module_info:
                     raise ValueError(
@@ -139,9 +143,9 @@ class Flow:
                     )
 
             except (AttributeError, ValueError) as e:
-                 raise ValueError(
+                raise ValueError(
                     f"Error retrieving 'info' for component_class {component_class.__name__}: {e}"
-                 ) from e
+                ) from e
 
         # Use component_module if component_class is not present
         else:
@@ -160,14 +164,16 @@ class Flow:
                 )
                 return
 
-            imported_module = import_module(component_module, base_path, component_package)
+            imported_module = import_module(
+                component_module, base_path, component_package
+            )
 
             try:
                 self.module_info = getattr(imported_module, "info")
-            except AttributeError as e:
+            except AttributeError:
                 raise ValueError(
                     f"Component module '{component_module}' does not have an 'info' attribute. It probably isn't a valid component."
-                ) from e
+                ) from None
 
             component_class = getattr(imported_module, self.module_info["class_name"])
 

@@ -54,11 +54,13 @@ def import_from_directories(module_name, base_path=None):
                     if path not in sys.path:
                         sys.path.insert(0, path)
                     spec.loader.exec_module(module)
-                except Exception as e:
-                    log.error("Exception importing %s: %s", module_path, e)
-                    raise e
+                except Exception:
+                    log.error("Exception importing %s", module_path)
+                    raise ValueError(
+                        f"Error importing module {module_path} - {module_name}"
+                    ) from None
                 return module
-    raise ImportError(f"Could not import module '{module_name}'")
+    raise ImportError(f"Could not import module '{module_name}'") from None
 
 
 def get_subdirectories(path=None):
@@ -115,7 +117,7 @@ def import_module(module, base_path=None, component_package=None):
             sys.path.append(base_path)
     try:
         return importlib.import_module(module)
-    except ModuleNotFoundError as exc:
+    except ModuleNotFoundError:
         # If the module does not have a path associated with it, try
         # importing it from the known prefixes - annoying that this
         # is necessary. It seems you can't dynamically import a module
@@ -149,12 +151,14 @@ def import_module(module, base_path=None, component_package=None):
                             name != "solace_ai_connector"
                             and name.split(".")[-1] != full_name.split(".")[-1]
                         ):
-                            raise e
-                    except Exception as e:
+                            raise ModuleNotFoundError(
+                                f"Module '{full_name}' not found"
+                            ) from None
+                    except Exception:
                         raise ImportError(
-                            f"Module load error for {full_name}: {e}"
-                        ) from e
-        raise ModuleNotFoundError(f"Module '{module}' not found") from exc
+                            f"Module load error for {full_name}"
+                        ) from None
+        raise ModuleNotFoundError(f"Module '{module}' not found") from None
 
 
 def invoke_config(config, allow_source_expression=False):
@@ -178,7 +182,9 @@ def invoke_config(config, allow_source_expression=False):
     params = config.get("params", {})
 
     if module and obj:
-        raise ValueError("Cannot have both module and object in an 'invoke' config")
+        raise ValueError(
+            "Cannot have both module and object in an 'invoke' config"
+        ) from None
 
     if module:
         obj = import_module(module, base_path=path)
@@ -196,7 +202,9 @@ def invoke_config(config, allow_source_expression=False):
         if func is None:
             func = getattr(builtins, function, None)
             if func is None:
-                raise ValueError(f"Function '{function}' not a known python function")
+                raise ValueError(
+                    f"Function '{function}' not a known python function"
+                ) from None
         return call_function(func, params, allow_source_expression)
 
 
@@ -210,9 +218,9 @@ def call_function(function, params, allow_source_expression):
     positional = params.get("positional")
     keyword = params.get("keyword")
     if positional is not None and not isinstance(positional, list):
-        raise ValueError("positional must be a list")
+        raise ValueError("positional must be a list") from None
     if keyword is not None and not isinstance(keyword, dict):
-        raise ValueError("keyword must be a dict")
+        raise ValueError("keyword must be a dict") from None
 
     # Loop through the parameters looking for source expressions and lambda functions
     have_lambda = False
@@ -244,7 +252,7 @@ def call_function(function, params, allow_source_expression):
                 if not allow_source_expression:
                     raise ValueError(
                         "evaluate_expression() is not allowed in this context"
-                    )
+                    ) from None
                 (expression, data_type) = extract_evaluate_expression(value)
                 keyword[key] = create_lambda_function_for_source_expression(
                     expression, data_type=data_type
@@ -287,7 +295,7 @@ def extract_evaluate_expression(se_call):
         (expression, data_type) = re.split(r"\s*,\s*", expression)
 
     if not expression:
-        raise ValueError("evaluate_expression() must contain an expression")
+        raise ValueError("evaluate_expression() must contain an expression") from None
     return (expression, data_type)
 
 
@@ -390,18 +398,18 @@ def decode_payload(payload, encoding, payload_format):
             if isinstance(payload, str):
                 payload = payload.encode("ascii")  # Base64 is ASCII
             decoded_payload = base64.b64decode(payload)
-        except Exception as e:
-            log.error("Error decoding base64 payload: %s", e)
-            raise e
+        except Exception:
+            log.error("Error decoding base64 payload")
+            raise ValueError("Error decoding base64 payload") from None
     elif encoding == "gzip":
         try:
             # Ensure payload is bytes before decompressing
             if not isinstance(payload, (bytes, bytearray)):
                 raise TypeError("Gzip payload must be bytes or bytearray")
             decoded_payload = gzip.decompress(payload)
-        except Exception as e:
-            log.error("Error decompressing gzip payload: %s", e)
-            raise e
+        except Exception:
+            log.error("Error decompressing gzip payload")
+            raise ValueError("Error decompressing gzip payload") from None
     # If encoding is utf-8, unicode_escape, or potentially others,
     # the result should be a string for further format parsing (JSON/YAML).
     # If the payload is already bytes/bytearray, decode it.
@@ -436,13 +444,14 @@ def decode_payload(payload, encoding, payload_format):
             # Returning raw bytes might be safer if subsequent steps can handle it.
             # For now, let's keep decoded_payload as the original bytes.
             pass  # decoded_payload remains the original byte payload
-        except Exception as e:
+        except Exception:
             log.error(
                 "Unexpected error during payload decoding with encoding '%s': %s",
                 encoding,
-                e,
             )
-            raise e  # Re-raise unexpected errors
+            raise ValueError(
+                f"Unexpected error during payload decoding with encoding '{encoding}'"
+            ) from None
 
     # --- Parsing based on 'payload_format' ---
     # This step expects decoded_payload to be a string for JSON/YAML
@@ -462,10 +471,10 @@ def decode_payload(payload, encoding, payload_format):
         if isinstance(decoded_payload, str):
             try:
                 return json.loads(decoded_payload)
-            except json.JSONDecodeError as e:
-                log.error("Error decoding JSON payload string: %s", e)
+            except json.JSONDecodeError:
+                log.error("Error decoding JSON payload string: %s")
                 # Return original string or raise error? Let's raise.
-                raise ValueError("Invalid JSON payload") from e
+                raise ValueError("Invalid JSON payload") from None
         else:
             # If it wasn't bytes or string, it might already be parsed (e.g., from dev broker)
             return decoded_payload
@@ -486,9 +495,9 @@ def decode_payload(payload, encoding, payload_format):
         if isinstance(decoded_payload, str):
             try:
                 return yaml.safe_load(decoded_payload)
-            except Exception as e:  # Catches YAML parsing errors
-                log.error("Error decoding YAML payload string: %s", e)
-                raise ValueError("Invalid YAML payload") from e
+            except Exception:  # Catches YAML parsing errors
+                log.error("Error decoding YAML payload string")
+                raise ValueError("Invalid YAML payload") from None
         else:
             # If it wasn't bytes or string, it might already be parsed
             return decoded_payload
@@ -546,7 +555,10 @@ def get_data_value(data_object, expression, resolve_none_colon=False):
                 f"Trying to access part '{part}' of a non-collection type "
                 f"({type(current_data)}) in expression '{expression}'"
             )
-            return None  # Cannot traverse further
+            raise ValueError(
+                f"Cannot access part '{part}' of a non-collection type "
+                f"({type(current_data)}) in expression '{expression}'"
+            ) from None
 
         # If at any point we get None, stop and return None
         if current_data is None:
@@ -576,19 +588,19 @@ def set_data_value(data_object, expression, value):
     if data_object is None:
         raise ValueError(
             f"Could not set data value for expression '{expression}' - data_object is None"
-        )
+        ) from None
     # Allow setting on non-dict/list if path is empty? No, require container.
     if not isinstance(data_object, (dict, list)):
         raise ValueError(
             f"Could not set data value for expression '{expression}' - data_object "
             f"is not a dictionary or list, but a {type(data_object)}"
-        )
+        ) from None
 
     # It is an error if the data_name is empty
     if data_name == "":
         raise ValueError(
             f"Could not set data value for expression '{expression}' - data_name is empty"
-        )
+        ) from None
 
     # Split the data_name by dots to get the path
     path_parts = data_name.split(".")
@@ -668,21 +680,20 @@ def remove_data_value(data_object, expression):
 
     # Allow removing from None or non-containers? No, should raise error or log.
     if data_object is None:
-        log.warning(
-            f"Cannot remove data value for expression '{expression}' - data_object is None"
-        )
-        return
-    if not isinstance(data_object, (dict, list)):
-        log.warning(
-            f"Cannot remove data value for expression '{expression}' - data_object "
-            f"is not a dictionary or list, but a {type(data_object)}"
-        )
-        return
+        raise ValueError(
+            f"Could not remove data value for expression '{expression}' - data_object is None"
+        ) from None
+    if not isinstance(data_object, dict) and not isinstance(data_object, list):
+        raise ValueError(
+            f"Could not remove data value for expression '{expression}' - data_object "
+            "is not a dictionary or list"
+        ) from None
 
+    # It is an error if the data_name is empty
     if data_name == "":
         raise ValueError(
-            f"Cannot remove data value for expression '{expression}' - data_name is empty"
-        )
+            f"Could not remove data value for expression '{expression}' - data_name is empty"
+        ) from None
 
     path_parts = data_name.split(".")
     current_data = data_object
@@ -716,40 +727,37 @@ def remove_data_value(data_object, expression):
             # Let's pop for now, consistent with dict behavior.
             current_data.pop(idx)
         else:
-            log.debug(
-                f"Index {idx} out of bounds for removal in list at '{'.'.join(path_parts[:-1])}'"
-            )
-    else:
-        log.debug(
-            f"Cannot remove '{last_part}'. Parent is not a dict or list, or index is invalid."
-        )
+            if isinstance(current_data, dict):
+                current_data = current_data.get(part, {})
+            elif isinstance(current_data, list) and part.isdigit():
+                if len(current_data) > int(part):
+                    current_data = current_data[int(part)]
+            else:
+                log.error(
+                    "Could not remove data value for expression '%s' - data "
+                    "is not a dictionary or list",
+                    expression,
+                )
+                return
 
 
-def deep_merge(source, destination):
-    """
-    Deep merge two dictionaries. Destination values overwrite source values.
-    If a key exists in both and both values are dictionaries, they are merged recursively.
-    If a key exists in both and both values are lists, the destination list is appended to the source list.
-    Otherwise, the destination value replaces the source value.
+def deep_merge(d, u):
+    # Create a deep copy of first dict to avoid modifying original
+    result = deepcopy(d)
 
-    Args:
-        source (dict): The source dictionary (provides default values).
-        destination (dict): The destination dictionary (overrides/extends source values).
-
-    Returns:
-        dict: The merged dictionary.
-    """
-    result = deepcopy(source)
-    for key, value in destination.items():
-        source_value = result.get(key)
-        # Check if both source and destination values are lists
-        if isinstance(source_value, list) and isinstance(value, list):
-            # Extend the source list with the destination list
-            result[key].extend(deepcopy(value))
-        # Check if both source and destination values are dictionaries
-        elif isinstance(source_value, Mapping) and isinstance(value, Mapping):
-            # Merge dictionaries recursively
-            result[key] = deep_merge(source_value, value)
+    # Iterate through keys and values in second dict
+    for k, v in u.items():
+        if k in result:
+            # If key exists in both dicts
+            if isinstance(result[k], list) and isinstance(v, list):
+                # For lists: extend the existing list
+                result[k].extend(v)
+            elif isinstance(result[k], Mapping) and isinstance(v, Mapping):
+                # For nested dicts: recursive merge
+                result[k] = deep_merge(result[k], v)
+            else:
+                # For other types: replace value
+                result[k] = v
         else:
             # Otherwise, destination value replaces source value (including replacing list with non-list, etc.)
             result[key] = deepcopy(value)

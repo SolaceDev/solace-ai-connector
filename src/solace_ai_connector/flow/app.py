@@ -199,8 +199,7 @@ class App:
                         raise ValueError(
                             f"Simplified app '{self.name}' must define 'broker' and 'components' keys "
                             "(or be a standard app with a 'flows' key)."
-                        )
-
+                        ) from None
                 # Call helper to generate implicit flow config
                 flow_config = self._create_simplified_flow_config()
                 # Create the single implicit flow
@@ -209,9 +208,11 @@ class App:
                 self.flow_input_queues[flow_config.get("name")] = flow_input_queue
                 self.flows.append(flow_instance)
 
-        except Exception as e:
-            log.error("Error initializing flows for app %s: %s", self.name, e)
-            raise e
+        except Exception:
+            log.error("Error initializing flows for app", self.name)
+            raise ValueError(
+                f"Error initializing flows for app '{self.name}'. Check the configuration."
+            )
 
     def _create_simplified_flow_config(self) -> Dict[str, Any]:
         """Creates the implicit flow configuration for a simplified app."""
@@ -362,10 +363,8 @@ class App:
         for flow in self.flows:
             try:
                 flow.cleanup()
-            except Exception as e:
-                log.error(
-                    "Error cleaning up flow %s in app %s: %s", flow.name, self.name, e
-                )
+            except Exception:
+                log.error(f"Error cleaning up flow in app {self.name}")
         self.flows.clear()
         self.flow_input_queues.clear()
         self._broker_output_component = None  # Clear cache

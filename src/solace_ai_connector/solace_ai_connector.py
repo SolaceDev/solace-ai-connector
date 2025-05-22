@@ -60,10 +60,11 @@ class SolaceAiConnector:
             log.info("Solace AI Event Connector started successfully")
         except KeyboardInterrupt:
             log.info("Received keyboard interrupt - stopping")
+
             raise KeyboardInterrupt from None
-        except Exception as e:
+        except Exception:
             log.error("Error during Solace AI Event Connector startup")
-            raise e from None
+            raise ValueError("An error occurred during startup") from None
 
     def create_apps(self):
         """Create apps from the configuration"""
@@ -191,9 +192,9 @@ class SolaceAiConnector:
         except KeyboardInterrupt:
             log.info("Received keyboard interrupt - stopping")
             raise KeyboardInterrupt from None
-        except Exception as e:
+        except Exception:
             log.error("Error creating apps")
-            raise e from None
+            raise ValueError("An error occurred during app creation") from None
 
     def create_internal_app(self, app_name: str, flows: List[Dict[str, Any]]) -> App:
         """
@@ -274,7 +275,7 @@ class SolaceAiConnector:
                 if not any(thread.is_alive() for thread in all_threads):
                     break
             except KeyboardInterrupt:
-                log.info("Received keyboard interrupt - stopping wait")
+                log.info("Received keyboard interrupt - stopping")
                 raise KeyboardInterrupt from None
 
     def cleanup(self):
@@ -284,17 +285,17 @@ class SolaceAiConnector:
             try:
                 app.cleanup()
             except Exception:
-                log.error("Error cleaning up app %s", app.name)
+                log.error("Error cleaning up app")
         self.apps.clear()
         self.flows.clear()  # Keep for backward compatibility refs?
 
         # Clean up queues
         for queue_name, q in self.flow_input_queues.items():
             try:
-                while not q.empty():
-                    q.get_nowait()
+                while not queue.empty():
+                    queue.get_nowait()
             except Exception:
-                log.error("Error cleaning queue %s", queue_name)
+                log.error(f"Error cleaning queue {queue_name}")
         self.flow_input_queues.clear()
 
         if hasattr(self, "trace_queue") and self.trace_queue:
@@ -381,9 +382,7 @@ class SolaceAiConnector:
 
         # Check if either apps or flows are defined at the top level
         if not self.config.get("apps") and not self.config.get("flows"):
-            raise ValueError(
-                "No 'apps' or 'flows' defined in configuration file"
-            ) from None
+            raise ValueError("No apps or flows defined in configuration file") from None
 
         if not self.config.get("log"):
             log.warning("No log config provided - using defaults")

@@ -220,7 +220,7 @@ apps:
         )
         sac.run()
     except Exception as e:
-        assert str(e) == "Module 'not_a_module' not found"
+        assert str(e) == "An error occurred during startup"
     finally:
         print("Finally")
 
@@ -243,7 +243,4 @@ apps:
         create_connector(
             config_yaml,
         )
-    assert (
-        str(e.value)
-        == "Component module 'utils' does not have an 'info' attribute. It probably isn't a valid component."
-    )
+    assert str(e.value) == "An error occurred during startup"
