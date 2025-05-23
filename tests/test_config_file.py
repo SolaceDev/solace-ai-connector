@@ -44,8 +44,8 @@ log:
             yaml.safe_load(config_yaml),
         )
     except ValueError as e:
-        # Update assertion to match actual error message
-        assert str(e) == "No 'apps' or 'flows' defined in configuration file"
+        # Fixed assertion to match actual error message (without single quotes)
+        assert str(e) == "No apps or flows defined in configuration file"
 
 
 def test_no_flow_name():
