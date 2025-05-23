@@ -87,11 +87,6 @@ flows:
                 aws_access_key_id: "${AWS_ACCESS_KEY_ID}" 
                 aws_secret_access_key: "${AWS_SECRET_ACCESS_KEY}"
                 aws_region_name: "${AWS_REGION_NAME}" # Default to us-east-1 if env var not set
-                
-                # Option 2: Rely entirely on standard AWS environment variables for credentials and region.
-                # In this case, you would remove the aws_access_key_id, aws_secret_access_key, 
-                # and aws_region_name lines above. Ensure AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY,
-                # and AWS_REGION_NAME (or AWS_DEFAULT_REGION) are set in your environment.
 
                 temperature: 0.5
                 max_tokens: 1024
