@@ -31,8 +31,6 @@ info = {
             "required": True,
             "description": "SQL database port.",
             "type": "integer",
-            # Defaults can be set per DB type if desired, e.g. 5432 for postgres, 3306 for mysql
-            # For now, require explicit port.
         },
         {
             "name": "sql_user",
@@ -114,7 +112,6 @@ class SQLBaseComponent(ComponentBase):
                 user=user,
                 password=password,
                 database=database_name,
-                # Pass any other kwargs if SQLHandler supports them, e.g., connection pool settings
             )
             log.info("%s initialized with %s handler.", self.__class__.__name__, db_type)
 

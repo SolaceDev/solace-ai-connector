@@ -82,10 +82,6 @@ class SQLExecuteComponent(SQLBaseComponent):
         if isinstance(query_params, list):
             query_params = tuple(query_params)
         
-        # Some drivers might expect dict for named parameters, tuple for positional.
-        # The sql_handler should ideally manage this based on db_type if there are strict differences.
-        # For now, we pass it as is.
-
         log.info(
             "Attempting to execute query on %s database: %s",
             self.db_handler.db_type,
@@ -105,16 +101,12 @@ class SQLExecuteComponent(SQLBaseComponent):
                 type(results)
             )
             
-            # Attempt to serialize if results are complex objects that are not directly JSON serializable
-            # This is a basic attempt; more robust serialization might be needed for specific data types
             final_results = results
             if fetch_results and isinstance(results, list):
                 try:
                     json.dumps(results) # Test serializability
                 except TypeError:
                     log.warning("Query results may not be directly JSON serializable. Consider transforming complex data types (e.g., datetime, Decimal).")
-                    # Basic conversion for common types, extend as needed
-                    # For now, we'll pass through and let downstream handle or error if not serializable by default JSON.
 
             return {"results": final_results, "query": query_str}
         except ValueError as ve:

@@ -49,13 +49,6 @@ class DatabaseFactory:
             raise ValueError("Unsupported database type: %s" % db_type)
 
         provider_class = DatabaseFactory.DATABASE_PROVIDERS[db_type]
-
-        # Pass port explicitly if provided, otherwise handlers might parse from host or use default
-        # This assumes the __init__ of MySQLDatabase and PostgreSQLDatabase
-        # can handle an optional 'port' keyword argument.
-        # If they strictly rely on "host:port" string, this part might need adjustment
-        # or the handlers themselves need to be updated.
-        # For now, we proceed with the assumption they accept an optional port.
         if port is not None:
             return provider_class(
                 host=host,
@@ -66,8 +59,6 @@ class DatabaseFactory:
                 **kwargs,
             )
         else:
-            # Fallback if port is not provided, relying on handler's default port logic
-            # or host:port parsing within the handler.
              return provider_class(
                 host=host, # Port might be embedded here or handler uses default
                 user=user,
@@ -124,9 +115,6 @@ class SQLHandler:
     def connect(self):
         """Ensure the database connection is active."""
         try:
-            # The connect method might be specific to the handler or implicit
-            # For now, we assume getting a cursor forces a connection if needed.
-            # Or the db_client.connect() method exists and is idempotent.
             if hasattr(self.db_client, 'connect') and callable(getattr(self.db_client, 'connect')):
                 if getattr(self.db_client, 'connection', None) is None or \
                    (hasattr(getattr(self.db_client, 'connection', None), 'closed') and getattr(self.db_client.connection, 'closed', False)):
@@ -184,11 +172,6 @@ class SQLHandler:
                 cursor_kwargs = {}
                 if self.db_type == "mysql":
                     cursor_kwargs['dictionary'] = True
-                elif self.db_type == "postgres":
-                    # Assuming PostgreSQLDatabase.cursor can take cursor_factory
-                    # This is already handled by postgres_database_handler.py's execute method
-                    pass
-
 
                 actual_cursor = self.db_client.cursor(**cursor_kwargs)
                 actual_cursor.execute(query, params)
@@ -206,8 +189,6 @@ class SQLHandler:
                     return [] # Or raise error
             else:
                 rowcount = cursor.rowcount
-                # For PostgreSQL, commit might be needed if autocommit is false and it's a DML
-                # However, the plan is to rely on autocommit=True from handlers
                 if self.db_type == "mysql" and self.db_client.connection.autocommit is False:
                      self.db_client.connection.commit()
                 elif self.db_type == "postgres" and self.db_client.connection.autocommit is False:
@@ -274,41 +255,13 @@ class SQLHandler:
                 update_clause = ", ".join([f"`{col}`=VALUES(`{col}`)" for col in on_duplicate_update_columns])
                 query = f"{base_query} ON DUPLICATE KEY UPDATE {update_clause}"
             elif self.db_type == "postgres":
-                # For PostgreSQL, need to specify the constraint columns for ON CONFLICT
-                # This is a simplification; a robust solution would need to know primary/unique keys.
-                # Assuming 'id' or the first column for simplicity if not specified.
-                # A better approach would be to require conflict target columns.
-                # For now, let's assume the user handles conflict targets or this is a simple case.
-                # A common pattern is to update all provided columns in `on_duplicate_update_columns`.
                 update_clause = ", ".join([f'"{col}"=EXCLUDED."{col}"' for col in on_duplicate_update_columns])
-                # Inferring conflict target is tricky. Let's assume the user ensures the table has a PK
-                # and the conflict will be on that. A more robust version would take conflict_target as param.
-                # This example will require the user to ensure the ON CONFLICT target is implicitly handled by the DB.
-                # A common way is to list the primary key columns in the ON CONFLICT clause.
-                # For simplicity, we'll assume the conflict target is on the primary key(s) of the table.
-                # This part is complex and database-specific.
-                # A common approach for ON CONFLICT is to specify the columns that form the unique constraint.
-                # E.g., ON CONFLICT (primary_key_column) DO UPDATE SET ...
-                # This simplified version might not work for all cases without knowing the PK.
-                # For now, we'll make a generic update clause and rely on the user to have a clear PK.
-                # A better version would require `conflict_target_columns` as a parameter.
-                # Let's assume for now the conflict is on the primary key and Postgres can infer it or it's simple.
-                # A more robust way for Postgres: ON CONFLICT (col1, col2) DO UPDATE SET...
-                # We will assume the user has set up the table such that a general conflict on insert works.
-                # This is a known simplification.
                 log.warning("PostgreSQL ON CONFLICT DO UPDATE is simplified and assumes conflict on primary key(s). "
                             "For complex cases, provide conflict_target_columns.")
-                # To make it work generally, one might need to specify the constraint name or columns.
-                # For now, we'll try a common pattern.
-                # This will likely require the user to have a primary key defined.
                 query = f"{base_query} ON CONFLICT DO UPDATE SET {update_clause}"
-                # A more specific version:
-                # query = f"{base_query} ON CONFLICT ON CONSTRAINT {constraint_name} DO UPDATE SET {update_clause}"
-                # or query = f"{base_query} ON CONFLICT (column_name_for_conflict) DO UPDATE SET {update_clause}"
-                # Since we don't have that info, this is a best guess.
             else:
                 raise ValueError(
-                    "ON DUPLICATE UPDATE not implemented for db_type: %s" % self.db_type
+                    f"ON DUPLICATE UPDATE not implemented for db_type: {self.db_type}"
                 )
         else:
             query = base_query
@@ -331,17 +284,7 @@ class SQLHandler:
             if len(data_list) > 1 and hasattr(actual_cursor, 'executemany') and callable(getattr(actual_cursor, 'executemany')):
                 values_to_insert = [tuple(row[col] for col in columns) for row in data_list]
                 actual_cursor.executemany(query, values_to_insert)
-                total_affected_rows = actual_cursor.rowcount 
-                # executemany rowcount can be unreliable across drivers/DBs for actual inserted/updated rows
-                # For MySQL with ON DUPLICATE KEY UPDATE, rowcount is 1 for each insert, 2 for each update.
-                # For PostgreSQL with ON CONFLICT DO UPDATE, rowcount is 1 for each row inserted or updated.
-                # We will use this value, but acknowledge its potential variance.
-                if self.db_type == "mysql" and on_duplicate_update_columns:
-                    # MySQL counts 2 for an update, 1 for an insert.
-                    # This is a common way to estimate actual changes, but not perfect.
-                    # For simplicity, we'll stick to cursor.rowcount.
-                    pass
-
+                total_affected_rows = actual_cursor.rowcount
             else: # Fallback to one by one if executemany is not available or for single insert
                 for row_data in data_list:
                     values = tuple(row_data[col] for col in columns)

@@ -12,9 +12,6 @@ info = copy.deepcopy(base_info)
 info["class_name"] = "SQLInsertComponent"
 info["description"] = "Inserts data into a SQL database table."
 
-# Add default_on_duplicate_update_columns to config_parameters
-if "config_parameters" not in info:
-    info["config_parameters"] = []
 info["config_parameters"].append(
     {
         "name": "default_on_duplicate_update_columns",
