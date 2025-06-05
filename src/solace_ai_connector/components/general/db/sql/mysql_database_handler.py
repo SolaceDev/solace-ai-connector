@@ -3,8 +3,9 @@
 import mysql.connector
 
 class MySQLDatabase:
-    def __init__(self, host: str, user: str, password: str, database: str):
+    def __init__(self, host: str, user: str, password: str, database: str, port: int = 3306):
         self.host = host
+        self.port = port
         self.user = user
         self.password = password
         self.database = database
@@ -12,8 +13,6 @@ class MySQLDatabase:
 
         if ":" in self.host:
             self.host, self.port = self.host.split(":")
-        else:
-            self.port = 3306
 
     def cursor(self, **kwargs):
         if self.connection is None:

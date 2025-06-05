@@ -6,17 +6,16 @@ from solace_ai_connector.common.log import log
 
 
 class PostgreSQLDatabase:
-    def __init__(self, host: str, user: str, password: str, database: str):
+    def __init__(self, host: str, user: str, password: str, database: str, port: int = 5432):
         self.host = host
         self.user = user
         self.password = password
         self.database = database
+        self.port = port
         self.connection = None
 
         if ":" in self.host:
             self.host, self.port = self.host.split(":")
-        else:
-            self.port = 5432
 
     def cursor(self, **kwargs):
         if self.connection is None or self.connection.closed:
