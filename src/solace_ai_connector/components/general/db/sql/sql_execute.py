@@ -100,15 +100,8 @@ class SQLExecuteComponent(SQLBaseComponent):
                 fetch_results,
                 type(results)
             )
-            
-            final_results = results
-            if fetch_results and isinstance(results, list):
-                try:
-                    json.dumps(results) # Test serializability
-                except TypeError:
-                    log.warning("Query results may not be directly JSON serializable. Consider transforming complex data types (e.g., datetime, Decimal).")
-
-            return {"results": final_results, "query": query_str}
+            # To convert things like datetime to string for JSON serialization and back to dict
+            return {"results": json.loads(json.dumps(results, default=str)), "query": query_str}
         except ValueError as ve:
             log.error("ValueError during query execution: %s", ve, exc_info=True)
             raise

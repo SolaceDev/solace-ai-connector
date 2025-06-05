@@ -44,7 +44,7 @@ class PostgreSQLDatabase:
         sanity = 3
         while True:
             try:
-                cursor = self.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+                cursor = self.cursor()
                 cursor.execute(query, params)
                 break
             except Exception as e:
