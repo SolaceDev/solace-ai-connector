@@ -126,7 +126,7 @@ class SQLHandler:
                     log.debug("Connection to %s database confirmed via cursor.", self.db_type)
         except Exception as e:
             log.error("Error connecting to %s database", self.db_type, trace=e)
-            raise ValueError("Failed to connect to %s database: %s" % (self.db_type, e)) from e
+            raise ValueError("Failed to connect to %s database." % (self.db_type)) from None
 
     def close(self):
         """Close the database connection."""
