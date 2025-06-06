@@ -24,7 +24,7 @@ class MySQLDatabase:
             return self.connection.cursor(**kwargs)
 
     def connect(self):
-        return mysql.connector.connect(
+        self.connection = mysql.connector.connect(
             host=self.host,
             port=self.port,
             user=self.user,
@@ -34,6 +34,10 @@ class MySQLDatabase:
             connection_timeout=60,
             autocommit=True,
         )
+        return self.connection
 
     def close(self):
-        self.connection.close()
+        if self.connection is not None:
+            self.connection.close()
+            self.connection = None
+
