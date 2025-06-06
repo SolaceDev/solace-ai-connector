@@ -125,7 +125,7 @@ class SQLHandler:
                 with self.db_client.cursor() as cursor: # cursor variable is not used here
                     log.debug("Connection to %s database confirmed via cursor.", self.db_type)
         except Exception as e:
-            log.error("Error connecting to %s database: %s", self.db_type, e, exc_info=True)
+            log.error("Error connecting to %s database", self.db_type, trace=e)
             raise ValueError("Failed to connect to %s database: %s" % (self.db_type, e)) from e
 
     def close(self):
@@ -136,7 +136,7 @@ class SQLHandler:
                 log.info("Successfully closed %s database connection.", self.db_type)
             except Exception as e:
                 log.error(
-                    "Error closing %s database connection: %s", self.db_type, e, exc_info=True
+                    "Error closing %s database connection", self.db_type, trace=e
                 )
 
     def execute_query(
@@ -198,7 +198,7 @@ class SQLHandler:
                 return rowcount
 
         except Exception as e:
-            log.error("Error executing query on %s: %s", self.db_type, e, exc_info=True)
+            log.error("Error executing query on %s", self.db_type, trace=e)
             # Attempt to rollback if autocommit is false and an error occurs
             if self.db_type == "mysql" and hasattr(self.db_client, 'connection') and self.db_client.connection and self.db_client.connection.autocommit is False:
                 self.db_client.connection.rollback()
@@ -304,7 +304,7 @@ class SQLHandler:
             )
             return total_affected_rows
         except Exception as e:
-            log.error("Error inserting data into %s for %s: %s", table_name, self.db_type, e, exc_info=True)
+            log.error("Error inserting data into %s for %s", table_name, self.db_type, trace=e)
             if self.db_type == "mysql" and hasattr(self.db_client, 'connection') and self.db_client.connection and self.db_client.connection.autocommit is False:
                 self.db_client.connection.rollback()
             elif self.db_type == "postgres" and hasattr(self.db_client, 'connection') and self.db_client.connection and self.db_client.connection.autocommit is False:

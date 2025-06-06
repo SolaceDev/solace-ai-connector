@@ -38,7 +38,10 @@ class PostgreSQLDatabase:
         self.connection.autocommit = auto_commit
 
     def close(self):
+        if self.connection is None:
+            return
         self.connection.close()
+        self.connection = None
 
     def execute(self, query, params=None):
         sanity = 3
@@ -48,7 +51,7 @@ class PostgreSQLDatabase:
                 cursor.execute(query, params)
                 break
             except Exception as e:
-                log.error("Database error: %s", e)
+                log.error("Database error: %s", e, trace=e)
                 sanity -= 1
                 if sanity == 0:
                     raise e

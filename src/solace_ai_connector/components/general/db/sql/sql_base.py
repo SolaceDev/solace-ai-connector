@@ -116,11 +116,11 @@ class SQLBaseComponent(ComponentBase):
             log.info("%s initialized with %s handler.", self.__class__.__name__, db_type)
 
         except ValueError as ve:
-            log.error("Configuration error in %s: %s", self.__class__.__name__, ve, exc_info=True)
+            log.error("Configuration error in %s", self.__class__.__name__, trace=ve)
             raise
         except Exception as e:
             log.error(
-                "Error initializing SQLHandler in %s: %s", self.__class__.__name__, e, exc_info=True
+                "Error initializing SQLHandler in %s", self.__class__.__name__, trace=e
             )
             # Wrap in ValueError or a custom component error
             raise ValueError("Failed to initialize SQL database handler: %s" % e) from e

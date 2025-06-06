@@ -103,8 +103,8 @@ class SQLExecuteComponent(SQLBaseComponent):
             # To convert things like datetime to string for JSON serialization and back to dict
             return {"results": json.loads(json.dumps(results, default=str)), "query": query_str}
         except ValueError as ve:
-            log.error("ValueError during query execution: %s", ve, exc_info=True)
+            log.error("ValueError during query execution", trace=ve)
             raise
         except Exception as e:
-            log.error("Unexpected error during query execution: %s", e, exc_info=True)
+            log.error("Unexpected error during query execution", trace=e)
             raise ValueError("An unexpected error occurred while executing query: %s" % e) from e
