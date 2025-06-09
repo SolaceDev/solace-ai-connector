@@ -198,12 +198,12 @@ class LiteLLMBase(ComponentBase):
         except litellm.BadRequestError as e:
             # Handle context window exceeded error
             if "ContextWindowExceededError" in str(e):
-                log.error("Context window exceeded error")
+                log.error("Context window exceeded error", trace=e)
                 return self.context_exceeded_response(model)
-            log.error("Bad request error.")
+            log.error("Bad request error.", trace=e)
             raise ValueError("Error LiteLLM bad request") from None
         except Exception as e:
-            log.error("LiteLLM API connection error.")
+            log.error("LiteLLM API connection error.", trace=e)
             raise ValueError("Error LiteLLM API connection") from None
 
         log.debug("Load balancer responded")
