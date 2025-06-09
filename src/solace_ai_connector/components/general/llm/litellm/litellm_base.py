@@ -253,31 +253,26 @@ class LiteLLMBase(ComponentBase):
                         f"This is typically not used for Bedrock; AWS credentials are used instead."
                     )
 
+                aws_keys_is_complete = (
+                    "aws_access_key_id" in params and "aws_secret_access_key" in params and "aws_region_name" in params
+                )
                 has_explicit_aws_keys = (
-                    "aws_access_key_id" in params and "aws_secret_access_key" in params
+                    "aws_access_key_id" in params or "aws_secret_access_key" in params
                 )
 
-                if has_explicit_aws_keys and not params.get("aws_region_name"):
+                if has_explicit_aws_keys and not aws_keys_is_complete:
+                    log.error(
+                        f"Missing AWS credentials in 'litellm_params' for Bedrock model '{model_identifier}' (alias '{model_alias}'). "
+                        f"'aws_access_key_id', 'aws_secret_access_key' and 'aws_region_name' must be provided."
+                    )
+                    raise ValueError(
+                        f"Both 'aws_access_key_id', 'aws_secret_access_key' and 'aws_region_name' must be provided in 'litellm_params' for Bedrock model '{model_identifier}' (alias '{model_alias}')."
+                    )
+
+                if not has_explicit_aws_keys:
                     log.warning(
-                        f"'aws_region_name' not found in 'litellm_params' for Bedrock model '{model_identifier}' (alias '{model_alias}') "
-                        f"when 'aws_access_key_id' and 'aws_secret_access_key' are provided. "
-                        f"Consider adding 'aws_region_name' to 'litellm_params' or ensure it's set via AWS environment variables for Boto3."
-                    )
-                elif (
-                    "aws_access_key_id" in params
-                    and not "aws_secret_access_key" in params
-                ):
-                    raise ValueError(
-                        f"If 'aws_access_key_id' is provided in 'litellm_params' for Bedrock model '{model_identifier}' (alias '{model_alias}'), "
-                        f"'aws_secret_access_key' must also be provided."
-                    )
-                elif (
-                    "aws_secret_access_key" in params
-                    and not "aws_access_key_id" in params
-                ):
-                    raise ValueError(
-                        f"If 'aws_secret_access_key' is provided in 'litellm_params' for Bedrock model '{model_identifier}' (alias '{model_alias}'), "
-                        f"'aws_access_key_id' must also be provided."
+                        f"No explicit AWS credentials found in 'litellm_params' for Bedrock model '{model_identifier}' (alias '{model_alias}'). "
+                        f"Ensure a valid AWS profile is available in ~/.aws/credentials and ~/.aws/config."
                     )
             else:
                 # Validation for other providers (e.g., OpenAI, Anthropic direct)
