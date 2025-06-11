@@ -157,7 +157,7 @@ def import_module(module, base_path=None, component_package=None):
                             ) from None
                     except Exception:
                         raise ImportError(
-                            f"Module load error for {full_name}"
+                            f"Module load error for {full_name}. Please ensure that all required dependencies are installed and parameters are correct."
                         ) from None
         raise ModuleNotFoundError(f"Module '{module}' not found") from None
 
