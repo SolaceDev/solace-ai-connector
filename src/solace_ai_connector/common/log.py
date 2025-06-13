@@ -83,7 +83,8 @@ class DatadogJsonFormatter(logging.Formatter):
         log_record["logger.module"] = record.module
 
         if record.exc_info:
-            log_record["error.kind"] = record.exc_info[0].__name__
+            if record.exc_info[0] is not None:
+                log_record["error.kind"] = record.exc_info[0].__name__
             log_record["error.message"] = str(record.exc_info[1])
             log_record["error.stack"] = self.formatException(record.exc_info)
         elif record.exc_text:
