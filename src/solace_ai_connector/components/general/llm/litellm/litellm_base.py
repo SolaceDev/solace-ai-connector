@@ -247,33 +247,9 @@ class LiteLLMBase(ComponentBase):
 
             if model_identifier.startswith("bedrock/"):
                 # Bedrock-specific validation
-                if "api_key" in params:
-                    log.warning(
-                        f"'api_key' found in 'litellm_params' for Bedrock model '{model_identifier}' (alias '{model_alias}'). "
-                        f"This is typically not used for Bedrock; AWS credentials are used instead."
-                    )
-
-                aws_keys_is_complete = (
-                    "aws_access_key_id" in params and "aws_secret_access_key" in params and "aws_region_name" in params
+                log.info(
+                    "Ensure AWS profile is set up correctly or AWS credentials, including aws_access_key_id, aws_secret_access_key, and aws_region_name are provided."
                 )
-                has_explicit_aws_keys = (
-                    "aws_access_key_id" in params or "aws_secret_access_key" in params
-                )
-
-                if has_explicit_aws_keys and not aws_keys_is_complete:
-                    log.error(
-                        f"Missing AWS credentials in 'litellm_params' for Bedrock model '{model_identifier}' (alias '{model_alias}'). "
-                        f"'aws_access_key_id', 'aws_secret_access_key' and 'aws_region_name' must be provided."
-                    )
-                    raise ValueError(
-                        f"Both 'aws_access_key_id', 'aws_secret_access_key' and 'aws_region_name' must be provided in 'litellm_params' for Bedrock model '{model_identifier}' (alias '{model_alias}')."
-                    )
-
-                if not has_explicit_aws_keys:
-                    log.warning(
-                        f"No explicit AWS credentials found in 'litellm_params' for Bedrock model '{model_identifier}' (alias '{model_alias}'). "
-                        f"Ensure a valid AWS profile is available in ~/.aws/credentials and ~/.aws/config."
-                    )
             else:
                 # Validation for other providers (e.g., OpenAI, Anthropic direct)
                 if not params.get("api_key"):
