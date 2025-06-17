@@ -238,7 +238,7 @@ class LiteLLMBase(ComponentBase):
         for model_entry in config:  # 'config' is the list from load_balancer
             params = model_entry.get("litellm_params", {})
             model_identifier = params.get("model")
-            model_alias = model_entry.get("model_name", "Unknown Model Alias")
+            model_alias = model_entry.get("model_name")
 
             if not model_identifier:
                 raise ValueError(
