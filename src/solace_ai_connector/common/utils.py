@@ -117,7 +117,7 @@ def import_module(module, base_path=None, component_package=None):
             sys.path.append(base_path)
     try:
         return importlib.import_module(module)
-    except ModuleNotFoundError:
+    except ModuleNotFoundError as er:
         # If the module does not have a path associated with it, try
         # importing it from the known prefixes - annoying that this
         # is necessary. It seems you can't dynamically import a module
@@ -157,7 +157,7 @@ def import_module(module, base_path=None, component_package=None):
                             ) from None
                     except Exception:
                         raise ImportError(
-                            f"Module load error for {full_name}. Please ensure that all required dependencies are installed and parameters are correct."
+                            f"Module load error for {full_name}. Please ensure that all required dependencies are installed and parameters are correct. Error: {str(er)}"
                         ) from None
         raise ModuleNotFoundError(f"Module '{module}' not found") from None
 
