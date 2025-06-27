@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - main
+      - test-ws
   pull_request:
     types: [opened, synchronize]
 
