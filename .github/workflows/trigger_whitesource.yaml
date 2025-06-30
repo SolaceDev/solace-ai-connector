@@ -1,0 +1,14 @@
+name: Trigger Whitesource Vulnerability Workflow
+
+on:
+  pull_request:
+
+jobs:
+  trigger:
+    uses: SolaceDev/sc-cicd-security-tools/.github/workflows/whitesource_vulnerability.yml@ws_test_123
+    with:
+      repositories: '["solace-ai-connector"]'
+      profile: 'ai-connector'
+      buildUrl: 'Built by GitHub CRON Job'
+      threadTs: ''
+      fullReport: true
