@@ -5,8 +5,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "solace_ai_connector"
-# version = "0.0.1" # Commented out for workaround
-dynamic = ["version"] # Commented out for workaround
+version = "1.1.1" # Commented out for workaround
+#dynamic = ["version"] # Commented out for workaround
 authors = [
   { name="Edward Funnekotter", email="edward.funnekotter@solace.com" },
 ]
@@ -206,7 +206,6 @@ qdrant_ext_release = [
     "langchain-core==0.3.51",
     "langchain-qdrant==0.2.0",
     "langsmith==0.3.27",
-    "numpy==2.2.4",
     "orjson==3.10.16",
     "packaging==24.2",
     "portalocker==2.10.1",
