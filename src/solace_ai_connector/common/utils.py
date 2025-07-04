@@ -523,11 +523,17 @@ def decode_payload(payload, encoding, payload_format):
 
         if isinstance(decoded_payload, str):
             try:
-                cleaned_payload = clean_json_string(decoded_payload)
-                return json.loads(cleaned_payload)
+                return json.loads(decoded_payload)
             except Exception as e:
-                log.error(f"Unexpected error decoding JSON payload: {e}", trace=e)
-                log.info("Payload content: %s", payload)
+                try:
+                    log.warning(
+                        "Error decoding JSON payload string, trying to clean it up"
+                    )
+                    cleaned_payload = clean_json_string(decoded_payload)
+                    return json.loads(cleaned_payload)
+                except Exception as e:
+                    log.error(f"Unexpected error decoding JSON payload: {e}", trace=e)
+                    log.info("Payload content: %s", payload)
                 raise ValueError("Invalid JSON payload") from e
         else:
             # If it wasn't bytes or string, it might already be parsed (e.g., from dev broker)
