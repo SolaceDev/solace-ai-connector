@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - main
+      - test-ws
   pull_request:
     types: [opened, synchronize]
 
@@ -18,6 +19,7 @@ jobs:
     with:
       min-python-version: "3.10"
       max-python-version: "3.13"
+      whitesource_project_name: "solace-ai-connectors"
       whitesource_product_name: "cicd_playground"
       whitesource_config_file: "wss-unified-agent.config"
 
