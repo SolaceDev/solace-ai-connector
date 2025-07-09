@@ -33,7 +33,7 @@ jobs:
       AUTOBOTS_WHITESOURCE_API_URL: ${{ secrets.AUTOBOTS_WHITESOURCE_API_URL }}
       SLACK_CHANNEL_LINK: ${{ secrets.SLACK_CHANNEL_LINK }}
   structure-test:
-    name: Test Docker Image Structure
+    name: Test Docker Image Structure3
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
