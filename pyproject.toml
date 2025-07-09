@@ -284,7 +284,7 @@ all = [
     
     # From qdrant-vector-store
     "langchain-qdrant==0.2.0",
-    "qdrant-client==1.10.1",
+    "qdrant-client==1.13.3",
     
     # From milvus-vector-store
     "langchain_milvus==0.1.8",
