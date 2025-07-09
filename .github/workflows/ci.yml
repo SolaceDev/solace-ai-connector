@@ -11,11 +11,10 @@ permissions:
   checks: write
   pull-requests: write
   contents: write
-  statuses: write
 
 jobs:
   ci:
-    uses: SolaceDev/solace-public-workflows/.github/workflows/hatch_ci.yml@9cf68431b6f6595979430719288e6126c4895890
+    uses: SolaceDev/solace-public-workflows/.github/workflows/hatch_ci.yml@f68e3655fdfb830c33e42d8ccf2bf35e486b3b2f
     with:
       min-python-version: "3.10"
       max-python-version: "3.13"
