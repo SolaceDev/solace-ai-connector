@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   ci:
-    uses: SolaceDev/solace-public-workflows/.github/workflows/hatch_ci.yml@dbabeff2f0d0511b3d35ee2c517dfd55ddbbea22
+    uses: SolaceDev/solace-public-workflows/.github/workflows/hatch_ci.yml@f6dbcff86fccd254c7243b615185da4a053f9892
     with:
       min-python-version: "3.10"
       max-python-version: "3.13"
