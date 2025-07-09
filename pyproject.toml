@@ -334,6 +334,9 @@ dependencies = [
   "pytest-cov>=4.0.0",
   "pytest-xdist>=3.5.0"
 ]
+extra_dependencies = [
+  "all"
+]
 
 # Specify minimum and maximum Python versions to test
 [[tool.hatch.envs.hatch-test.matrix]]
