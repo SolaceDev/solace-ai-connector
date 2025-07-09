@@ -331,10 +331,8 @@ installer = "pip"
 dependencies = [
   "pytest>=8.0.0",
   "pytest-mock>=3.0.0",
-  "pytest-cov>=4.0.0", # If you use coverage
-  # You might want to include 'llm' extras here if LLM tests need those deps
-  # e.g., "solace_ai_connector[llm,test]" if solace_ai_connector is the project name
-  # For now, we'll install extras explicitly in the run command as per plan.txt
+  "pytest-cov>=4.0.0",
+  "pytest-xdist>=3.5.0"
 ]
 
 # Specify minimum and maximum Python versions to test
