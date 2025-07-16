@@ -214,7 +214,7 @@ qdrant_ext_release = [
     "pydantic==2.11.3",
     "pydantic_core==2.33.1",
     "PyYAML==6.0.2",
-    "qdrant-client==1.13.3",
+    "qdrant-client==1.14.3",
     "requests==2.32.4",
     "requests-toolbelt==1.0.0",
     "setuptools==78.1.1",
