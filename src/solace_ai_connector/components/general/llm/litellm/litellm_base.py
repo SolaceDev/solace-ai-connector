@@ -124,10 +124,10 @@ class LiteLLMBase(ComponentBase):
 
     def init(self):
         # Get configuration parameters
-        suppress_debug_info = self.get_config("suppress_debug_info")
-        aiohttp_trust_env = self.get_config("aiohttp_trust_env")
-        ssl_verify = self.get_config("ssl_verify")
-        
+        suppress_debug_info = self.get_config("suppress_debug_info", False)
+        aiohttp_trust_env = self.get_config("aiohttp_trust_env", True)
+        ssl_verify = self.get_config("ssl_verify", False)
+
         # Set LiteLLM parameters
         litellm.suppress_debug_info = suppress_debug_info
         litellm.aiohttp_trust_env = aiohttp_trust_env
