@@ -223,6 +223,7 @@ class BrokerRequestResponse(BrokerBase):
 
     def __init__(self, **kwargs):
         super().__init__(info, **kwargs)
+        self._local_stop_signal = threading.Event()
         self.need_acknowledgement = False
         self.request_expiry_ms = self.get_config("request_expiry_ms")
         self.response_topic_prefix = ensure_slash_on_end(
@@ -304,7 +305,7 @@ class BrokerRequestResponse(BrokerBase):
         self.response_thread.start()
 
     def handle_responses(self):
-        while not self.stop_signal.is_set():
+        while not self._local_stop_signal.is_set():
             try:
                 broker_message = self.messaging_service.receive_message(
                     1000, self.reply_queue_name
@@ -315,7 +316,7 @@ class BrokerRequestResponse(BrokerBase):
                 log.error("Error handling response.", trace=e)
 
     def handle_test_pass_through(self):
-        while not self.stop_signal.is_set():
+        while not self._local_stop_signal.is_set():
             try:
                 message = self.pass_through_queue.get(timeout=1)
                 decoded_payload = self.decode_payload(message.get_payload())
@@ -539,6 +540,7 @@ class BrokerRequestResponse(BrokerBase):
 
     def cleanup(self):
         if self.response_thread:
+            self._local_stop_signal.set()
             self.response_thread.join()
         super().cleanup()
 
