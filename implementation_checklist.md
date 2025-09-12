@@ -9,10 +9,10 @@ This checklist breaks down the implementation plan into actionable, trackable st
     -   [x] Define `SessionClosedError(Exception)`.
     -   [x] Define `SessionNotFoundError(ValueError)`.
 
-2.  [ ] **Define Session Configuration (`src/solace_ai_connector/common/session_config.py`)**
-    -   [ ] Create `SessionConfig` dataclass.
-    -   [ ] Implement `to_controller_config()` method.
-    -   [ ] Implement `validate()` method.
+2.  [x] **Define Session Configuration (`src/solace_ai_connector/common/session_config.py`)**
+    -   [x] Create `SessionConfig` dataclass.
+    -   [x] Implement `to_controller_config()` method.
+    -   [x] Implement `validate()` method.
 
 3.  [ ] **Implement the Session Registry (`src/solace_ai_connector/flow/session_registry.py`)**
     -   [ ] Create `SessionRegistry` class with `_sessions` dict, `RLock`, and `_session_counter`.
