@@ -67,7 +67,7 @@ This checklist breaks down the implementation plan into actionable, trackable st
 
 9.  [ ] **Integration Tests**
     -   [x] Create a multi-session test (create, use, list, destroy).
-    -   [ ] Create a session expiration test.
+    -   [x] Create a session expiration test.
     -   [ ] Create a backward compatibility test using legacy config.
 
 10. [ ] **Documentation**

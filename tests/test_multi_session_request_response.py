@@ -1,4 +1,5 @@
 import sys
+import time
 import pytest
 
 sys.path.append("src")
@@ -98,6 +99,61 @@ def test_multi_session_lifecycle_and_isolation():
         # 7. Destroy the second session
         assert component.destroy_request_response_session(session_id_B) is True
         assert len(component.list_request_response_sessions()) == 0
+
+    finally:
+        dispose_connector(connector)
+
+
+def test_session_idle_timeout():
+    """
+    Tests that an idle session is automatically cleaned up after its timeout expires.
+    """
+    config = {
+        "flows": [
+            {
+                "name": "test_timeout_flow",
+                "components": [
+                    {
+                        "component_name": "session_handler",
+                        "component_module": "handler_callback",
+                        "multi_session_request_response": {
+                            "enabled": True,
+                            "default_broker_config": {
+                                "broker_type": "test",
+                                "broker_url": "test",
+                                "broker_username": "test",
+                                "broker_password": "test",
+                                "broker_vpn": "test",
+                            },
+                            # Set a very short timeout for the test
+                            "session_timeout_seconds": 1,
+                        },
+                    }
+                ],
+            }
+        ]
+    }
+
+    connector, flows = create_test_flows(config)
+    component = flows[0]["flow"].component_groups[0][0]
+
+    try:
+        # 1. Create a session
+        session_id = component.create_request_response_session()
+        assert len(component.list_request_response_sessions()) == 1
+
+        # 2. Wait for longer than the session timeout.
+        # The cleanup thread checks at intervals, so wait a bit longer to be safe.
+        time.sleep(2)
+
+        # 3. Verify the session has been cleaned up
+        assert len(component.list_request_response_sessions()) == 0
+
+        # 4. Verify using the expired session raises an error
+        with pytest.raises(SessionNotFoundError):
+            component.do_broker_request_response(
+                Message(payload="test"), session_id=session_id
+            )
 
     finally:
         dispose_connector(connector)
