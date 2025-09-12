@@ -14,14 +14,14 @@ This checklist breaks down the implementation plan into actionable, trackable st
     -   [x] Implement `to_controller_config()` method.
     -   [x] Implement `validate()` method.
 
-3.  [ ] **Implement the Session Registry (`src/solace_ai_connector/flow/session_registry.py`)**
-    -   [ ] Create `SessionRegistry` class with `_sessions` dict, `RLock`, and `_session_counter`.
-    -   [ ] Implement `generate_session_id()`.
-    -   [ ] Implement `register_session(session)`.
-    -   [ ] Implement `unregister_session(session_id)`.
-    -   [ ] Implement `get_session(session_id)`.
-    -   [ ] Implement `list_sessions()`.
-    -   [ ] Implement `clear()`.
+3.  [x] **Implement the Session Registry (`src/solace_ai_connector/flow/session_registry.py`)**
+    -   [x] Create `SessionRegistry` class with `_sessions` dict, `RLock`, and `_session_counter`.
+    -   [x] Implement `generate_session_id()`.
+    -   [x] Implement `register_session(session)`.
+    -   [x] Implement `unregister_session(session_id)`.
+    -   [x] Implement `get_session(session_id)`.
+    -   [x] Implement `list_sessions()`.
+    -   [x] Implement `clear()`.
 
 4.  [ ] **Implement the Request/Response Session Wrapper (`src/solace_ai_connector/flow/request_response_session.py`)**
     -   [ ] Create `RequestResponseSession` class.
