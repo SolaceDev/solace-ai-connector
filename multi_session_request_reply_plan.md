@@ -118,8 +118,15 @@ response = component.do_broker_request_response(
     session_id=session_id
 )
 
-# List active sessions
+# List detailed status of active sessions
 sessions = component.list_request_response_sessions()
+# Example return:
+# [
+#   {
+#     "session_id": "...", "created_at": ..., "last_used_at": ..., 
+#     "active_request_count": 0, "is_expired": False
+#   }
+# ]
 
 # Destroy a session
 component.destroy_request_response_session(session_id)
@@ -181,8 +188,8 @@ def do_broker_request_response(self, message, session_id=None, stream=False, str
 
 ## Considerations
 
-1. **Resource Management**: Need careful cleanup of broker connections and temp queues
-2. **Thread Safety**: Session registry and operations must be thread-safe
-3. **Error Handling**: Session-specific error handling and recovery
-4. **Monitoring**: Session metrics and health monitoring
-5. **Configuration Validation**: Validate session configurations before creation
+1. **Resource Management**: Need careful cleanup of broker connections and temp queues. The design includes a configurable `max_sessions` limit to prevent resource exhaustion and an idle timeout for automatic cleanup.
+2. **Thread Safety**: Session registry and all session management operations must be thread-safe.
+3. **Error Handling**: Session-specific error handling is required. If a session is destroyed or expires, any in-flight requests waiting on a response must immediately raise an exception to the caller.
+4. **Monitoring**: Session health and metrics are critical. The `list_sessions` API will provide detailed status (age, active requests, etc.) for observability.
+5. **Configuration Validation**: Session configurations must be validated before creation to prevent runtime errors.

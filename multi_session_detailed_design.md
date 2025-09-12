@@ -38,6 +38,7 @@ class MultiSessionRequestResponseManager:
     - session_registry: SessionRegistry instance
     - component_ref: WeakReference to parent component
     - default_broker_config: Default broker configuration
+    - max_sessions: Maximum number of concurrent sessions allowed
     - cleanup_thread: Background thread for session cleanup
     - _lock: Threading lock for thread safety
     """
@@ -60,7 +61,7 @@ class MultiSessionRequestResponseManager:
 - `create_session(session_config) -> str`: Creates new session, returns session_id
 - `destroy_session(session_id) -> bool`: Destroys session and cleans up resources
 - `get_session(session_id) -> RequestResponseSession`: Retrieves session by ID
-- `list_sessions() -> List[str]`: Returns list of active session IDs
+- `list_sessions() -> List[Dict[str, Any]]`: Returns a list of dictionaries with detailed status for each active session.
 - `cleanup_expired_sessions()`: Background cleanup of expired sessions
 - `shutdown()`: Cleanup all sessions and stop background threads
 
@@ -106,7 +107,7 @@ class RequestResponseSession:
 - `do_request_response(message, stream, streaming_complete_expression)`: Execute request/response
 - `is_expired() -> bool`: Check if session has expired based on config
 - `get_active_request_count() -> int`: Number of active requests
-- `cleanup() -> None`: Clean up resources and stop controller
+- `cleanup() -> None`: Clean up resources, stop controller, and ensure any in-flight requests immediately fail.
 - `update_last_used()`: Update last used timestamp
 
 ### 3. SessionRegistry
@@ -275,6 +276,7 @@ components:
     component_module: my_module
     multi_session_request_response:
       enabled: true
+      max_sessions: 50  # Safeguard against resource exhaustion
       default_broker_config:
         broker_url: tcp://localhost:55555
         broker_username: default_user
@@ -308,10 +310,10 @@ response = component.do_broker_request_response(
 ## Error Handling Strategy
 
 ### Session-Level Errors:
-1. **Session creation failures** - Return None and log error
-2. **Session not found** - Raise ValueError with clear message
-3. **Session expired** - Automatically clean up and raise SessionExpiredError
-4. **Broker connection failures** - Propagate from RequestResponseFlowController
+1. **Session creation failures** - Return None and log error. If `max_sessions` is reached, raise a specific `SessionLimitExceededError`.
+2. **Session not found** - Raise `ValueError` with clear message.
+3. **Session expired or destroyed** - Automatically clean up. Any callers waiting for a response from this session will immediately receive a `SessionClosedError` exception.
+4. **Broker connection failures** - Propagate from `RequestResponseFlowController`.
 
 ### Recovery Mechanisms:
 1. **Automatic session cleanup** for expired or failed sessions
