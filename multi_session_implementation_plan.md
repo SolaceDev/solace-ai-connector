@@ -57,7 +57,6 @@ This phase focuses on creating the foundational classes for session management i
         -   Track the request by adding a unique ID to `active_requests`.
         -   Delegate the call to the internal `RequestResponseFlowController`.
         -   Use a `finally` block to ensure the request ID is removed from `active_requests` upon completion or failure.
-    -   **`is_expired()`**: Implement logic to check if the session has been idle longer than `session_timeout_seconds`.
     -   **`get_status()`**: Return a dictionary with detailed session status (ID, age, last use, active request count).
     -   **`cleanup()`**:
         -   Set an internal shutdown flag.
@@ -70,10 +69,9 @@ This phase focuses on creating the foundational classes for session management i
 -   **Content:**
     -   Import necessary classes (`SessionRegistry`, `RequestResponseSession`, `SessionConfig`, etc.) and modules (`threading`, `weakref`, `time`).
     -   Create the `MultiSessionRequestResponseManager` class.
-    -   **`__init__(component, default_session_config, max_sessions, session_timeout_seconds)`**:
+    -   **`__init__(component, default_session_config, max_sessions)`**:
         -   Store a `weakref` to the parent component, default configuration, and limits.
         -   Instantiate the `SessionRegistry`.
-        -   Start a background `_cleanup_thread` that periodically checks for and removes expired sessions.
     -   **`create_session(session_config)`**:
         -   Check against `max_sessions` and raise `SessionLimitExceededError` if the limit is reached.
         -   Merge the provided `session_config` with defaults.
@@ -82,7 +80,7 @@ This phase focuses on creating the foundational classes for session management i
     -   **`destroy_session(session_id)`**: Unregister the session and call its `cleanup()` method.
     -   **`get_session(session_id)`**: Delegate to the `SessionRegistry`.
     -   **`list_sessions()`**: Iterate through sessions in the registry, call `get_status()` on each, and return a list of status dictionaries.
-    -   **`shutdown()`**: Gracefully stop the cleanup thread and destroy all active sessions.
+    -   **`shutdown()`**: Gracefully destroy all active sessions.
 -   **Rationale:** Serves as the primary API for the feature, managing the entire lifecycle of all sessions associated with a component.
 
 ---
@@ -143,7 +141,6 @@ This phase outlines the necessary steps for validation and user-facing documenta
     5.  Destroys session 1.
     6.  Verifies that attempting to use session 1 raises `SessionNotFoundError` or `SessionClosedError`.
     7.  Verifies that session 2 remains fully functional.
--   Create a test specifically for session expiration to ensure the cleanup thread works as expected.
 -   Create a test for backward compatibility by calling `do_broker_request_response` without a `session_id` on a component with the legacy configuration.
 
 ### Step 3.3: Documentation

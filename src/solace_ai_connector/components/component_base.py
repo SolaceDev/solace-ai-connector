@@ -414,10 +414,7 @@ class ComponentBase:
 
             try:
                 default_session_config = SessionConfig(
-                    broker_config=default_broker_config,
-                    session_timeout_seconds=multi_session_config.get(
-                        "session_timeout_seconds", 3600
-                    ),
+                    broker_config=default_broker_config
                 )
             except ValueError as e:
                 raise ValueError(

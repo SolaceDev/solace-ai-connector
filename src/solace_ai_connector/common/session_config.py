@@ -16,7 +16,6 @@ class SessionConfig:
     request_expiry_ms: int = 30000
     response_topic_prefix: str = "reply"
     response_queue_prefix: str = "reply-queue"
-    session_timeout_seconds: int = 3600  # 1 hour default
     max_concurrent_requests: int = 100
     user_properties_reply_topic_key: str = (
         "__solace_ai_connector_broker_request_response_topic__"

@@ -93,7 +93,6 @@ graph TB
 3. **SessionRegistry**
    - Thread-safe registry for tracking active sessions
    - Provides session lookup by ID
-   - Handles session timeout and cleanup
 
 ## API Design
 
@@ -124,7 +123,7 @@ sessions = component.list_request_response_sessions()
 # [
 #   {
 #     "session_id": "...", "created_at": ..., "last_used_at": ..., 
-#     "active_request_count": 0, "is_expired": False
+#     "active_request_count": 0
 #   }
 # ]
 
@@ -170,7 +169,7 @@ def do_broker_request_response(self, message, session_id=None, stream=False, str
 - Extend ComponentBase with multi-session support
 - Add session-aware do_broker_request_response method
 - Implement backward compatibility layer
-- Add session timeout and cleanup mechanisms
+- Add session cleanup mechanisms
 
 ### Phase 3: Testing & Documentation
 - Create comprehensive unit tests
@@ -188,8 +187,8 @@ def do_broker_request_response(self, message, session_id=None, stream=False, str
 
 ## Considerations
 
-1. **Resource Management**: Need careful cleanup of broker connections and temp queues. The design includes a configurable `max_sessions` limit to prevent resource exhaustion and an idle timeout for automatic cleanup.
+1. **Resource Management**: Need careful cleanup of broker connections and temp queues. The design includes a configurable `max_sessions` limit to prevent resource exhaustion. Session lifecycle is managed explicitly via API calls.
 2. **Thread Safety**: Session registry and all session management operations must be thread-safe.
-3. **Error Handling**: Session-specific error handling is required. If a session is destroyed or expires, any in-flight requests waiting on a response must immediately raise an exception to the caller.
+3. **Error Handling**: Session-specific error handling is required. If a session is destroyed, any in-flight requests waiting on a response must immediately raise an exception to the caller.
 4. **Monitoring**: Session health and metrics are critical. The `list_sessions` API will provide detailed status (age, active requests, etc.) for observability.
 5. **Configuration Validation**: Session configurations must be validated before creation to prevent runtime errors.

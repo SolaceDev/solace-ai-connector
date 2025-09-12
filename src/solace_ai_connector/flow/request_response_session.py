@@ -80,20 +80,6 @@ class RequestResponseSession:
             with self._lock:
                 self.active_requests.remove(request_id)
 
-    def is_expired(self) -> bool:
-        """
-        Checks if the session has been idle longer than its configured timeout.
-
-        Returns:
-            True if the session is expired, False otherwise.
-        """
-        if self.config.session_timeout_seconds <= 0:
-            return False  # Timeout is disabled
-        with self._lock:
-            if self.active_requests:
-                return False  # Don't expire if there are active requests
-        return (time.time() - self.last_used_at) > self.config.session_timeout_seconds
-
     def get_status(self) -> Dict[str, Any]:
         """
         Returns a dictionary with detailed status information for this session.
@@ -109,7 +95,6 @@ class RequestResponseSession:
             "created_at": self.created_at,
             "last_used_at": self.last_used_at,
             "active_request_count": active_request_count,
-            "is_expired": self.is_expired(),
         }
 
     def cleanup(self) -> None:

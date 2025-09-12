@@ -39,7 +39,6 @@ class MultiSessionRequestResponseManager:
     - component_ref: WeakReference to parent component
     - default_broker_config: Default broker configuration
     - max_sessions: Maximum number of concurrent sessions allowed
-    - cleanup_thread: Background thread for session cleanup
     - _lock: Threading lock for thread safety
     """
     
@@ -47,7 +46,6 @@ class MultiSessionRequestResponseManager:
         self.component_ref = weakref.ref(component)
         self.session_registry = SessionRegistry()
         self.default_broker_config = default_broker_config or {}
-        self.cleanup_thread = None
         self._lock = threading.RLock()
         self._shutdown = threading.Event()
         
@@ -62,8 +60,7 @@ class MultiSessionRequestResponseManager:
 - `destroy_session(session_id) -> bool`: Destroys session and cleans up resources
 - `get_session(session_id) -> RequestResponseSession`: Retrieves session by ID
 - `list_sessions() -> List[Dict[str, Any]]`: Returns a list of dictionaries with detailed status for each active session.
-- `cleanup_expired_sessions()`: Background cleanup of expired sessions
-- `shutdown()`: Cleanup all sessions and stop background threads
+- `shutdown()`: Cleanup all sessions
 
 ### 2. RequestResponseSession
 **Location**: `src/solace_ai_connector/flow/request_response_session.py`
@@ -105,7 +102,6 @@ class RequestResponseSession:
 
 **Key Methods**:
 - `do_request_response(message, stream, streaming_complete_expression)`: Execute request/response
-- `is_expired() -> bool`: Check if session has expired based on config
 - `get_active_request_count() -> int`: Number of active requests
 - `cleanup() -> None`: Clean up resources, stop controller, and ensure any in-flight requests immediately fail.
 - `update_last_used()`: Update last used timestamp
@@ -140,7 +136,6 @@ class SessionRegistry:
 - `unregister_session(session_id: str) -> RequestResponseSession`: Remove and return session
 - `get_session(session_id: str) -> RequestResponseSession`: Retrieve session by ID
 - `list_session_ids() -> List[str]`: Get all active session IDs
-- `get_expired_sessions(max_age_seconds: int) -> List[RequestResponseSession]`: Find expired sessions
 - `clear() -> List[RequestResponseSession]`: Remove all sessions and return them
 
 ### 4. SessionConfig
@@ -158,7 +153,6 @@ class SessionConfig:
     - request_expiry_ms: Request timeout in milliseconds
     - response_topic_prefix: Prefix for reply topics
     - response_queue_prefix: Prefix for temp queue names
-    - session_timeout_seconds: Session idle timeout
     - max_concurrent_requests: Limit on concurrent requests per session
     """
     
@@ -166,7 +160,6 @@ class SessionConfig:
     request_expiry_ms: int = 30000
     response_topic_prefix: str = "reply"
     response_queue_prefix: str = "reply-queue"
-    session_timeout_seconds: int = 3600  # 1 hour default
     max_concurrent_requests: int = 100
     user_properties_reply_topic_key: str = "__solace_ai_connector_broker_request_response_topic__"
     user_properties_reply_metadata_key: str = "__solace_ai_connector_broker_request_reply_metadata__"
@@ -222,7 +215,7 @@ class ComponentBase:
 
 3. **Session Cleanup**:
    ```
-   Background cleanup thread or explicit destroy_session() call
+   Explicit destroy_session() call
    → Session removed from SessionRegistry
    → RequestResponseFlowController cleanup() called
    → Temp queues and broker connections cleaned up
@@ -239,20 +232,20 @@ class ComponentBase:
 ### Concurrency Patterns:
 1. **Multiple sessions can handle requests simultaneously** - Each session has its own RequestResponseFlowController
 2. **Session registry operations are atomic** - All registry modifications are protected by locks
-3. **Background cleanup is non-blocking** - Cleanup thread operates independently
+3. **Background cleanup is removed** - Lifecycle is explicitly managed.
 
 ## Memory Management
 
 ### Object Lifecycle:
 1. **Sessions are created on-demand** and stored in SessionRegistry
-2. **Sessions are removed** when explicitly destroyed or expired
+2. **Sessions are removed** when explicitly destroyed
 3. **Weak references** used where appropriate to prevent circular references
 4. **RequestResponseFlowController cleanup** ensures broker resources are released
 
 ### Resource Cleanup:
 1. **Temp queues** are automatically deleted when RequestResponseFlowController is destroyed
 2. **Broker connections** are properly closed during session cleanup
-3. **Background threads** are stopped during component shutdown
+3. **Background threads for cleanup are removed**. Other threads are stopped during component shutdown.
 4. **Active requests** are tracked and can be cancelled during session destruction
 
 ## Integration Points
@@ -282,7 +275,6 @@ components:
         broker_username: default_user
         broker_password: default_pass
         broker_vpn: default_vpn
-      session_timeout_seconds: 1800
 ```
 
 ### Runtime Session Creation:
@@ -296,8 +288,7 @@ session_id = component.create_request_response_session(
         "broker_vpn": "prod_vpn"
     },
     request_expiry_ms=60000,
-    response_topic_prefix="prod/replies",
-    session_timeout_seconds=3600
+    response_topic_prefix="prod/replies"
 )
 
 # Use the session
@@ -312,11 +303,11 @@ response = component.do_broker_request_response(
 ### Session-Level Errors:
 1. **Session creation failures** - Return None and log error. If `max_sessions` is reached, raise a specific `SessionLimitExceededError`.
 2. **Session not found** - Raise `ValueError` with clear message.
-3. **Session expired or destroyed** - Automatically clean up. Any callers waiting for a response from this session will immediately receive a `SessionClosedError` exception.
+3. **Session destroyed** - Any callers waiting for a response from this session will immediately receive a `SessionClosedError` exception.
 4. **Broker connection failures** - Propagate from `RequestResponseFlowController`.
 
 ### Recovery Mechanisms:
-1. **Automatic session cleanup** for expired or failed sessions
+1. **Explicit session cleanup** for failed sessions
 2. **Graceful degradation** - Fall back to default session if multi-session fails
 3. **Resource leak prevention** - Ensure cleanup even on exceptions
 4. **Request tracking** - Cancel active requests when session is destroyed

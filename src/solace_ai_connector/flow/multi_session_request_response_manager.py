@@ -3,7 +3,6 @@ Manages multiple independent request/response sessions for a component.
 """
 
 import threading
-import time
 import weakref
 from typing import Dict, Any, List, Optional
 
@@ -39,11 +38,6 @@ class MultiSessionRequestResponseManager:
         self.max_sessions = max_sessions
         self._lock = threading.RLock()
         self._shutdown_event = threading.Event()
-
-        self._cleanup_thread = threading.Thread(
-            target=self._cleanup_expired_sessions_loop, daemon=True
-        )
-        self._cleanup_thread.start()
 
     def create_session(
         self, session_config_overrides: Optional[Dict[str, Any]] = None
@@ -133,43 +127,12 @@ class MultiSessionRequestResponseManager:
         sessions = self.session_registry.list_sessions()
         return [session.get_status() for session in sessions]
 
-    def _cleanup_expired_sessions_loop(self):
-        """
-        Background thread loop that periodically checks for and removes
-        expired sessions based on their idle timeout.
-        """
-        while not self._shutdown_event.is_set():
-            try:
-                # Use a copy of the list to avoid issues with concurrent modification
-                sessions_to_check = self.session_registry.list_sessions()
-                for session in sessions_to_check:
-                    if session.is_expired():
-                        log.info(f"Session {session.session_id} has expired. Cleaning up.")
-                        self.destroy_session(session.session_id)
-            except Exception as e:
-                log.error(f"Error in session cleanup loop: {e}", trace=e)
-
-            # Determine a sensible wait interval.
-            # Use a fraction of the shortest timeout, or a default.
-            all_timeouts = [
-                s.config.session_timeout_seconds
-                for s in self.session_registry.list_sessions()
-                if s.config.session_timeout_seconds > 0
-            ]
-            wait_interval = min(all_timeouts) / 10 if all_timeouts else 60
-            wait_interval = max(1, wait_interval)
-
-            self._shutdown_event.wait(timeout=wait_interval)
-
     def shutdown(self):
         """
         Gracefully stops the cleanup thread and destroys all active sessions.
         """
         log.info("Shutting down MultiSessionRequestResponseManager.")
         self._shutdown_event.set()
-
-        if self._cleanup_thread.is_alive():
-            self._cleanup_thread.join(timeout=5.0)
 
         all_sessions = self.session_registry.clear()
         for session in all_sessions:
