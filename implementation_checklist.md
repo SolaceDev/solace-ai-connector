@@ -23,13 +23,13 @@ This checklist breaks down the implementation plan into actionable, trackable st
     -   [x] Implement `list_sessions()`.
     -   [x] Implement `clear()`.
 
-4.  [ ] **Implement the Request/Response Session Wrapper (`src/solace_ai_connector/flow/request_response_session.py`)**
-    -   [ ] Create `RequestResponseSession` class.
-    -   [ ] In `__init__`, store metadata and instantiate `RequestResponseFlowController`.
-    -   [ ] Implement `do_request_response(...)` with request tracking.
-    -   [ ] Implement `is_expired()`.
-    -   [ ] Implement `get_status()`.
-    -   [ ] Implement `cleanup()` to release resources and fail waiting callers.
+4.  [x] **Implement the Request/Response Session Wrapper (`src/solace_ai_connector/flow/request_response_session.py`)**
+    -   [x] Create `RequestResponseSession` class.
+    -   [x] In `__init__`, store metadata and instantiate `RequestResponseFlowController`.
+    -   [x] Implement `do_request_response(...)` with request tracking.
+    -   [x] Implement `is_expired()`.
+    -   [x] Implement `get_status()`.
+    -   [x] Implement `cleanup()` to release resources and fail waiting callers.
 
 5.  [ ] **Implement the Multi-Session Manager (`src/solace_ai_connector/flow/multi_session_request_response_manager.py`)**
     -   [ ] Create `MultiSessionRequestResponseManager` class.
