@@ -127,7 +127,6 @@ This phase outlines the necessary steps for validation and user-facing documenta
 -   **`RequestResponseSession`**: Verify correct `RequestResponseFlowController` initialization and ensure its `cleanup()` method is called.
 -   **`MultiSessionRequestResponseManager`**:
     -   Verify that `max_sessions` is correctly enforced.
-    -   Test the background cleanup thread to ensure it correctly identifies and removes expired sessions.
     -   Test the `shutdown()` method to confirm all sessions are destroyed.
 -   **`ComponentBase`**: Test the new API methods to ensure they delegate correctly to the manager.
 

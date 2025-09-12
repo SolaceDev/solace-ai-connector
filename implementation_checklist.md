@@ -27,14 +27,14 @@ This checklist breaks down the implementation plan into actionable, trackable st
     -   [x] Create `RequestResponseSession` class.
     -   [x] In `__init__`, store metadata and instantiate `RequestResponseFlowController`.
     -   [x] Implement `do_request_response(...)` with request tracking.
-    -   [x] Implement `is_expired()`.
+    -   [ ] Implement `is_expired()`.
     -   [x] Implement `get_status()`.
     -   [x] Implement `cleanup()` to release resources and fail waiting callers.
 
 5.  [x] **Implement the Multi-Session Manager (`src/solace_ai_connector/flow/multi_session_request_response_manager.py`)**
     -   [x] Create `MultiSessionRequestResponseManager` class.
     -   [x] In `__init__`, store component `weakref`, config, limits, and instantiate `SessionRegistry`.
-    -   [x] Implement and start the background `_cleanup_thread`.
+    -   [ ] Implement and start the background `_cleanup_thread`.
     -   [x] Implement `create_session(session_config)` with `max_sessions` check.
     -   [x] Implement `destroy_session(session_id)`.
     -   [x] Implement `get_session(session_id)`.
@@ -62,12 +62,12 @@ This checklist breaks down the implementation plan into actionable, trackable st
 8.  [ ] **Unit Tests**
     -   [ ] Test `SessionRegistry` for thread safety.
     -   [ ] Test `RequestResponseSession` for correct initialization and cleanup.
-    -   [ ] Test `MultiSessionRequestResponseManager` for `max_sessions` enforcement, session expiration, and shutdown.
+    -   [ ] Test `MultiSessionRequestResponseManager` for `max_sessions` enforcement, and shutdown.
     -   [ ] Test `ComponentBase` API methods for correct delegation.
 
 9.  [ ] **Integration Tests**
     -   [x] Create a multi-session test (create, use, list, destroy).
-    -   [x] Create a session expiration test.
+    -   [ ] Create a session expiration test.
     -   [ ] Create a backward compatibility test using legacy config.
 
 10. [ ] **Documentation**
