@@ -66,7 +66,7 @@ This checklist breaks down the implementation plan into actionable, trackable st
     -   [ ] Test `ComponentBase` API methods for correct delegation.
 
 9.  [ ] **Integration Tests**
-    -   [ ] Create a multi-session test (create, use, list, destroy).
+    -   [x] Create a multi-session test (create, use, list, destroy).
     -   [ ] Create a session expiration test.
     -   [ ] Create a backward compatibility test using legacy config.
 
