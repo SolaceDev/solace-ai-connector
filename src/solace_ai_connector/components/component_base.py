@@ -513,11 +513,11 @@ class ComponentBase:
                 validate_config_block(
                     self.component_config, config_params, self.log_identifier
                 )
-            except ValueError:
+            except ValueError as e:
                 # Re-raise the error with more context
                 raise ValueError(
                     f"Configuration error in component '{self.name}': {e}"
-                ) from None
+                ) from e
         else:
             log.debug(
                 "%s No 'config_parameters' defined in module_info. Skipping config validation.",
