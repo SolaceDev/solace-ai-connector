@@ -15,6 +15,11 @@ from solace_ai_connector.common.exceptions import (
     SessionLimitExceededError,
     SessionClosedError,
 )
+from solace_ai_connector.components.inputs_outputs.broker_request_response import (
+    BrokerRequestResponse,
+)
+from solace_ai_connector.common.log import log
+import queue
 
 
 def test_multi_session_lifecycle_and_isolation():
@@ -204,7 +209,7 @@ def test_backward_compatibility_with_legacy_rrc():
         dispose_connector(connector)
 
 
-def test_error_on_destroying_active_session():
+def test_error_on_destroying_active_session(monkeypatch):
     """
     Tests that a thread waiting for a response fails with SessionClosedError
     if the session is destroyed mid-request.
@@ -213,11 +218,45 @@ def test_error_on_destroying_active_session():
     handler_should_finish = threading.Event()
     worker_exception = None
 
-    def blocking_invoke_handler(component, message, data):
-        # This handler blocks until an event is set
-        handler_started.set()  # Signal that the handler has started and is blocking
-        handler_should_finish.wait(timeout=5)  # Wait here with a timeout
-        return data  # Echo the data back
+    # 1. Create a test-only subclass that blocks in the response path
+    class BlockingBrokerRequestResponse(BrokerRequestResponse):
+        def handle_test_pass_through(self):
+            while not self._local_stop_signal.is_set():
+                try:
+                    # This is where the worker thread will block
+                    message = self.pass_through_queue.get(timeout=1)
+
+                    # Signal to the main thread that we are now blocking
+                    handler_started.set()
+                    # Wait until the main thread tells us to continue
+                    handler_should_finish.wait(timeout=5)
+
+                    # After being unblocked, process the response as normal
+                    decoded_payload = self.decode_payload(message.get_payload())
+                    message.set_payload(decoded_payload)
+                    self.process_response(message)
+                except queue.Empty:
+                    continue
+                except Exception as e:
+                    log.error("Error in blocking test passthrough.", trace=e)
+
+    # 2. Use monkeypatch to replace the real component with our blocking one
+    monkeypatch.setattr(
+        "solace_ai_connector.flow.flow.import_module",
+        lambda module, base_path, component_package: (
+            __import__(
+                "solace_ai_connector.components.inputs_outputs.broker_request_response"
+            ).components.inputs_outputs.broker_request_response
+            if module == "broker_request_response"
+            else sys.modules["solace_ai_connector.common.utils"].import_module(
+                module, base_path, component_package
+            )
+        ),
+    )
+    monkeypatch.setattr(
+        "solace_ai_connector.components.inputs_outputs.broker_request_response.BrokerRequestResponse",
+        BlockingBrokerRequestResponse,
+    )
 
     config = {
         "flows": [
@@ -225,11 +264,8 @@ def test_error_on_destroying_active_session():
                 "name": "test_blocking_flow",
                 "components": [
                     {
-                        "component_name": "blocking_handler",
+                        "component_name": "requester_component",
                         "component_module": "handler_callback",
-                        "component_config": {
-                            "invoke_handler": blocking_invoke_handler,
-                        },
                         "multi_session_request_response": {
                             "enabled": True,
                             "default_broker_config": {
@@ -253,26 +289,26 @@ def test_error_on_destroying_active_session():
         nonlocal worker_exception
         try:
             message = Message(payload={"data": "wait_for_it"})
-            # This call will block inside the handler
+            # This call will block inside our patched component
             component.do_broker_request_response(message, session_id=session_id)
         except Exception as e:
             worker_exception = e
 
     try:
-        # 1. Create a session
+        # 3. Create a session
         session_id = component.create_request_response_session()
 
-        # 2. Start a worker thread to make a blocking request
+        # 4. Start a worker thread to make a blocking request
         worker = threading.Thread(target=worker_thread_task, args=(session_id,))
         worker.start()
 
-        # 3. Wait for the handler to signal that it's blocking
+        # 5. Wait for the handler to signal that it's blocking
         assert handler_started.wait(timeout=5), "Handler did not start in time"
 
-        # 4. Destroy the session while the worker is waiting for a response
+        # 6. Destroy the session while the worker is waiting for a response
         component.destroy_request_response_session(session_id)
 
-        # 5. Join the worker thread and check for the expected exception
+        # 7. Join the worker thread and check for the expected exception
         worker.join(timeout=5)
         assert not worker.is_alive(), "Worker thread did not terminate"
         assert isinstance(worker_exception, SessionClosedError)
