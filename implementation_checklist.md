@@ -4,10 +4,10 @@ This checklist breaks down the implementation plan into actionable, trackable st
 
 ## Phase 1: Core Infrastructure (New Files)
 
-1.  [ ] **Create Custom Exceptions (`src/solace_ai_connector/common/exceptions.py`)**
-    -   [ ] Define `SessionLimitExceededError(Exception)`.
-    -   [ ] Define `SessionClosedError(Exception)`.
-    -   [ ] Define `SessionNotFoundError(ValueError)`.
+1.  [x] **Create Custom Exceptions (`src/solace_ai_connector/common/exceptions.py`)**
+    -   [x] Define `SessionLimitExceededError(Exception)`.
+    -   [x] Define `SessionClosedError(Exception)`.
+    -   [x] Define `SessionNotFoundError(ValueError)`.
 
 2.  [ ] **Define Session Configuration (`src/solace_ai_connector/common/session_config.py`)**
     -   [ ] Create `SessionConfig` dataclass.
