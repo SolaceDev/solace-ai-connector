@@ -48,14 +48,14 @@ This checklist breaks down the implementation plan into actionable, trackable st
     -   [x] Add a shutdown flag (`self._is_shutdown`).
     -   [x] Check the shutdown flag in `do_broker_request_response` and raise `SessionClosedError` if set.
 
-7.  [ ] **Modify `ComponentBase` (`src/solace_ai_connector/components/component_base.py`)**
-    -   [ ] In `__init__`, add `self._multi_session_manager = None`.
-    -   [ ] Create and call `_setup_multi_session_request_response()` from `__init__`.
-    -   [ ] Add public API method `create_request_response_session(...)`.
-    -   [ ] Add public API method `destroy_request_response_session(...)`.
-    -   [ ] Add public API method `list_request_response_sessions()`.
-    -   [ ] Modify `do_broker_request_response(...)` to accept `session_id` and handle both new and legacy paths.
-    -   [ ] Modify `cleanup()` to call `self._multi_session_manager.shutdown()` if it exists.
+7.  [x] **Modify `ComponentBase` (`src/solace_ai_connector/components/component_base.py`)**
+    -   [x] In `__init__`, add `self._multi_session_manager = None`.
+    -   [x] Create and call `_setup_multi_session_request_response()` from `__init__`.
+    -   [x] Add public API method `create_request_response_session(...)`.
+    -   [x] Add public API method `destroy_request_response_session(...)`.
+    -   [x] Add public API method `list_request_response_sessions()`.
+    -   [x] Modify `do_broker_request_response(...)` to accept `session_id` and handle both new and legacy paths.
+    -   [x] Modify `cleanup()` to call `self._multi_session_manager.shutdown()` if it exists.
 
 ## Phase 3: Testing and Documentation
 
