@@ -43,10 +43,10 @@ This checklist breaks down the implementation plan into actionable, trackable st
 
 ## Phase 2: Integration (Modifying Existing Files)
 
-6.  [ ] **Modify `RequestResponseFlowController` (`src/solace_ai_connector/flow/request_response_flow_controller.py`)**
-    -   [ ] Add a `cleanup()` method that calls `self.flow.cleanup()`.
-    -   [ ] Add a shutdown flag (`self._is_shutdown`).
-    -   [ ] Check the shutdown flag in `do_broker_request_response` and raise `SessionClosedError` if set.
+6.  [x] **Modify `RequestResponseFlowController` (`src/solace_ai_connector/flow/request_response_flow_controller.py`)**
+    -   [x] Add a `cleanup()` method that calls `self.flow.cleanup()`.
+    -   [x] Add a shutdown flag (`self._is_shutdown`).
+    -   [x] Check the shutdown flag in `do_broker_request_response` and raise `SessionClosedError` if set.
 
 7.  [ ] **Modify `ComponentBase` (`src/solace_ai_connector/components/component_base.py`)**
     -   [ ] In `__init__`, add `self._multi_session_manager = None`.
