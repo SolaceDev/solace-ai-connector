@@ -1,5 +1,6 @@
 import sys
 import time
+import threading
 import pytest
 
 sys.path.append("src")
@@ -9,7 +10,11 @@ from solace_ai_connector.test_utils.utils_for_test_files import (
     create_test_flows,
     dispose_connector,
 )
-from solace_ai_connector.common.exceptions import SessionNotFoundError
+from solace_ai_connector.common.exceptions import (
+    SessionNotFoundError,
+    SessionLimitExceededError,
+    SessionClosedError,
+)
 
 
 def test_multi_session_lifecycle_and_isolation():
@@ -101,6 +106,180 @@ def test_multi_session_lifecycle_and_isolation():
         assert len(component.list_request_response_sessions()) == 0
 
     finally:
+        dispose_connector(connector)
+
+
+def test_max_sessions_limit():
+    """Tests that the max_sessions limit is enforced."""
+    config = {
+        "flows": [
+            {
+                "name": "test_max_sessions_flow",
+                "components": [
+                    {
+                        "component_name": "session_handler",
+                        "component_module": "handler_callback",
+                        "multi_session_request_response": {
+                            "enabled": True,
+                            "max_sessions": 2,  # Set a low limit
+                            "default_broker_config": {
+                                "broker_type": "test",
+                                "broker_url": "test",
+                                "broker_username": "test",
+                                "broker_password": "test",
+                                "broker_vpn": "test",
+                            },
+                        },
+                    }
+                ],
+            }
+        ]
+    }
+
+    connector, flows = create_test_flows(config)
+    component = flows[0]["flow"].component_groups[0][0]
+
+    try:
+        # 1. Create sessions up to the limit
+        session_id_1 = component.create_request_response_session()
+        component.create_request_response_session()
+        assert len(component.list_request_response_sessions()) == 2
+
+        # 2. Verify that creating one more session raises an error
+        with pytest.raises(SessionLimitExceededError):
+            component.create_request_response_session()
+
+        # 3. Destroy a session and verify a new one can be created
+        component.destroy_request_response_session(session_id_1)
+        assert len(component.list_request_response_sessions()) == 1
+        component.create_request_response_session()
+        assert len(component.list_request_response_sessions()) == 2
+
+    finally:
+        dispose_connector(connector)
+
+
+def test_backward_compatibility_with_legacy_rrc():
+    """
+    Tests that do_broker_request_response works correctly with the legacy,
+    component-level RRC configuration when no session_id is provided.
+    """
+    config = {
+        "flows": [
+            {
+                "name": "test_legacy_flow",
+                "components": [
+                    {
+                        "component_name": "legacy_requester",
+                        "component_module": "handler_callback",
+                        # NOTE: No multi_session_request_response block
+                        "broker_request_response": {
+                            "enabled": True,
+                            "broker_config": {
+                                "broker_type": "test",
+                                "broker_url": "test",
+                                "broker_username": "test",
+                                "broker_password": "test",
+                                "broker_vpn": "test",
+                            },
+                        },
+                    }
+                ],
+            }
+        ]
+    }
+
+    connector, flows = create_test_flows(config)
+    component = flows[0]["flow"].component_groups[0][0]
+
+    try:
+        # Call do_broker_request_response WITHOUT a session_id
+        message = Message(payload={"data": "legacy_test"})
+        response = component.do_broker_request_response(message)
+
+        # Verify the response is correct, proving the fallback worked
+        assert response.get_payload() == {"data": "legacy_test"}
+
+    finally:
+        dispose_connector(connector)
+
+
+def test_error_on_destroying_active_session():
+    """
+    Tests that a thread waiting for a response fails with SessionClosedError
+    if the session is destroyed mid-request.
+    """
+    handler_started = threading.Event()
+    handler_should_finish = threading.Event()
+    worker_exception = None
+
+    def blocking_invoke_handler(component, message, data):
+        # This handler blocks until an event is set
+        handler_started.set()  # Signal that the handler has started and is blocking
+        handler_should_finish.wait(timeout=5)  # Wait here with a timeout
+        return data  # Echo the data back
+
+    config = {
+        "flows": [
+            {
+                "name": "test_blocking_flow",
+                "components": [
+                    {
+                        "component_name": "blocking_handler",
+                        "component_module": "handler_callback",
+                        "component_config": {
+                            "invoke_handler": blocking_invoke_handler,
+                        },
+                        "multi_session_request_response": {
+                            "enabled": True,
+                            "default_broker_config": {
+                                "broker_type": "test",
+                                "broker_url": "test",
+                                "broker_username": "test",
+                                "broker_password": "test",
+                                "broker_vpn": "test",
+                            },
+                        },
+                    }
+                ],
+            }
+        ]
+    }
+
+    connector, flows = create_test_flows(config)
+    component = flows[0]["flow"].component_groups[0][0]
+
+    def worker_thread_task(session_id):
+        nonlocal worker_exception
+        try:
+            message = Message(payload={"data": "wait_for_it"})
+            # This call will block inside the handler
+            component.do_broker_request_response(message, session_id=session_id)
+        except Exception as e:
+            worker_exception = e
+
+    try:
+        # 1. Create a session
+        session_id = component.create_request_response_session()
+
+        # 2. Start a worker thread to make a blocking request
+        worker = threading.Thread(target=worker_thread_task, args=(session_id,))
+        worker.start()
+
+        # 3. Wait for the handler to signal that it's blocking
+        assert handler_started.wait(timeout=5), "Handler did not start in time"
+
+        # 4. Destroy the session while the worker is waiting for a response
+        component.destroy_request_response_session(session_id)
+
+        # 5. Join the worker thread and check for the expected exception
+        worker.join(timeout=5)
+        assert not worker.is_alive(), "Worker thread did not terminate"
+        assert isinstance(worker_exception, SessionClosedError)
+
+    finally:
+        # Unblock the handler so its thread can terminate cleanly
+        handler_should_finish.set()
         dispose_connector(connector)
 
 

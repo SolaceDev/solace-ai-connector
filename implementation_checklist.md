@@ -63,9 +63,11 @@ This checklist breaks down the implementation plan into actionable, trackable st
     -   [ ] Test `MultiSessionRequestResponseManager` for `max_sessions` enforcement and shutdown.
     -   [ ] Test `ComponentBase` API methods for correct delegation.
 
-9.  [ ] **Integration Tests**
+9.  [x] **Integration Tests**
     -   [x] Create a multi-session test (create, use, list, destroy).
-    -   [ ] Create a backward compatibility test using legacy config.
+    -   [x] Test resource limit enforcement (`max_sessions`).
+    -   [x] Create a backward compatibility test using legacy config.
+    -   [x] Test error handling on session destruction.
 
 10. [ ] **Documentation**
     -   [ ] Update `llm.txt` developer guides for modified files.
