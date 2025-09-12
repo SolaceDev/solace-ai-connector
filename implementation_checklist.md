@@ -31,15 +31,15 @@ This checklist breaks down the implementation plan into actionable, trackable st
     -   [x] Implement `get_status()`.
     -   [x] Implement `cleanup()` to release resources and fail waiting callers.
 
-5.  [ ] **Implement the Multi-Session Manager (`src/solace_ai_connector/flow/multi_session_request_response_manager.py`)**
-    -   [ ] Create `MultiSessionRequestResponseManager` class.
-    -   [ ] In `__init__`, store component `weakref`, config, limits, and instantiate `SessionRegistry`.
-    -   [ ] Implement and start the background `_cleanup_thread`.
-    -   [ ] Implement `create_session(session_config)` with `max_sessions` check.
-    -   [ ] Implement `destroy_session(session_id)`.
-    -   [ ] Implement `get_session(session_id)`.
-    -   [ ] Implement `list_sessions()` to return detailed status dictionaries.
-    -   [ ] Implement `shutdown()` to stop the thread and clean up all sessions.
+5.  [x] **Implement the Multi-Session Manager (`src/solace_ai_connector/flow/multi_session_request_response_manager.py`)**
+    -   [x] Create `MultiSessionRequestResponseManager` class.
+    -   [x] In `__init__`, store component `weakref`, config, limits, and instantiate `SessionRegistry`.
+    -   [x] Implement and start the background `_cleanup_thread`.
+    -   [x] Implement `create_session(session_config)` with `max_sessions` check.
+    -   [x] Implement `destroy_session(session_id)`.
+    -   [x] Implement `get_session(session_id)`.
+    -   [x] Implement `list_sessions()` to return detailed status dictionaries.
+    -   [x] Implement `shutdown()` to stop the thread and clean up all sessions.
 
 ## Phase 2: Integration (Modifying Existing Files)
 
