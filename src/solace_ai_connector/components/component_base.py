@@ -617,11 +617,19 @@ class ComponentBase:
         session_id: Optional[str] = None,
         stream=False,
         streaming_complete_expression=None,
+        wait_for_response: bool = True,
     ):
         """
         Performs broker request-response.
         If session_id is provided, uses the dynamic multi-session manager.
         Otherwise, falls back to the legacy App-level or Component-level controller.
+
+        Args:
+            message: The request message to send.
+            session_id: The ID of the dynamic session to use.
+            stream: Whether the response is expected to be streaming.
+            streaming_complete_expression: Expression to detect the end of a stream.
+            wait_for_response: If False, sends the request and returns immediately.
         """
         generator = None
         # New multi-session path
@@ -633,7 +641,7 @@ class ComponentBase:
                 )
             session = self._multi_session_manager.get_session(session_id)
             generator = session.do_request_response(
-                message, stream, streaming_complete_expression
+                message, stream, streaming_complete_expression, wait_for_response
             )
         # Legacy single-session path (backward compatibility)
         else:
@@ -660,10 +668,13 @@ class ComponentBase:
                 )
 
             generator = controller.do_broker_request_response(
-                message, stream, streaming_complete_expression
+                message, stream, streaming_complete_expression, wait_for_response
             )
 
         # Common response handling for both paths
+        if not wait_for_response:
+            return None  # Fire-and-forget, return immediately
+
         if stream:
             return generator  # Return the generator directly for streaming
         else:

@@ -98,13 +98,20 @@ class RequestResponseFlowController:
         flow.set_next_component(rrcComponent)
 
     def do_broker_request_response(
-        self, request_message, stream=False, streaming_complete_expression=None
+        self,
+        request_message,
+        stream=False,
+        streaming_complete_expression=None,
+        wait_for_response: bool = True,
     ):
         if self._is_shutdown.is_set():
             raise SessionClosedError("Request/response session has been closed.")
 
         # Send the message to the broker
         self.send_message(request_message, stream, streaming_complete_expression)
+
+        if not wait_for_response:
+            return
 
         # Now we will wait for the response
         now = time.time()

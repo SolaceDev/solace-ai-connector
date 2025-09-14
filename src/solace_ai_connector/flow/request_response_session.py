@@ -47,6 +47,7 @@ class RequestResponseSession:
         message: Message,
         stream: bool = False,
         streaming_complete_expression: str = None,
+        wait_for_response: bool = True,
     ) -> Generator[Tuple[Message, bool], None, None]:
         """
         Executes a request/response operation using this session's controller.
@@ -55,6 +56,7 @@ class RequestResponseSession:
             message: The request message to send.
             stream: Whether the response is expected to be streaming.
             streaming_complete_expression: Expression to detect the end of a stream.
+            wait_for_response: If False, sends the request and returns immediately.
 
         Yields:
             A tuple containing the response Message and a boolean indicating if it's the last message.
@@ -74,7 +76,7 @@ class RequestResponseSession:
 
         try:
             yield from self.controller.do_broker_request_response(
-                message, stream, streaming_complete_expression
+                message, stream, streaming_complete_expression, wait_for_response
             )
         finally:
             with self._lock:
