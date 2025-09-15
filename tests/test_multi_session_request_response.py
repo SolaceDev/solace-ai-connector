@@ -114,6 +114,71 @@ def test_multi_session_lifecycle_and_isolation():
         dispose_connector(connector)
 
 
+def test_multi_session_no_default_config():
+    """
+    Tests that multi-session mode works without a default broker config.
+    - Fails to create a session without overrides.
+    - Succeeds in creating a session with full overrides.
+    - The created session is functional.
+    """
+    config = {
+        "flows": [
+            {
+                "name": "test_no_default_flow",
+                "components": [
+                    {
+                        "component_name": "session_handler",
+                        "component_module": "handler_callback",
+                        "multi_session_request_response": {
+                            "enabled": True
+                            # NO default_broker_config here
+                        },
+                    }
+                ],
+            }
+        ]
+    }
+
+    connector, flows = create_test_flows(config)
+    component = flows[0]["flow"].component_groups[0][0]
+
+    try:
+        # 1. Verify creating a session with NO overrides fails
+        with pytest.raises(
+            ValueError, match="must contain a 'broker_config' dictionary"
+        ):
+            component.create_request_response_session()
+
+        # 2. Create a session WITH a full broker_config override
+        session_id = component.create_request_response_session(
+            session_config_overrides={
+                "broker_config": {
+                    "broker_type": "test",
+                    "broker_url": "test",
+                    "broker_username": "test",
+                    "broker_password": "test",
+                    "broker_vpn": "test",
+                }
+            }
+        )
+        assert session_id is not None
+        assert len(component.list_request_response_sessions()) == 1
+
+        # 3. Verify the session is functional
+        message = Message(payload={"data": "no_default_test"})
+        response = component.do_broker_request_response(
+            message, session_id=session_id
+        )
+        assert response.get_payload() == {"data": "no_default_test"}
+
+        # 4. Destroy the session
+        assert component.destroy_request_response_session(session_id) is True
+        assert len(component.list_request_response_sessions()) == 0
+
+    finally:
+        dispose_connector(connector)
+
+
 def test_max_sessions_limit():
     """Tests that the max_sessions limit is enforced."""
     config = {

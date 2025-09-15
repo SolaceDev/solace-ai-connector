@@ -76,7 +76,10 @@ This mode allows a single component to create and manage multiple, independent r
 
 Enable this mode by adding a `multi_session_request_response` block to a component's configuration.
 
-A default broker configuration is required. It can be provided explicitly via `default_broker_config`, or it will be automatically inherited from the parent app's `broker` section if available.
+A default broker configuration is **optional**.
+
+-   If a default is provided (either explicitly via `default_broker_config` or inherited from the parent app's `broker` section), new sessions can be created without specifying connection details.
+-   If no default is provided, every call to `create_request_response_session()` **must** include a complete `broker_config` in the `session_config_overrides`.
 
 **Example 1: Inheriting from App's Broker Config (Recommended)**
 

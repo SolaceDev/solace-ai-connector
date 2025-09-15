@@ -425,21 +425,25 @@ class ComponentBase:
                         self.log_identifier,
                     )
 
-            # A default broker config is required to enable the feature
-            if not default_broker_config:
-                raise ValueError(
-                    "multi_session_request_response is enabled but a default broker configuration could not be found. "
-                    "Provide it via 'default_broker_config' or in the parent app's 'broker' section."
+            # A default broker config is optional. If not provided, each session
+            # must be created with a full 'broker_config' override.
+            default_session_config = None
+            if default_broker_config:
+                try:
+                    default_session_config = SessionConfig(
+                        broker_config=default_broker_config
+                    )
+                except ValueError as e:
+                    raise ValueError(
+                        f"Invalid 'default_broker_config' for multi_session_request_response: {e}"
+                    ) from e
+            else:
+                log.info(
+                    "[%s] %s No default broker config found for multi-session mode. "
+                    "Each session must be created with a full 'broker_config' override.",
+                    self.name,
+                    self.log_identifier,
                 )
-
-            try:
-                default_session_config = SessionConfig(
-                    broker_config=default_broker_config
-                )
-            except ValueError as e:
-                raise ValueError(
-                    f"Invalid 'default_broker_config' for multi_session_request_response: {e}"
-                ) from e
 
             self._multi_session_manager = MultiSessionRequestResponseManager(
                 component=self,
