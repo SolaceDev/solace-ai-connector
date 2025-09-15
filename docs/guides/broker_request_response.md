@@ -200,6 +200,20 @@ self.create_request_response_session(
 -   **`session_config`**: A dictionary of configuration values for this session. These values are merged with any defaults.
 -   **Returns**: A unique `session_id` (string) for the new session.
 
+The `session_config` dictionary can contain the following keys to customize the session's behavior. Any values not provided will fall back to the component's default configuration, if one is defined.
+
+| Key | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `broker_config` | `dict` | (Inherited) | A dictionary containing broker connection details, such as `broker_url`, `broker_username`, `broker_password`, and `broker_vpn`. |
+| `request_expiry_ms` | `int` | `30000` | Timeout in milliseconds for a request to receive a response. |
+| `response_topic_prefix` | `str` | `"reply"` | The prefix used for the session's unique reply topic. |
+| `response_queue_prefix` | `str` | `"reply-queue"` | The prefix used for the session's unique reply queue. |
+| `max_concurrent_requests` | `int` | `100` | The maximum number of outstanding requests allowed for this session. |
+| `user_properties_reply_topic_key` | `str` | `__solace_ai_...` | The key used to store the reply topic in the request message's user properties. |
+| `response_topic_insertion_expression` | `str` | `""` | An expression to insert the reply topic directly into the request message's payload (e.g., `input.payload:reply_to`). |
+
+> **Note:** Parameters like `payload_encoding` and `payload_format` are not configurable on a per-session basis in multi-session mode. They use the framework's default values (`utf-8` and `json`, respectively).
+
 ### `destroy_request_response_session()`
 
 Destroys a dynamic session and cleans up its resources. **Only available in multi-session mode.** It is critical to call this to prevent resource leaks.
@@ -343,8 +357,17 @@ def invoke(self, message, data):
     session_id = self.kv_store_get(f"session_{tenant_id}")
     if not session_id:
         log.info(f"Creating new session for tenant {tenant_id}")
+        # Create a new session with tenant-specific configuration
         session_id = self.create_request_response_session(
-            session_config={"broker_config": {"broker_url": tenant_broker_url}}
+            session_config={
+                "broker_config": {
+                    "broker_url": tenant_broker_url,
+                    "broker_vpn": f"vpn-for-{tenant_id}"
+                    # Other broker settings can be provided here
+                },
+                "request_expiry_ms": 60000, # Longer timeout for this tenant
+                "response_topic_prefix": f"replies/tenant/{tenant_id}"
+            }
         )
         self.kv_store_set(f"session_{tenant_id}", session_id)
 
