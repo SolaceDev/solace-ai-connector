@@ -205,6 +205,8 @@ The `session_config` dictionary can contain the following keys to customize the 
 | Key | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
 | `broker_config` | `dict` | (Inherited) | A dictionary containing broker connection details, such as `broker_url`, `broker_username`, `broker_password`, and `broker_vpn`. |
+| `payload_encoding` | `str` | `"utf-8"` | The encoding for the message payload (e.g., `utf-8`, `base64`). |
+| `payload_format` | `str` | `"json"` | The format of the message payload (e.g., `json`, `text`, `yaml`). |
 | `request_expiry_ms` | `int` | `30000` | Timeout in milliseconds for a request to receive a response. |
 | `response_topic_prefix` | `str` | `"reply"` | The prefix used for the session's unique reply topic. |
 | `response_queue_prefix` | `str` | `"reply-queue"` | The prefix used for the session's unique reply queue. |
@@ -212,7 +214,6 @@ The `session_config` dictionary can contain the following keys to customize the 
 | `user_properties_reply_topic_key` | `str` | `__solace_ai_...` | The key used to store the reply topic in the request message's user properties. |
 | `response_topic_insertion_expression` | `str` | `""` | An expression to insert the reply topic directly into the request message's payload (e.g., `input.payload:reply_to`). |
 
-> **Note:** Parameters like `payload_encoding` and `payload_format` are not configurable on a per-session basis in multi-session mode. They use the framework's default values (`utf-8` and `json`, respectively).
 
 ### `destroy_request_response_session()`
 

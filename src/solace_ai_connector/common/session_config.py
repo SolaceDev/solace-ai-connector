@@ -13,6 +13,8 @@ class SessionConfig:
     """
 
     broker_config: Dict[str, Any]
+    payload_encoding: str = "utf-8"
+    payload_format: str = "json"
     request_expiry_ms: int = 30000
     response_topic_prefix: str = "reply"
     response_queue_prefix: str = "reply-queue"
