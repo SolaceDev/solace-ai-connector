@@ -146,6 +146,16 @@ self.do_broker_request_response(
 -   If `wait_for_response=True` and `stream=False`: Returns the single response `Message` object, or raises a `TimeoutError`.
 -   If `wait_for_response=True` and `stream=True`: Returns a Python generator that yields tuples of `(chunk_message, is_last)`.
 
+### `do_broker_request_response_async()`
+
+An `async` wrapper for the standard request-response method. Use this version with `await` when calling from an `async` function to avoid blocking the event loop.
+
+```python
+await self.do_broker_request_response_async(...)
+```
+
+It accepts the exact same parameters as its synchronous counterpart and works for both blocking and fire-and-forget patterns.
+
 ### `create_request_response_session()`
 
 Creates a new, dynamic request-response session. **Only available in multi-session mode.**
@@ -317,6 +327,30 @@ def invoke(self, message, data):
         self.destroy_request_response_session(session_id)
         self.kv_store_set(f"session_{tenant_id}", None)
         raise
+```
+
+### Usage from an Async Context
+
+If your component's logic uses `asyncio`, you **must** use the `do_broker_request_response_async` method with `await` to prevent blocking the event loop. The framework will automatically run the underlying blocking operation in a separate thread.
+
+```python
+# In your component's code
+import asyncio
+from solace_ai_connector.common.message import Message
+
+async def my_async_logic(self, data):
+    request_msg = Message(payload=data, topic="service/request")
+
+    # Correctly await the async version of the method
+    response_msg = await self.do_broker_request_response_async(request_msg)
+
+    if response_msg:
+        return response_msg.get_payload()
+    return None
+
+def invoke(self, message, data):
+    # You can run your async logic from the synchronous invoke method
+    return asyncio.run(self.my_async_logic(data))
 ```
 
 ---

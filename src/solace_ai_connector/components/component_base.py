@@ -2,6 +2,7 @@ import threading
 import queue
 import traceback
 import pprint
+import asyncio
 from abc import abstractmethod
 from typing import Any, Optional, Dict, List
 
@@ -610,6 +611,34 @@ class ComponentBase:
                     self.input_queue.get_nowait()
                 except queue.Empty:
                     break
+
+    async def do_broker_request_response_async(
+        self,
+        message,
+        session_id: Optional[str] = None,
+        stream=False,
+        streaming_complete_expression=None,
+        wait_for_response: bool = True,
+    ):
+        """
+        Asynchronous wrapper for do_broker_request_response.
+        Runs the blocking call in a separate thread to avoid blocking the asyncio event loop.
+
+        Args:
+            message: The request message to send.
+            session_id: The ID of the dynamic session to use.
+            stream: Whether the response is expected to be streaming.
+            streaming_complete_expression: Expression to detect the end of a stream.
+            wait_for_response: If False, sends the request and returns immediately.
+        """
+        return await asyncio.to_thread(
+            self.do_broker_request_response,
+            message,
+            session_id=session_id,
+            stream=stream,
+            streaming_complete_expression=streaming_complete_expression,
+            wait_for_response=wait_for_response,
+        )
 
     def do_broker_request_response(
         self,
