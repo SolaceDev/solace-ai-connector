@@ -404,13 +404,32 @@ class ComponentBase:
                 self.log_identifier,
             )
 
+            # Try to get explicit default_broker_config first
             default_broker_config = multi_session_config.get(
                 "default_broker_config", {}
             )
+
+            # If not found, try to inherit from the parent app's broker config
+            if not default_broker_config and self.parent_app:
+                log.debug(
+                    "[%s] %s No explicit default_broker_config found, attempting to inherit from app's broker config.",
+                    self.name,
+                    self.log_identifier,
+                )
+                app_broker_config = self.parent_app.app_info.get("broker")
+                if app_broker_config:
+                    default_broker_config = app_broker_config
+                    log.info(
+                        "[%s] %s Using parent app's broker configuration as default for multi-session request/response.",
+                        self.name,
+                        self.log_identifier,
+                    )
+
             # A default broker config is required to enable the feature
             if not default_broker_config:
                 raise ValueError(
-                    "multi_session_request_response is enabled but 'default_broker_config' is missing or empty."
+                    "multi_session_request_response is enabled but a default broker configuration could not be found. "
+                    "Provide it via 'default_broker_config' or in the parent app's 'broker' section."
                 )
 
             try:

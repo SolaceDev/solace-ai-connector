@@ -76,6 +76,35 @@ This mode allows a single component to create and manage multiple, independent r
 
 Enable this mode by adding a `multi_session_request_response` block to a component's configuration.
 
+A default broker configuration is required. It can be provided explicitly via `default_broker_config`, or it will be automatically inherited from the parent app's `broker` section if available.
+
+**Example 1: Inheriting from App's Broker Config (Recommended)**
+
+If the component is in an app with a defined `broker` section, you only need to enable the feature.
+
+```yaml
+# config.yaml
+apps:
+  - name: my_app
+    broker:
+      # This configuration will be used as the default for multi-session
+      broker_url: "${SOLACE_BROKER_URL}"
+      broker_username: "${SOLACE_USERNAME}"
+      broker_password: "${SOLACE_PASSWORD}"
+      broker_vpn: "${SOLACE_VPN}"
+    components:
+      - name: my_component
+        component_module: my_module
+        component_config:
+          multi_session_request_response:
+            enabled: true
+            max_sessions: 10 # Optional: default is 50
+```
+
+**Example 2: Explicitly Defining a Default Broker Config**
+
+This is useful if the component needs to use a different default broker than the parent app, or if the app has no `broker` section.
+
 ```yaml
 # config.yaml
 apps:
@@ -89,13 +118,13 @@ apps:
             component_config:
               multi_session_request_response:
                 enabled: true
-                max_sessions: 10 # Optional: default is 50
+                max_sessions: 10
                 default_broker_config:
-                  # Default connection details for new sessions
-                  broker_url: "${SOLACE_BROKER_URL}"
-                  broker_username: "${SOLACE_USERNAME}"
-                  broker_password: "${SOLACE_PASSWORD}"
-                  broker_vpn: "${SOLACE_VPN}"
+                  # Explicit default connection details for new sessions
+                  broker_url: "tcp://another-broker:55555"
+                  broker_username: "session_user"
+                  broker_password: "session_pass"
+                  broker_vpn: "session_vpn"
 ```
 
 ---
