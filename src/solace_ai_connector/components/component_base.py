@@ -452,14 +452,14 @@ class ComponentBase:
             )
 
     def create_request_response_session(
-        self, session_config_overrides: Optional[Dict[str, Any]] = None
+        self, session_config: Optional[Dict[str, Any]] = None
     ) -> str:
         """
         Creates a new dynamic request/response session.
 
         Args:
-            session_config_overrides: A dictionary of configuration values to
-                                      override the defaults for this session.
+            session_config: A dictionary of configuration values for this session.
+                            These values are merged with any defaults.
 
         Returns:
             The unique session ID of the newly created session.
@@ -471,7 +471,7 @@ class ComponentBase:
             raise RuntimeError(
                 "Multi-session request/response is not enabled for this component."
             )
-        return self._multi_session_manager.create_session(session_config_overrides)
+        return self._multi_session_manager.create_session(session_config)
 
     def destroy_request_response_session(self, session_id: str) -> bool:
         """

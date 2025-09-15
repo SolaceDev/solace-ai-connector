@@ -52,10 +52,10 @@ class SessionConfig:
 
     @classmethod
     def from_dict(
-        cls, overrides: Dict[str, Any], defaults: Optional["SessionConfig"] = None
+        cls, config: Dict[str, Any], defaults: Optional["SessionConfig"] = None
     ) -> "SessionConfig":
         """
-        Creates a SessionConfig instance from a dictionary of overrides and defaults.
+        Creates a SessionConfig instance from a configuration dictionary and defaults.
         """
         if defaults:
             config_dict = asdict(defaults)
@@ -63,13 +63,13 @@ class SessionConfig:
             config_dict = {}
 
         # Deep merge broker_config
-        if "broker_config" in overrides:
+        if "broker_config" in config:
             merged_broker_config = config_dict.get("broker_config", {}).copy()
-            merged_broker_config.update(overrides["broker_config"])
+            merged_broker_config.update(config["broker_config"])
             config_dict["broker_config"] = merged_broker_config
 
         # Update top-level keys
-        for key, value in overrides.items():
+        for key, value in config.items():
             if key != "broker_config":
                 config_dict[key] = value
 

@@ -40,15 +40,14 @@ class MultiSessionRequestResponseManager:
         self._shutdown_event = threading.Event()
 
     def create_session(
-        self, session_config_overrides: Optional[Dict[str, Any]] = None
+        self, session_config: Optional[Dict[str, Any]] = None
     ) -> str:
         """
-        Creates a new request/response session, applies overrides to the default
-        configuration, registers it, and returns its unique ID.
+        Creates a new request/response session, applies configuration to the default
+        settings, registers it, and returns its unique ID.
 
         Args:
-            session_config_overrides: A dictionary of configuration values to
-                                      override the defaults.
+            session_config: A dictionary of configuration values for the session.
 
         Returns:
             The unique session ID of the newly created session.
@@ -64,21 +63,21 @@ class MultiSessionRequestResponseManager:
                     f"{self.max_sessions} reached."
                 )
 
-            session_config_overrides = session_config_overrides or {}
+            session_config = session_config or {}
 
-            # If no default config, the overrides must contain a complete broker_config.
+            # If no default config, the session_config must contain a complete broker_config.
             if not self.default_session_config:
-                if "broker_config" not in session_config_overrides or not isinstance(
-                    session_config_overrides.get("broker_config"), dict
+                if "broker_config" not in session_config or not isinstance(
+                    session_config.get("broker_config"), dict
                 ):
                     raise ValueError(
-                        "session_config_overrides must contain a 'broker_config' dictionary "
+                        "session_config must contain a 'broker_config' dictionary "
                         "when no default broker config is defined for the component."
                     )
 
             try:
                 final_config = SessionConfig.from_dict(
-                    session_config_overrides, self.default_session_config
+                    session_config, self.default_session_config
                 )
             except (ValueError, TypeError) as e:
                 # Catch potential validation errors from SessionConfig and add context.

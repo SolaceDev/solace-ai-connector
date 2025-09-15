@@ -194,10 +194,10 @@ Creates a new, dynamic request-response session. **Only available in multi-sessi
 
 ```python
 self.create_request_response_session(
-    session_config_overrides: Optional[Dict[str, Any]] = None
+    session_config: Optional[Dict[str, Any]] = None
 ) -> str
 ```
--   **`session_config_overrides`**: A dictionary of broker properties to override the defaults for this specific session.
+-   **`session_config`**: A dictionary of configuration values for this session. These values are merged with any defaults.
 -   **Returns**: A unique `session_id` (string) for the new session.
 
 ### `destroy_request_response_session()`
@@ -344,7 +344,7 @@ def invoke(self, message, data):
     if not session_id:
         log.info(f"Creating new session for tenant {tenant_id}")
         session_id = self.create_request_response_session(
-            session_config_overrides={"broker_url": tenant_broker_url}
+            session_config={"broker_config": {"broker_url": tenant_broker_url}}
         )
         self.kv_store_set(f"session_{tenant_id}", session_id)
 

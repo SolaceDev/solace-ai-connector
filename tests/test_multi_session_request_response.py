@@ -64,9 +64,7 @@ def test_multi_session_lifecycle_and_isolation():
         # 1. Create two sessions
         session_id_A = component.create_request_response_session()
         session_id_B = component.create_request_response_session(
-            session_config_overrides={
-                "request_expiry_ms": 60000  # Custom config for this session
-            }
+            session_config={"request_expiry_ms": 60000}  # Custom config for this session
         )
         assert session_id_A != session_id_B
 
@@ -282,7 +280,7 @@ def test_multi_session_no_default_config():
 
         # 2. Create a session WITH a full broker_config override
         session_id = component.create_request_response_session(
-            session_config_overrides={
+            session_config={
                 "broker_config": {
                     "broker_type": "test",
                     "broker_url": "test",
