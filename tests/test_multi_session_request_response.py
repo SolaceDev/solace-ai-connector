@@ -2,6 +2,7 @@ import sys
 import time
 import threading
 import pytest
+import asyncio
 
 sys.path.append("src")
 
@@ -109,6 +110,136 @@ def test_multi_session_lifecycle_and_isolation():
         # 7. Destroy the second session
         assert component.destroy_request_response_session(session_id_B) is True
         assert len(component.list_request_response_sessions()) == 0
+
+    finally:
+        dispose_connector(connector)
+
+
+@pytest.mark.asyncio
+async def test_async_multi_session_lifecycle():
+    """
+    Tests the async version of do_broker_request_response with the multi-session manager.
+    """
+    config = {
+        "flows": [
+            {
+                "name": "test_async_multi_session_flow",
+                "components": [
+                    {
+                        "component_name": "session_handler",
+                        "component_module": "handler_callback",
+                        "multi_session_request_response": {
+                            "enabled": True,
+                            "default_broker_config": {
+                                "broker_type": "test",
+                                "broker_url": "test",
+                                "broker_username": "test",
+                                "broker_password": "test",
+                                "broker_vpn": "test",
+                            },
+                        },
+                    }
+                ],
+            }
+        ]
+    }
+
+    connector, flows = create_test_flows(config)
+    component = flows[0]["flow"].component_groups[0][0]
+
+    try:
+        # 1. Create a session
+        session_id = component.create_request_response_session()
+        assert session_id is not None
+
+        # 2. Use the session with the async method (blocking wait)
+        message = Message(payload={"data": "async_test"})
+        response = await component.do_broker_request_response_async(
+            message, session_id=session_id
+        )
+        assert response.get_payload() == {"data": "async_test"}
+
+        # 3. Test fire-and-forget async
+        ff_message = Message(payload={"data": "fire_and_forget"})
+        ff_response = await component.do_broker_request_response_async(
+            ff_message, session_id=session_id, wait_for_response=False
+        )
+        assert ff_response is None
+
+        # 4. Destroy the session
+        assert component.destroy_request_response_session(session_id) is True
+
+        # 5. Verify error on using destroyed session with async method
+        with pytest.raises(SessionNotFoundError):
+            await component.do_broker_request_response_async(
+                message, session_id=session_id
+            )
+
+    finally:
+        dispose_connector(connector)
+
+
+@pytest.mark.asyncio
+async def test_async_multi_session_streaming():
+    """
+    Tests the async version of do_broker_request_response with streaming.
+    """
+    config = {
+        "flows": [
+            {
+                "name": "test_async_streaming_flow",
+                "components": [
+                    {
+                        "component_name": "session_handler",
+                        "component_module": "handler_callback",
+                        "multi_session_request_response": {
+                            "enabled": True,
+                            "default_broker_config": {
+                                "broker_type": "test_streaming",
+                                "broker_url": "test",
+                                "broker_username": "test",
+                                "broker_password": "test",
+                                "broker_vpn": "test",
+                            },
+                        },
+                    }
+                ],
+            }
+        ]
+    }
+
+    connector, flows = create_test_flows(config)
+    component = flows[0]["flow"].component_groups[0][0]
+
+    try:
+        session_id = component.create_request_response_session()
+
+        request_payload = [
+            {"text": "chunk1", "done": False},
+            {"text": "chunk2", "done": False},
+            {"text": "chunk3", "done": True},
+        ]
+        message = Message(payload=request_payload, topic="test/stream")
+
+        response_generator = await component.do_broker_request_response_async(
+            message,
+            session_id=session_id,
+            stream=True,
+            streaming_complete_expression="input.payload:done",
+        )
+
+        results = []
+        for chunk, is_last in response_generator:
+            results.append(chunk.get_payload())
+            if is_last:
+                break
+
+        assert len(results) == 3
+        assert results[0]["text"] == "chunk1"
+        assert results[2]["text"] == "chunk3"
+        assert results[2]["done"] is True
+
+        component.destroy_request_response_session(session_id)
 
     finally:
         dispose_connector(connector)
