@@ -66,9 +66,25 @@ class MultiSessionRequestResponseManager:
 
             session_config_overrides = session_config_overrides or {}
 
-            final_config = SessionConfig.from_dict(
-                session_config_overrides, self.default_session_config
-            )
+            # If no default config, the overrides must contain a complete broker_config.
+            if not self.default_session_config:
+                if "broker_config" not in session_config_overrides or not isinstance(
+                    session_config_overrides.get("broker_config"), dict
+                ):
+                    raise ValueError(
+                        "session_config_overrides must contain a 'broker_config' dictionary "
+                        "when no default broker config is defined for the component."
+                    )
+
+            try:
+                final_config = SessionConfig.from_dict(
+                    session_config_overrides, self.default_session_config
+                )
+            except (ValueError, TypeError) as e:
+                # Catch potential validation errors from SessionConfig and add context.
+                raise ValueError(
+                    f"Invalid session configuration. The combination of defaults and overrides is incomplete or invalid: {e}"
+                ) from e
 
             component = self.component_ref()
             if not component:
