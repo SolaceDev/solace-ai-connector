@@ -459,3 +459,54 @@ def test_rrc_process_response_with_decode_error():
     # The 'result' passed to process_post_invoke should also contain the error payload
     assert isinstance(response_data["payload"], dict)
     assert response_data["payload"]["error"] == "Payload decode error"
+
+
+def test_rrc_end_to_end_with_decode_error():
+    """
+    Tests the full request-response loop when the response payload is invalid.
+    Ensures that do_broker_request_response returns a proper error message.
+    """
+    config = {
+        "flows": [
+            {
+                "name": "test_decode_error_flow",
+                "components": [
+                    {
+                        "component_name": "requester",
+                        "component_module": "handler_callback",
+                        "broker_request_response": {
+                            "enabled": True,
+                            "broker_config": {
+                                "broker_type": "test_bad_payload",  # Use the special test broker
+                                "broker_url": "test",
+                                "broker_username": "test",
+                                "broker_password": "test",
+                                "broker_vpn": "test",
+                            },
+                            "payload_format": "json",  # Ensure we try to decode as JSON
+                        },
+                    }
+                ],
+            }
+        ]
+    }
+
+    connector, flows = create_test_flows(config)
+    component = flows[0]["flow"].component_groups[0][0]
+
+    try:
+        # Call do_broker_request_response. The internal "test_bad_payload" broker
+        # will return a message with invalid JSON.
+        message = Message(payload={"data": "some_request"})
+        response = component.do_broker_request_response(message)
+
+        # Verify the response is the generated error message
+        assert response is not None
+        response_payload = response.get_payload()
+        assert isinstance(response_payload, dict)
+        assert response_payload["error"] == "Payload decode error"
+        assert "details" in response_payload
+        assert "Payload is not valid JSON" in response_payload["details"]
+
+    finally:
+        dispose_connector(connector)

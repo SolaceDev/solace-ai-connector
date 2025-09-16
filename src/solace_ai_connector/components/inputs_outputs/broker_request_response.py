@@ -250,6 +250,10 @@ class BrokerRequestResponse(BrokerBase):
             "streaming_complete_expression"
         )
         self.broker_type = self.broker_properties.get("broker_type", "solace")
+        if self.broker_type in ["test", "test_streaming", "test_bad_payload"]:
+            self.test_mode = True
+        else:
+            self.test_mode = False
         self.broker_properties["temporary_queue"] = True
         self.broker_properties["queue_name"] = self.reply_queue_name
         self.broker_properties["subscriptions"] = [
@@ -262,7 +266,6 @@ class BrokerRequestResponse(BrokerBase):
                 "qos": 1,
             },
         ]
-        self.test_mode = False
 
         self.response_topic_insertion_expression = self.get_config(
             "response_topic_insertion_expression"
@@ -273,8 +276,7 @@ class BrokerRequestResponse(BrokerBase):
                     f"input.payload:{self.response_topic_insertion_expression}"
                 )
 
-        if self.broker_type == "test" or self.broker_type == "test_streaming":
-            self.test_mode = True
+        if self.test_mode:
             self.setup_test_pass_through()
         else:
             self.connect()
@@ -553,6 +555,16 @@ class BrokerRequestResponse(BrokerBase):
                             topic=data["topic"],
                         )
                     )
+            elif self.broker_type == "test_bad_payload":
+                # Simulate receiving a response with an invalid payload
+                bad_payload = '{"invalid": json, "some_valid_key": "some_value"}'
+                self.pass_through_queue.put(
+                    Message(
+                        payload=bad_payload.encode("utf-8"),
+                        user_properties=data["user_properties"],
+                        topic=data["topic"],
+                    )
+                )
             else:
                 encoded_payload = self.encode_payload(data["payload"])
                 self.pass_through_queue.put(
