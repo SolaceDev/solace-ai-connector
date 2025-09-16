@@ -319,8 +319,6 @@ class BrokerRequestResponse(BrokerBase):
         while not self._local_stop_signal.is_set():
             try:
                 message = self.pass_through_queue.get(timeout=1)
-                decoded_payload = self.decode_payload(message.get_payload())
-                message.set_payload(decoded_payload)
                 self.process_response(message)
             except queue.Empty as e:
                 log.debug("No messages in pass-through queue.", trace=e)
@@ -333,11 +331,12 @@ class BrokerRequestResponse(BrokerBase):
             payload = broker_message.get_payload()
             topic = broker_message.get_topic()
             user_properties = broker_message.get_user_properties()
+            payload = self.decode_payload(payload)
         else:
             payload = broker_message.get("payload")
-            payload = self.decode_payload(payload)
             topic = broker_message.get("topic")
             user_properties = broker_message.get("user_properties", {})
+            payload = self.decode_payload(payload)
 
             self.messaging_service.ack_message(broker_message)
 
