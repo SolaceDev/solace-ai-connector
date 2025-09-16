@@ -361,122 +361,123 @@ class BrokerRequestResponse(BrokerBase):
                 log.error("Error handling test passthrough.", trace=e)
 
     def process_response(self, broker_message):
-        if self.test_mode:
-            payload = broker_message.get_payload()
-            topic = broker_message.get_topic()
-            user_properties = broker_message.get_user_properties()
-        else:
-            payload = broker_message.get("payload")
-            topic = broker_message.get("topic")
-            user_properties = broker_message.get("user_properties", {})
-
         try:
-            payload = self.decode_payload(payload)
-        except ValueError as e:
-            log.error(
-                "Error decoding payload in request/response: %s", e, exc_info=True
+            if self.test_mode:
+                payload = broker_message.get_payload()
+                topic = broker_message.get_topic()
+                user_properties = broker_message.get_user_properties()
+            else:
+                payload = broker_message.get("payload")
+                topic = broker_message.get("topic")
+                user_properties = broker_message.get("user_properties", {})
+
+            try:
+                payload = self.decode_payload(payload)
+            except ValueError as e:
+                log.error(
+                    "Error decoding payload in request/response: %s", e, exc_info=True
+                )
+                payload = {
+                    "error": "Payload decode error",
+                    "details": str(e),
+                }
+
+            if not user_properties:
+                log.error("Received response without user properties.")
+                return
+
+            streaming_complete_expression = None
+            metadata_json = get_data_value(
+                user_properties, self.user_properties_reply_metadata_key, True
             )
-            payload = {
-                "error": "Payload decode error",
-                "details": str(e),
+            if not metadata_json:
+                log.error("Received response without metadata.")
+                return
+
+            try:
+                metadata_stack = json.loads(metadata_json)
+            except json.JSONDecodeError as e:
+                log.error("Received response with invalid metadata JSON.", trace=e)
+                return
+
+            if not metadata_stack:
+                log.error("Received response with empty metadata stack.")
+                return
+
+            try:
+                current_metadata = metadata_stack.pop()
+            except IndexError as e:
+                log.error("Received response with invalid metadata stack.", trace=e)
+                return
+            request_id = current_metadata.get("request_id")
+            if not request_id:
+                log.error("Received response without request_id in metadata.")
+                return
+
+            cached_request = self.cache_service.get_data(request_id)
+            if not cached_request:
+                log.error("Received response for unknown request_id.")
+                return
+
+            stream = cached_request.get("stream", False)
+            streaming_complete_expression = cached_request.get(
+                "streaming_complete_expression"
+            )
+
+            response = {
+                "payload": payload,
+                "topic": topic,
+                "user_properties": user_properties,
             }
 
-        if not self.test_mode:
-            self.messaging_service.ack_message(broker_message)
-
-        if not user_properties:
-            log.error("Received response without user properties.")
-            return
-
-        streaming_complete_expression = None
-        metadata_json = get_data_value(
-            user_properties, self.user_properties_reply_metadata_key, True
-        )
-        if not metadata_json:
-            log.error("Received response without metadata.")
-            return
-
-        try:
-            metadata_stack = json.loads(metadata_json)
-        except json.JSONDecodeError as e:
-            log.error("Received response with invalid metadata JSON.", trace=e)
-            return
-
-        if not metadata_stack:
-            log.error("Received response with empty metadata stack.")
-            return
-
-        try:
-            current_metadata = metadata_stack.pop()
-        except IndexError as e:
-            log.error("Received response with invalid metadata stack.", trace=e)
-            return
-        request_id = current_metadata.get("request_id")
-        if not request_id:
-            log.error("Received response without request_id in metadata.")
-            return
-
-        cached_request = self.cache_service.get_data(request_id)
-        if not cached_request:
-            log.error("Received response for unknown request_id.")
-            return
-
-        stream = cached_request.get("stream", False)
-        streaming_complete_expression = cached_request.get(
-            "streaming_complete_expression"
-        )
-
-        response = {
-            "payload": payload,
-            "topic": topic,
-            "user_properties": user_properties,
-        }
-
-        # Update the metadata in the response
-        if metadata_stack:
-            set_data_value(
-                response["user_properties"],
-                self.user_properties_reply_metadata_key,
-                json.dumps(metadata_stack),
-            )
-            # Put the last reply topic back in the user properties
-            set_data_value(
-                response["user_properties"],
-                self.user_properties_reply_topic_key,
-                metadata_stack[-1]["response_topic"],
-            )
-        else:
-            # Remove the metadata and reply topic from the user properties
-            remove_data_value(
-                response["user_properties"], self.user_properties_reply_metadata_key
-            )
-            remove_data_value(
-                response["user_properties"], self.user_properties_reply_topic_key
-            )
-
-        message = Message(
-            payload=payload,
-            user_properties=user_properties,
-            topic=topic,
-        )
-        self.process_post_invoke(response, message)
-
-        # Only remove the cache entry if this isn't a streaming response or
-        # if it is the last piece of a streaming response
-        last_piece = True
-        if stream and streaming_complete_expression:
-            is_last = message.get_data(streaming_complete_expression)
-            if not is_last:
-                last_piece = False
-                self.cache_service.add_data(
-                    key=request_id,
-                    value=cached_request,
-                    expiry=self.request_expiry_ms / 1000,  # Reset expiry time
-                    component=self,
+            # Update the metadata in the response
+            if metadata_stack:
+                set_data_value(
+                    response["user_properties"],
+                    self.user_properties_reply_metadata_key,
+                    json.dumps(metadata_stack),
+                )
+                # Put the last reply topic back in the user properties
+                set_data_value(
+                    response["user_properties"],
+                    self.user_properties_reply_topic_key,
+                    metadata_stack[-1]["response_topic"],
+                )
+            else:
+                # Remove the metadata and reply topic from the user properties
+                remove_data_value(
+                    response["user_properties"], self.user_properties_reply_metadata_key
+                )
+                remove_data_value(
+                    response["user_properties"], self.user_properties_reply_topic_key
                 )
 
-        if last_piece:
-            self.cache_service.remove_data(request_id)
+            message = Message(
+                payload=payload,
+                user_properties=user_properties,
+                topic=topic,
+            )
+            self.process_post_invoke(response, message)
+
+            # Only remove the cache entry if this isn't a streaming response or
+            # if it is the last piece of a streaming response
+            last_piece = True
+            if stream and streaming_complete_expression:
+                is_last = message.get_data(streaming_complete_expression)
+                if not is_last:
+                    last_piece = False
+                    self.cache_service.add_data(
+                        key=request_id,
+                        value=cached_request,
+                        expiry=self.request_expiry_ms / 1000,  # Reset expiry time
+                        component=self,
+                    )
+
+            if last_piece:
+                self.cache_service.remove_data(request_id)
+        finally:
+            if not self.test_mode:
+                self.messaging_service.ack_message(broker_message)
 
     def invoke(self, message, data):
         request_id = str(uuid.uuid4())
