@@ -358,6 +358,9 @@ def test_max_sessions_limit():
         dispose_connector(connector)
 
 
+import unittest.mock
+
+
 def test_backward_compatibility_with_legacy_rrc():
     """
     Tests that do_broker_request_response works correctly with the legacy,
@@ -401,3 +404,58 @@ def test_backward_compatibility_with_legacy_rrc():
 
     finally:
         dispose_connector(connector)
+
+
+def test_rrc_process_response_with_decode_error():
+    """
+    Unit tests the process_response method of BrokerRequestResponse
+    to ensure it handles payload decode errors correctly.
+    """
+    # 1. Create an instance of the component to test, mocking dependencies
+    with unittest.mock.patch(
+        "solace_ai_connector.components.inputs_outputs.broker_request_response.BrokerRequestResponse.connect"
+    ), unittest.mock.patch(
+        "solace_ai_connector.components.inputs_outputs.broker_request_response.BrokerRequestResponse.start"
+    ):
+        rrc = BrokerRequestResponse(
+            config={
+                "component_config": {
+                    "payload_format": "json",
+                    "user_properties_reply_metadata_key": "test_meta_key",
+                    "user_properties_reply_topic_key": "test_topic_key",
+                }
+            },
+            cache_service=unittest.mock.MagicMock(),
+        )
+
+    # 2. Mock dependencies needed by process_response
+    rrc.test_mode = True
+    rrc.process_post_invoke = unittest.mock.MagicMock()
+    rrc.cache_service.get_data.return_value = {
+        "request_id": "123",
+        "stream": False,
+    }
+
+    # 3. Create a fake response message with a bad payload
+    bad_payload = '{"invalid": json}'  # Invalid JSON string
+    user_props = {"test_meta_key": '[{"request_id": "123"}]'}
+    mock_broker_message = Message(payload=bad_payload, user_properties=user_props)
+
+    # 4. Call the method under test
+    rrc.process_response(mock_broker_message)
+
+    # 5. Assert that process_post_invoke was called with the error payload
+    rrc.process_post_invoke.assert_called_once()
+    call_args = rrc.process_post_invoke.call_args
+    response_data = call_args[0][0]  # First positional argument (the 'result' dict)
+    message_arg = call_args[0][1]  # Second positional argument (the 'message' object)
+
+    # The payload of the new message should be the error dict
+    assert isinstance(message_arg.get_payload(), dict)
+    assert message_arg.get_payload()["error"] == "Payload decode error"
+    assert "details" in message_arg.get_payload()
+    assert "Payload is not valid JSON" in message_arg.get_payload()["details"]
+
+    # The 'result' passed to process_post_invoke should also contain the error payload
+    assert isinstance(response_data["payload"], dict)
+    assert response_data["payload"]["error"] == "Payload decode error"
