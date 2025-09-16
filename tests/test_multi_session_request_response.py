@@ -423,6 +423,11 @@ def test_rrc_process_response_with_decode_error():
                     "payload_format": "json",
                     "user_properties_reply_metadata_key": "test_meta_key",
                     "user_properties_reply_topic_key": "test_topic_key",
+                    # Add dummy broker config to pass validation
+                    "broker_url": "dummy_url",
+                    "broker_username": "dummy_user",
+                    "broker_password": "dummy_password",
+                    "broker_vpn": "dummy_vpn",
                 }
             },
             cache_service=unittest.mock.MagicMock(),
