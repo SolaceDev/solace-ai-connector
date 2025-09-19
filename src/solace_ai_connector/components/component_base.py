@@ -725,6 +725,16 @@ class ComponentBase:
 
         # Common response handling for both paths
         if not wait_for_response:
+            # For fire-and-forget, we must advance the generator once to trigger
+            # the initial send_message call within the controller.
+            try:
+                # The generator will execute until the first yield or a return.
+                # In the fire-and-forget case, it hits a 'return', which
+                # raises StopIteration.
+                next(generator)
+            except StopIteration:
+                # This is the expected outcome for a non-waiting call.
+                pass
             return None  # Fire-and-forget, return immediately
 
         if stream:
