@@ -113,6 +113,63 @@ def test_multi_session_lifecycle_and_isolation():
         dispose_connector(connector)
 
 
+def test_fire_and_forget_sends_message():
+    """
+    Tests that do_broker_request_response with wait_for_response=False
+    correctly sends the message (fire-and-forget).
+    """
+    config = {
+        "flows": [
+            {
+                "name": "test_fire_and_forget_flow",
+                "components": [
+                    {
+                        "component_name": "session_handler",
+                        "component_module": "handler_callback",
+                        "multi_session_request_response": {
+                            "enabled": True,
+                            "default_broker_config": {
+                                "broker_type": "test",
+                                "broker_url": "test",
+                                "broker_username": "test",
+                                "broker_password": "test",
+                                "broker_vpn": "test",
+                            },
+                        },
+                    }
+                ],
+            }
+        ]
+    }
+
+    connector, flows = create_test_flows(config)
+    component = flows[0]["flow"].component_groups[0][0]
+
+    try:
+        # 1. Create a session
+        session_id = component.create_request_response_session()
+
+        # 2. Spy on the send_message method of the controller
+        with unittest.mock.patch(
+            "solace_ai_connector.flow.request_response_flow_controller.RequestResponseFlowController.send_message"
+        ) as mock_send:
+            # 3. Call fire-and-forget
+            ff_message = Message(payload={"data": "fire_and_forget_sync"})
+            response = component.do_broker_request_response(
+                ff_message, session_id=session_id, wait_for_response=False
+            )
+
+            # 4. Assert that the call returned None and send_message was called
+            assert response is None
+            mock_send.assert_called_once()
+
+        # 5. Destroy the session
+        component.destroy_request_response_session(session_id)
+
+    finally:
+        dispose_connector(connector)
+
+
 @pytest.mark.asyncio
 async def test_async_multi_session_lifecycle():
     """
