@@ -445,11 +445,20 @@ class ComponentBase:
                     self.log_identifier,
                 )
 
-            self._multi_session_manager = MultiSessionRequestResponseManager(
-                component=self,
-                default_session_config=default_session_config,
-                max_sessions=multi_session_config.get("max_sessions", 50),
-            )
+            try:
+                self._multi_session_manager = MultiSessionRequestResponseManager(
+                    component=self,
+                    default_session_config=default_session_config,
+                    max_sessions=multi_session_config.get("max_sessions", 50),
+                )
+            except Exception as e:
+                log.error(
+                    "[%s] %s Failed to initialize multi-session manager",
+                    self.name,
+                    self.log_identifier,
+                    trace=e,
+                )
+                raise ValueError("Failed to initialize multi-session manager") from None
 
     def create_request_response_session(
         self, session_config: Optional[Dict[str, Any]] = None
