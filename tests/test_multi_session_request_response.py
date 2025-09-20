@@ -104,7 +104,7 @@ def test_multi_session_lifecycle_and_isolation():
         assert response_B_again.get_payload() == {"data": "B"}
         # Also verify that the internal user properties were cleaned up
         user_props = response_B_again.get_user_properties()
-        assert DEFAULT_REPLY_METAD"A" in user_props
+        assert DEFAULT_REPLY_METADATA_KEY not in user_props
         assert DEFAULT_REPLY_TOPIC_KEY not in user_props
 
         # 7. Destroy the second session
