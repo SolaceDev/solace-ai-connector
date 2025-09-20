@@ -69,10 +69,10 @@ class ComponentBase:
 
         self.log_identifier = f"[{self.instance_name}.{self.flow_name}.{self.name}] "
 
-        self.validate_config()
-        self.setup_transforms()
-        self.setup_communications()
-        self.setup_component_broker_request_response()
+        self._validate_config()
+        self._setup_transforms()
+        self._setup_communications()
+        self._setup_component_broker_request_response()
         self._setup_multi_session_request_response()
 
         self.monitoring = Monitoring()
@@ -323,7 +323,7 @@ class ComponentBase:
     def kv_store_set(self, key, value):
         self.flow_kv_store.set(key, value)
 
-    def setup_communications(self):
+    def _setup_communications(self):
         self.queue_max_depth = self.config.get(
             "component_queue_max_depth", DEFAULT_QUEUE_MAX_DEPTH
         )
@@ -335,7 +335,7 @@ class ComponentBase:
         else:
             self.input_queue = queue.Queue(maxsize=self.queue_max_depth)
 
-    def setup_component_broker_request_response(self):
+    def _setup_component_broker_request_response(self):
         """Initializes RRC if configured at the component level (backward compatibility)."""
         if (
             self.broker_request_response_config
@@ -520,12 +520,12 @@ class ComponentBase:
             return True
         return False
 
-    def setup_transforms(self):
+    def _setup_transforms(self):
         self.transforms = Transforms(
             self.config.get("input_transforms", []), log_identifier=self.log_identifier
         )
 
-    def validate_config(self):
+    def _validate_config(self):
         """Validates the component_config against the schema in module_info."""
         config_params = self.module_info.get("config_parameters", [])
         # Only validate if schema parameters are defined
@@ -703,7 +703,9 @@ class ComponentBase:
             # Prioritize App-level controller (new way)
             if app and app.request_response_controller:
                 controller = app.request_response_controller
-                log.debug("[%s] %s Using App-level RRC.", self.name, self.log_identifier)
+                log.debug(
+                    "[%s] %s Using App-level RRC.", self.name, self.log_identifier
+                )
             # Fallback to Component-level controller (old way)
             elif hasattr(self, "_component_rrc") and self._component_rrc:
                 controller = self._component_rrc
