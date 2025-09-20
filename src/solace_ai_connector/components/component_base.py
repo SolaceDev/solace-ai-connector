@@ -69,7 +69,7 @@ class ComponentBase:
 
         self.log_identifier = f"[{self.instance_name}.{self.flow_name}.{self.name}] "
 
-        self._validate_config()
+        self.validate_config()
         self._setup_transforms()
         self._setup_communications()
         self._setup_component_broker_request_response()
@@ -534,7 +534,7 @@ class ComponentBase:
             self.config.get("input_transforms", []), log_identifier=self.log_identifier
         )
 
-    def _validate_config(self):
+    def validate_config(self):
         """Validates the component_config against the schema in module_info."""
         config_params = self.module_info.get("config_parameters", [])
         # Only validate if schema parameters are defined
