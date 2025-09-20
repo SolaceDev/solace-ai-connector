@@ -42,6 +42,10 @@ class SessionConfig:
         """Validates the session configuration."""
         if not self.broker_config or not isinstance(self.broker_config, dict):
             raise ValueError("'broker_config' must be a non-empty dictionary.")
+
+        if self.broker_config.get("dev_mode", False):
+            return
+
         required_keys = [
             "broker_url",
             "broker_username",
