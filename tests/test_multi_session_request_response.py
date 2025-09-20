@@ -1,8 +1,5 @@
 import sys
-import time
-import threading
 import pytest
-import asyncio
 
 sys.path.append("src")
 
@@ -14,13 +11,10 @@ from solace_ai_connector.test_utils.utils_for_test_files import (
 from solace_ai_connector.common.exceptions import (
     SessionNotFoundError,
     SessionLimitExceededError,
-    SessionClosedError,
 )
 from solace_ai_connector.components.inputs_outputs.broker_request_response import (
     BrokerRequestResponse,
 )
-from solace_ai_connector.common.log import log
-import queue
 
 
 def test_multi_session_lifecycle_and_isolation():
