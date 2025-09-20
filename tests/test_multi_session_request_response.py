@@ -14,6 +14,8 @@ from solace_ai_connector.common.exceptions import (
 )
 from solace_ai_connector.components.inputs_outputs.broker_request_response import (
     BrokerRequestResponse,
+    DEFAULT_REPLY_METADATA_KEY,
+    DEFAULT_REPLY_TOPIC_KEY,
 )
 
 
@@ -100,6 +102,10 @@ def test_multi_session_lifecycle_and_isolation():
             message_B, session_id=session_id_B
         )
         assert response_B_again.get_payload() == {"data": "B"}
+        # Also verify that the internal user properties were cleaned up
+        user_props = response_B_again.get_user_properties()
+        assert DEFAULT_REPLY_METAD"A" in user_props
+        assert DEFAULT_REPLY_TOPIC_KEY not in user_props
 
         # 7. Destroy the second session
         assert component.destroy_request_response_session(session_id_B) is True
