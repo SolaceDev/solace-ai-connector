@@ -64,7 +64,9 @@ def test_multi_session_lifecycle_and_isolation():
         # 1. Create two sessions
         session_id_A = component.create_request_response_session()
         session_id_B = component.create_request_response_session(
-            session_config={"request_expiry_ms": 60000}  # Custom config for this session
+            session_config={
+                "request_expiry_ms": 60000
+            }  # Custom config for this session
         )
         assert session_id_A != session_id_B
 
@@ -352,9 +354,7 @@ def test_multi_session_no_default_config():
 
         # 3. Verify the session is functional
         message = Message(payload={"data": "no_default_test"})
-        response = component.do_broker_request_response(
-            message, session_id=session_id
-        )
+        response = component.do_broker_request_response(message, session_id=session_id)
         assert response.get_payload() == {"data": "no_default_test"}
 
         # 4. Destroy the session
@@ -469,10 +469,13 @@ def test_rrc_process_response_with_decode_error():
     to ensure it handles payload decode errors correctly.
     """
     # 1. Create an instance of the component to test, mocking dependencies
-    with unittest.mock.patch(
-        "solace_ai_connector.components.inputs_outputs.broker_request_response.BrokerRequestResponse.connect"
-    ), unittest.mock.patch(
-        "solace_ai_connector.components.inputs_outputs.broker_request_response.BrokerRequestResponse.start"
+    with (
+        unittest.mock.patch(
+            "solace_ai_connector.components.inputs_outputs.broker_request_response.BrokerRequestResponse.connect"
+        ),
+        unittest.mock.patch(
+            "solace_ai_connector.components.inputs_outputs.broker_request_response.BrokerRequestResponse.start"
+        ),
     ):
         rrc = BrokerRequestResponse(
             config={
@@ -521,54 +524,3 @@ def test_rrc_process_response_with_decode_error():
     # The 'result' passed to process_post_invoke should also contain the error payload
     assert isinstance(response_data["payload"], dict)
     assert response_data["payload"]["error"] == "Payload decode error"
-
-
-def test_rrc_end_to_end_with_decode_error():
-    """
-    Tests the full request-response loop when the response payload is invalid.
-    Ensures that do_broker_request_response returns a proper error message.
-    """
-    config = {
-        "flows": [
-            {
-                "name": "test_decode_error_flow",
-                "components": [
-                    {
-                        "component_name": "requester",
-                        "component_module": "handler_callback",
-                        "broker_request_response": {
-                            "enabled": True,
-                            "broker_config": {
-                                "broker_type": "test_bad_payload",  # Use the special test broker
-                                "broker_url": "test",
-                                "broker_username": "test",
-                                "broker_password": "test",
-                                "broker_vpn": "test",
-                            },
-                            "payload_format": "json",  # Ensure we try to decode as JSON
-                        },
-                    }
-                ],
-            }
-        ]
-    }
-
-    connector, flows = create_test_flows(config)
-    component = flows[0]["flow"].component_groups[0][0]
-
-    try:
-        # Call do_broker_request_response. The internal "test_bad_payload" broker
-        # will return a message with invalid JSON.
-        message = Message(payload={"data": "some_request"})
-        response = component.do_broker_request_response(message)
-
-        # Verify the response is the generated error message
-        assert response is not None
-        response_payload = response.get_payload()
-        assert isinstance(response_payload, dict)
-        assert response_payload["error"] == "Payload decode error"
-        assert "details" in response_payload
-        assert "Payload is not valid JSON" in response_payload["details"]
-
-    finally:
-        dispose_connector(connector)

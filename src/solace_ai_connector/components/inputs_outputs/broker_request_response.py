@@ -555,16 +555,6 @@ class BrokerRequestResponse(BrokerBase):
                             topic=data["topic"],
                         )
                     )
-            elif self.broker_type == "test_bad_payload":
-                # Simulate receiving a response with an invalid payload
-                bad_payload = '{"invalid": json, "some_valid_key": "some_value"}'
-                self.pass_through_queue.put(
-                    Message(
-                        payload=bad_payload.encode("utf-8"),
-                        user_properties=data["user_properties"],
-                        topic=data["topic"],
-                    )
-                )
             else:
                 encoded_payload = self.encode_payload(data["payload"])
                 self.pass_through_queue.put(
@@ -594,11 +584,11 @@ class BrokerRequestResponse(BrokerBase):
 
         return None  # The actual result will be processed in handle_responses
 
-    def cleanup(self):
+    def stop_component(self):
         if self.response_thread:
             self._local_stop_signal.set()
             self.response_thread.join()
-        super().cleanup()
+        super().stop_component()
 
     def get_metrics(self):
         # override because it removes messaging_service from the BrokerBase
