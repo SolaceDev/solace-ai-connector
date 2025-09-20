@@ -287,40 +287,6 @@ class BrokerRequestResponse(BrokerBase):
         # Will get called after the message service is connected
         self.start_response_thread()
 
-    def decode_payload(self, payload):
-        """
-        Decodes the payload, raising an error on failure.
-        Overrides BrokerBase.decode_payload to ensure JSON/YAML parsing errors are not suppressed.
-        """
-        encoding = self.get_config("payload_encoding", "utf-8")
-        payload_format = self.get_config("payload_format", "json")
-
-        if payload is None:
-            return None
-
-        # Decode from bytes to string if necessary
-        if isinstance(payload, (bytes, bytearray)):
-            if encoding and encoding != "none":
-                try:
-                    payload = payload.decode(encoding)
-                except UnicodeDecodeError as e:
-                    raise ValueError(
-                        f"Failed to decode payload with encoding '{encoding}'"
-                    ) from e
-            else:
-                return payload
-
-        # Parse from string format (json/yaml) to object
-        if payload_format == "json":
-            if isinstance(payload, str):
-                try:
-                    return json.loads(payload)
-                except json.JSONDecodeError as e:
-                    # Raise a more specific error to be caught upstream
-                    raise ValueError(f"Payload is not valid JSON: {e}") from e
-
-        return payload
-
     def setup_reply_queue(self):
         self.messaging_service.bind_to_queue(
             self.reply_queue_name, [self.response_topic], temporary=True

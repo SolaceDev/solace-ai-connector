@@ -513,7 +513,7 @@ def test_rrc_process_response_with_decode_error():
     assert isinstance(message_arg.get_payload(), dict)
     assert message_arg.get_payload()["error"] == "Payload decode error"
     assert "details" in message_arg.get_payload()
-    assert "Payload is not valid JSON" in message_arg.get_payload()["details"]
+    assert "Invalid JSON payload" in message_arg.get_payload()["details"]
 
     # The 'result' passed to process_post_invoke should also contain the error payload
     assert isinstance(response_data["payload"], dict)
